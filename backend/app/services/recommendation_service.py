@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
+from sqlalchemy.orm import selectinload
 from app.models.menu import Menu, TimeSlot
 from app.models.question import Question
 from app.models.recommendation import RecommendationLog
@@ -44,13 +45,12 @@ class RecommendationService:
         db: AsyncSession, answers: Dict[str, str], session_id: str, limit: int = 5
     ) -> List[MenuRecommendation]:
         """
-        질답 기반 맞춤 추천 (개인화/트렌드/다양성 고도화)
-        - 최근 추천된 메뉴(동일 세션)는 제외
-        - 추천 로그 기반 인기/트렌드 가중치 반영
-        - 점수 상위 N개 중 일부 랜덤 섞기(다양성)
+        질답 기반 맞춤 추천 (필수 조건 AND 필터 + 선호 가중치)
+        - 필수 조건: 시간대, 채식, 국물, 국가/카테고리 등
+        - 선호 조건: 매운맛, 건강식, 빠른조리 등
         """
-        # 1. 전체 메뉴 조회
-        stmt = select(Menu)
+        # 1. 전체 메뉴 + 카테고리 join 조회
+        stmt = select(Menu).options(selectinload(Menu.category))
         result = await db.execute(stmt)
         menus = result.scalars().all()
         if not menus:
@@ -72,14 +72,48 @@ class RecommendationService:
         filtered_menus = [m for m in menus if str(m.id) not in recent_menu_ids]
         if not filtered_menus:
             filtered_menus = menus  # 모두 제외되면 전체 허용
-        # 3. 트렌드(추천수/조회수) 기반 가중치 계산
+
+        # 3. 필수 조건 AND 필터링
+        def is_required(menu):
+            # 시간대
+            if "time_slot" in answers and menu.time_slot != answers["time_slot"]:
+                return False
+            # 채식
+            if any(v == "채식" for v in answers.values()) and not menu.is_vegetarian:
+                return False
+            # 국물
+            if any(v == "국물요리" for v in answers.values()):
+                if not menu.has_soup:
+                    return False
+            else:
+                if menu.has_soup:
+                    return False
+            # 국가/카테고리
+            if (
+                "country" in answers
+                and menu.category
+                and menu.category.country != answers["country"]
+            ):
+                return False
+            if (
+                "cuisine_type" in answers
+                and menu.category
+                and menu.category.cuisine_type != answers["cuisine_type"]
+            ):
+                return False
+            return True
+
+        required_menus = [m for m in filtered_menus if is_required(m)]
+        if not required_menus:
+            return []  # 필수 조건 만족 메뉴 없음
+        # 4. 트렌드(추천수/조회수) 기반 가중치 계산
         trend_scores = await RecommendationService._get_menu_trend_scores(db)
-        # 4. 질문/가중치 기반 점수 계산 + 트렌드 가중치 합산
+        # 5. 질문/가중치 기반 점수 계산 + 트렌드 가중치 합산
         stmt = select(Question)
         result = await db.execute(stmt)
         questions = result.scalars().all()
         menu_scores = []
-        for menu in filtered_menus:
+        for menu in required_menus:
             score = RecommendationService._calculate_menu_score(
                 menu, answers, questions
             )
@@ -88,7 +122,7 @@ class RecommendationService:
             if total_score > 0:
                 menu_scores.append((menu, total_score))
         menu_scores.sort(key=lambda x: x[1], reverse=True)
-        # 5. 다양성: 상위 N*2개 중 N개 랜덤 추출
+        # 6. 다양성: 상위 N*2개 중 N개 랜덤 추출
         top_n = limit * 2
         top_candidates = (
             menu_scores[:top_n] if len(menu_scores) > top_n else menu_scores

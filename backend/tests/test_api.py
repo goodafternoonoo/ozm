@@ -165,6 +165,83 @@ async def test_quiz_recommendation():
         assert isinstance(data["recommendations"], list)
 
 
+@pytest.mark.asyncio
+async def test_quiz_recommendation_required_filters():
+    """
+    질답 기반 추천에서 필수 조건(시간대, 채식, 국물, 국가 등) AND 필터 동작 검증
+    - 모든 조건을 만족하는 메뉴만 추천
+    - 하나라도 불일치하면 추천 결과 없음
+    """
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        # 1. 카테고리/메뉴 생성 (채식+국물+한국+아침)
+        cat_payload = {
+            "name": "필수조건 카테고리",
+            "description": "필수조건 테스트",
+            "country": "한국",
+            "cuisine_type": "한식",
+            "is_active": True,
+            "display_order": 1,
+            "icon_url": None,
+            "color_code": "#111111",
+        }
+        cat_resp = await client.post("/api/v1/categories/", json=cat_payload)
+        category_id = cat_resp.json()["id"]
+        menu_payload = {
+            "name": "필수조건 메뉴",
+            "description": "채식+국물+한국+아침",
+            "time_slot": "breakfast",
+            "is_spicy": False,
+            "is_healthy": True,
+            "is_vegetarian": True,
+            "is_quick": False,
+            "has_rice": True,
+            "has_soup": True,
+            "has_meat": False,
+            "calories": 300,
+            "protein": 10.0,
+            "carbs": 40.0,
+            "fat": 5.0,
+            "prep_time": 10,
+            "difficulty": "easy",
+            "rating": 4.5,
+            "image_url": None,
+            "category_id": category_id,
+        }
+        await client.post("/api/v1/menus/", json=menu_payload)
+        # 2. 모든 조건을 만족하는 답변 → 추천 결과 있음
+        req = {
+            "answers": {
+                "time_slot": "breakfast",
+                "country": "한국",
+                "cuisine_type": "한식",
+                "q1": "채식",
+                "q2": "국물요리",
+            },
+            "session_id": "req-filter-1",
+        }
+        resp = await client.post("/api/v1/recommendations/quiz", json=req)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["recommendations"]) > 0
+        # 3. 하나라도 불일치(예: 국물 → False) → 추천 결과 없음
+        req2 = {
+            "answers": {
+                "time_slot": "breakfast",
+                "country": "한국",
+                "cuisine_type": "한식",
+                "q1": "채식",
+                # 국물요리 빠짐
+            },
+            "session_id": "req-filter-2",
+        }
+        resp2 = await client.post("/api/v1/recommendations/quiz", json=req2)
+        assert resp2.status_code == 200
+        data2 = resp2.json()
+        print("[필수조건 미충족 추천 결과]", data2["recommendations"])
+        # 국물요리 조건이 없으므로 추천 결과 없음
+        assert len(data2["recommendations"]) == 0
+
+
 # ---------------- 즐겨찾기(찜) ----------------
 @pytest.mark.asyncio
 async def test_favorite_add_and_get():
