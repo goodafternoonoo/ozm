@@ -29,6 +29,7 @@ class MenuBase(BaseModel):
     difficulty: Optional[str] = "easy"
     rating: Optional[float] = Field(0.0, ge=0.0, le=5.0)
     image_url: Optional[str] = None
+    category_id: Optional[uuid.UUID] = None
 
 
 class MenuCreate(MenuBase):
@@ -58,6 +59,7 @@ class MenuUpdate(BaseModel):
 
 class Menu(MenuBase):
     id: uuid.UUID
+    category_id: Optional[uuid.UUID] = None
 
     class Config:
         from_attributes = True
