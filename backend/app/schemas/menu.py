@@ -89,7 +89,8 @@ class MenuRecommendation(BaseModel):
 class FavoriteBase(BaseModel):
     """즐겨찾기(찜) 공통 필드"""
 
-    session_id: str
+    session_id: Optional[str] = None
+    user_id: Optional[uuid.UUID] = None
     menu_id: uuid.UUID
 
 
