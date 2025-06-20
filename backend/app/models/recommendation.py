@@ -1,6 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, DateTime, JSON, Float
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, DateTime, JSON
 from sqlalchemy.sql import func
 from app.db.database import Base
 import sqlalchemy.types as types
@@ -8,12 +7,16 @@ from datetime import datetime
 
 
 class GUID(types.TypeDecorator):
-    """플랫폼에 따라 UUID를 String으로 변환 (PostgreSQL/SQLite 호환)"""
+    """
+    플랫폼에 따라 UUID를 String으로 변환 (PostgreSQL/SQLite 호환)
+    """
 
     impl = String(36)
 
     def load_dialect_impl(self, dialect):
         if dialect.name == "postgresql":
+            from sqlalchemy.dialects.postgresql import UUID
+
             return dialect.type_descriptor(UUID())
         return dialect.type_descriptor(String(36))
 
@@ -27,7 +30,12 @@ class GUID(types.TypeDecorator):
 
 
 class RecommendationLog(Base):
-    """추천 결과 로그 테이블"""
+    """
+    추천 결과 로그 테이블
+    - user_answers: 사용자 답변(JSON)
+    - recommended_menus: 추천된 메뉴 목록(JSON)
+    - recommendation_type: simple/quiz 등
+    """
 
     __tablename__ = "recommendation_logs"
 

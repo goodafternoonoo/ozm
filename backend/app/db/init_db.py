@@ -9,29 +9,31 @@ from app.models.category import Category
 
 
 async def init_db():
-    """데이터베스 초기화"""
-    # 기존 테이블 삭제 후 새로 생성
+    """
+    데이터베이스 전체 초기화 (테이블 삭제 후 재생성)
+    - 운영 환경에서는 사용 금지 (개발/테스트용)
+    """
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-
-    # 샘플 데이터 생성
     await create_sample_data()
 
 
 async def create_sample_data():
-    """샘플 데이터 생성"""
+    """
+    샘플 데이터(카테고리, 메뉴, 질문) 자동 생성
+    - 카테고리 생성 후 id 매핑 → 메뉴에 category_id 할당
+    - 실전 서비스 수준의 샘플 구조
+    """
     from app.db.database import AsyncSessionLocal
 
     async with AsyncSessionLocal() as db:
-        # 기존 데이터 확인
+        # 기존 데이터 확인 (중복 방지)
         result = await db.execute(select(Menu))
         existing_menus = result.scalars().all()
-
         if existing_menus:
             print("샘플 데이터가 이미 존재합니다.")
             return
-
         # 샘플 카테고리 데이터
         sample_categories = [
             {
@@ -83,7 +85,6 @@ async def create_sample_data():
                 "color_code": "#DDA0DD",
             },
         ]
-
         # 카테고리 데이터 저장 및 이름→id 매핑
         category_name_to_id = {}
         for category_data in sample_categories:
@@ -92,10 +93,8 @@ async def create_sample_data():
             await db.flush()  # id 확보
             category_name_to_id[category_data["name"]] = category.id
         await db.commit()
-
-        # 샘플 메뉴 데이터 (카테고리명 추가)
+        # 샘플 메뉴 데이터 (카테고리 연관관계 반영)
         sample_menus = [
-            # 아침 메뉴 (한식)
             {
                 "name": "김치볶음밥",
                 "description": "매콤한 김치와 함께 볶은 맛있는 볶음밥",
@@ -133,7 +132,6 @@ async def create_sample_data():
                 "rating": 3.8,
                 "category_id": category_name_to_id["이탈리아 요리"],
             },
-            # 점심 메뉴 (한식/중식)
             {
                 "name": "비빔밥",
                 "description": "다양한 나물과 고추장을 비빈 한국 전통 요리",
@@ -170,7 +168,6 @@ async def create_sample_data():
                 "rating": 4.3,
                 "category_id": category_name_to_id["한국 전통 요리"],
             },
-            # 저녁 메뉴 (한식/중식/일식/동남아식 등 다양화 가능)
             {
                 "name": "삼겹살",
                 "description": "구워서 먹는 대표적인 한국 고기 요리",
@@ -207,12 +204,9 @@ async def create_sample_data():
                 "category_id": category_name_to_id["이탈리아 요리"],
             },
         ]
-
-        # 메뉴 데이터 저장 (카테고리 연관관계 반영)
         for menu_data in sample_menus:
             menu = Menu(**menu_data)
             db.add(menu)
-
         # 샘플 질문 데이터
         sample_questions = [
             {
@@ -251,11 +245,8 @@ async def create_sample_data():
                 },
             },
         ]
-
-        # 질문 데이터 저장
         for question_data in sample_questions:
             question = Question(**question_data)
             db.add(question)
-
         await db.commit()
         print("샘플 데이터가 성공적으로 생성되었습니다.")

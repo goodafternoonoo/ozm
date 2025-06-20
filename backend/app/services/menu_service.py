@@ -1,6 +1,6 @@
 from typing import List, Optional, Union
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select
 from app.models.menu import Menu, TimeSlot
 from app.schemas.menu import MenuCreate, MenuUpdate
 import uuid
@@ -8,6 +8,7 @@ from enum import Enum
 
 
 class MenuService:
+    """메뉴 관련 비즈니스 로직 서비스"""
 
     @staticmethod
     async def get_menus_by_time_slot(
@@ -43,14 +44,11 @@ class MenuService:
         stmt = select(Menu).where(Menu.id == menu_id)
         result = await db.execute(stmt)
         db_menu = result.scalar_one_or_none()
-
         if not db_menu:
             return None
-
         update_data = menu_data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(db_menu, field, value)
-
         await db.commit()
         await db.refresh(db_menu)
         return db_menu
@@ -61,10 +59,8 @@ class MenuService:
         stmt = select(Menu).where(Menu.id == menu_id)
         result = await db.execute(stmt)
         db_menu = result.scalar_one_or_none()
-
         if not db_menu:
             return False
-
         await db.delete(db_menu)
         await db.commit()
         return True

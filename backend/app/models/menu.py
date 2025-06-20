@@ -16,7 +16,9 @@ from app.db.database import Base
 
 
 class TimeSlot(enum.Enum):
-    """메뉴 제공 시간대 구분"""
+    """
+    메뉴 제공 시간대 구분 (아침/점심/저녁)
+    """
 
     BREAKFAST = "breakfast"
     LUNCH = "lunch"
@@ -24,7 +26,9 @@ class TimeSlot(enum.Enum):
 
 
 class GUID(types.TypeDecorator):
-    """플랫폼에 따라 UUID를 String으로 변환 (PostgreSQL/SQLite 호환)"""
+    """
+    플랫폼에 따라 UUID를 String으로 변환 (PostgreSQL/SQLite 호환)
+    """
 
     impl = String(36)
 
@@ -43,7 +47,11 @@ class GUID(types.TypeDecorator):
 
 
 class Menu(Base):
-    """음식 메뉴 테이블"""
+    """
+    음식 메뉴 테이블
+    - category_id: 카테고리와 N:1 관계
+    - 영양 정보, 속성, 이미지 등 포함
+    """
 
     __tablename__ = "menus"
 

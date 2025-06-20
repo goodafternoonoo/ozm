@@ -10,6 +10,8 @@ from app.schemas.category import CategoryCreate, CategoryUpdate
 
 
 class CategoryService:
+    """카테고리 관련 비즈니스 로직 서비스"""
+
     def __init__(self, db: AsyncSession):
         self.db = db
 
@@ -36,10 +38,8 @@ class CategoryService:
         cuisine_type: Optional[str] = None,
         is_active: Optional[bool] = None,
     ) -> List[Category]:
-        """카테고리 목록 조회 (필터링 및 페이징 지원)"""
+        """카테고리 목록 조회 (필터링/페이징 지원)"""
         query = select(Category)
-
-        # 필터 조건 추가
         filters = []
         if country:
             filters.append(Category.country == country)
@@ -47,16 +47,10 @@ class CategoryService:
             filters.append(Category.cuisine_type == cuisine_type)
         if is_active is not None:
             filters.append(Category.is_active == is_active)
-
         if filters:
             query = query.where(and_(*filters))
-
-        # 정렬 (display_order, name 순)
         query = query.order_by(Category.display_order, Category.name)
-
-        # 페이징
         query = query.offset(skip).limit(limit)
-
         result = await self.db.execute(query)
         return result.scalars().all()
 
@@ -64,14 +58,12 @@ class CategoryService:
         self, skip: int = 0, limit: int = 100
     ) -> List[dict]:
         """메뉴 개수와 함께 카테고리 목록 조회"""
-        # 서브쿼리로 각 카테고리의 메뉴 개수 계산
+        # 각 카테고리별 메뉴 개수 집계
         menu_count_subquery = (
             select(Menu.category_id, func.count(Menu.id).label("menu_count"))
             .group_by(Menu.category_id)
             .subquery()
         )
-
-        # 메인 쿼리
         query = (
             select(
                 Category,
@@ -85,7 +77,6 @@ class CategoryService:
             .offset(skip)
             .limit(limit)
         )
-
         result = await self.db.execute(query)
         return [
             {**category.__dict__, "menu_count": menu_count}
@@ -99,11 +90,9 @@ class CategoryService:
         category = await self.get_category_by_id(category_id)
         if not category:
             return None
-
         update_data = category_data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(category, field, value)
-
         await self.db.commit()
         await self.db.refresh(category)
         return category
@@ -113,7 +102,6 @@ class CategoryService:
         category = await self.get_category_by_id(category_id)
         if not category:
             return False
-
         category.is_active = False
         await self.db.commit()
         return True
@@ -143,13 +131,11 @@ class CategoryService:
     ) -> int:
         """카테고리 총 개수 조회"""
         query = select(func.count(Category.id))
-
         filters = [Category.is_active == True]
         if country:
             filters.append(Category.country == country)
         if cuisine_type:
             filters.append(Category.cuisine_type == cuisine_type)
-
         query = query.where(and_(*filters))
         result = await self.db.execute(query)
         return result.scalar()

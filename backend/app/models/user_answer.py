@@ -1,18 +1,21 @@
 import uuid
 from sqlalchemy import Column, String, DateTime, JSON
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from app.db.database import Base
 import sqlalchemy.types as types
 
 
 class GUID(types.TypeDecorator):
-    """플랫폼에 따라 UUID를 String으로 변환 (PostgreSQL/SQLite 호환)"""
+    """
+    플랫폼에 따라 UUID를 String으로 변환 (PostgreSQL/SQLite 호환)
+    """
 
     impl = String(36)
 
     def load_dialect_impl(self, dialect):
         if dialect.name == "postgresql":
+            from sqlalchemy.dialects.postgresql import UUID
+
             return dialect.type_descriptor(UUID())
         return dialect.type_descriptor(String(36))
 
@@ -26,7 +29,11 @@ class GUID(types.TypeDecorator):
 
 
 class UserAnswer(Base):
-    """사용자 답변 테이블"""
+    """
+    사용자 답변 테이블
+    - session_id: 세션별 식별자
+    - answers: 모든 답변(JSON)
+    """
 
     __tablename__ = "user_answers"
 

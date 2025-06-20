@@ -19,7 +19,11 @@ router = APIRouter()
 async def create_category(
     category_data: CategoryCreate, db: AsyncSession = Depends(get_db)
 ):
-    """새로운 카테고리 생성"""
+    """
+    새로운 카테고리 생성
+    - 입력: CategoryCreate
+    - 출력: CategoryResponse
+    """
     service = CategoryService(db)
     category = await service.create_category(category_data)
     return CategoryResponse.model_validate(category)
@@ -34,7 +38,10 @@ async def get_categories(
     include_menu_count: bool = Query(False, description="메뉴 개수 포함 여부"),
     db: AsyncSession = Depends(get_db),
 ):
-    """카테고리 목록 조회 (필터링 및 페이징 지원)"""
+    """
+    카테고리 목록 조회 (필터링/페이징)
+    - include_menu_count: True면 각 카테고리별 메뉴 개수 포함
+    """
     service = CategoryService(db)
     skip = (page - 1) * size
 
@@ -74,7 +81,11 @@ async def get_categories(
 
 @router.get("/{category_id}", response_model=CategoryResponse)
 async def get_category(category_id: UUID, db: AsyncSession = Depends(get_db)):
-    """특정 카테고리 조회"""
+    """
+    특정 카테고리 상세 조회
+    - 입력: category_id
+    - 출력: CategoryResponse
+    """
     service = CategoryService(db)
     category = await service.get_category_by_id(category_id)
 

@@ -7,7 +7,9 @@ import sqlalchemy.types as types
 
 
 class GUID(types.TypeDecorator):
-    """플랫폼에 따라 UUID를 String으로 변환 (PostgreSQL/SQLite 호환)"""
+    """
+    플랫폼에 따라 UUID를 String으로 변환 (PostgreSQL/SQLite 호환)
+    """
 
     impl = String(36)
 
@@ -26,7 +28,11 @@ class GUID(types.TypeDecorator):
 
 
 class Category(Base):
-    """음식 카테고리 테이블"""
+    """
+    음식 카테고리 테이블
+    - 각 메뉴와 1:N 관계
+    - color_code: 프론트엔드 시각 구분용 색상 코드(예: #FF5733)
+    """
 
     __tablename__ = "categories"
 
@@ -42,7 +48,7 @@ class Category(Base):
     is_active = Column(Boolean, default=True)
     display_order = Column(Integer, default=0)  # 표시 순서
     icon_url = Column(String(255))  # 카테고리 아이콘 이미지
-    color_code = Column(String(7))  # 카테고리 색상 (예: #FF5733)
+    color_code = Column(String(7))  # 색상 코드 (예: #FF5733)
 
     # 메뉴와의 관계
     menus = relationship("Menu", back_populates="category")
