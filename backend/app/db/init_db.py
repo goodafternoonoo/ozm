@@ -32,161 +32,6 @@ async def create_sample_data():
             print("샘플 데이터가 이미 존재합니다.")
             return
 
-        # 샘플 메뉴 데이터
-        sample_menus = [
-            # 아침 메뉴
-            {
-                "name": "김치볶음밥",
-                "description": "매콤한 김치와 함께 볶은 맛있는 볶음밥",
-                "time_slot": "breakfast",
-                "is_spicy": True,
-                "is_quick": True,
-                "has_rice": True,
-                "calories": 450,
-                "prep_time": 15,
-                "difficulty": "easy",
-                "rating": 4.5,
-            },
-            {
-                "name": "토스트",
-                "description": "바삭한 토스트에 잼이나 버터를 발라 드세요",
-                "time_slot": "breakfast",
-                "is_quick": True,
-                "is_vegetarian": True,
-                "calories": 200,
-                "prep_time": 5,
-                "difficulty": "easy",
-                "rating": 4.0,
-            },
-            {
-                "name": "오트밀",
-                "description": "건강한 귀리를 우유와 함께 끓인 영양식",
-                "time_slot": "breakfast",
-                "is_healthy": True,
-                "is_vegetarian": True,
-                "calories": 150,
-                "prep_time": 10,
-                "difficulty": "easy",
-                "rating": 3.8,
-            },
-            # 점심 메뉴
-            {
-                "name": "비빔밥",
-                "description": "다양한 나물과 고추장을 비빈 한국 전통 요리",
-                "time_slot": "lunch",
-                "is_healthy": True,
-                "has_rice": True,
-                "is_vegetarian": True,
-                "calories": 500,
-                "prep_time": 20,
-                "difficulty": "medium",
-                "rating": 4.7,
-            },
-            {
-                "name": "불고기",
-                "description": "달콤하게 양념한 소고기 구이",
-                "time_slot": "lunch",
-                "has_meat": True,
-                "calories": 600,
-                "prep_time": 30,
-                "difficulty": "medium",
-                "rating": 4.8,
-            },
-            {
-                "name": "된장찌개",
-                "description": "구수한 된장의 맛이 일품인 국물 요리",
-                "time_slot": "lunch",
-                "has_soup": True,
-                "is_healthy": True,
-                "calories": 200,
-                "prep_time": 25,
-                "difficulty": "easy",
-                "rating": 4.3,
-            },
-            # 저녁 메뉴
-            {
-                "name": "삼겹살",
-                "description": "구워서 먹는 대표적인 한국 고기 요리",
-                "time_slot": "dinner",
-                "has_meat": True,
-                "calories": 700,
-                "prep_time": 20,
-                "difficulty": "easy",
-                "rating": 4.9,
-            },
-            {
-                "name": "김치찌개",
-                "description": "매콤한 김치로 끓인 뜨끈한 찌개",
-                "time_slot": "dinner",
-                "is_spicy": True,
-                "has_soup": True,
-                "calories": 350,
-                "prep_time": 30,
-                "difficulty": "easy",
-                "rating": 4.6,
-            },
-            {
-                "name": "샐러드",
-                "description": "신선한 야채로 만든 건강한 샐러드",
-                "time_slot": "dinner",
-                "is_healthy": True,
-                "is_vegetarian": True,
-                "calories": 100,
-                "prep_time": 10,
-                "difficulty": "easy",
-                "rating": 4.2,
-            },
-        ]
-
-        # 메뉴 데이터 저장
-        for menu_data in sample_menus:
-            menu = Menu(**menu_data)
-            db.add(menu)
-
-        # 샘플 질문 데이터
-        sample_questions = [
-            {
-                "text": "매운 음식을 좋아하시나요?",
-                "order": 1,
-                "options": ["매운맛", "순한맛"],
-                "weight_map": {
-                    "매운맛": {"is_spicy": 1.0},
-                    "순한맛": {"is_spicy": -1.0},
-                },
-            },
-            {
-                "text": "어떤 식단을 선호하시나요?",
-                "order": 2,
-                "options": ["건강식", "일반식", "채식"],
-                "weight_map": {
-                    "건강식": {"is_healthy": 1.0},
-                    "채식": {"is_vegetarian": 1.0},
-                    "일반식": {},
-                },
-            },
-            {
-                "text": "조리 시간은 어느 정도를 원하시나요?",
-                "order": 3,
-                "options": ["빠른조리", "일반조리"],
-                "weight_map": {"빠른조리": {"is_quick": 1.0}, "일반조리": {}},
-            },
-            {
-                "text": "어떤 종류의 음식을 좋아하시나요?",
-                "order": 4,
-                "options": ["밥류", "국물요리", "고기요리"],
-                "weight_map": {
-                    "밥류": {"has_rice": 1.0},
-                    "국물요리": {"has_soup": 1.0},
-                    "고기요리": {"has_meat": 1.0},
-                },
-            },
-        ]
-
-        # 질문 데이터 저장
-        for question_data in sample_questions:
-            question = Question(**question_data)
-            db.add(question)
-
         # 샘플 카테고리 데이터
         sample_categories = [
             {
@@ -239,10 +84,178 @@ async def create_sample_data():
             },
         ]
 
-        # 카테고리 데이터 저장
+        # 카테고리 데이터 저장 및 이름→id 매핑
+        category_name_to_id = {}
         for category_data in sample_categories:
             category = Category(**category_data)
             db.add(category)
+            await db.flush()  # id 확보
+            category_name_to_id[category_data["name"]] = category.id
+        await db.commit()
+
+        # 샘플 메뉴 데이터 (카테고리명 추가)
+        sample_menus = [
+            # 아침 메뉴 (한식)
+            {
+                "name": "김치볶음밥",
+                "description": "매콤한 김치와 함께 볶은 맛있는 볶음밥",
+                "time_slot": "breakfast",
+                "is_spicy": True,
+                "is_quick": True,
+                "has_rice": True,
+                "calories": 450,
+                "prep_time": 15,
+                "difficulty": "easy",
+                "rating": 4.5,
+                "category_id": category_name_to_id["한국 전통 요리"],
+            },
+            {
+                "name": "토스트",
+                "description": "바삭한 토스트에 잼이나 버터를 발라 드세요",
+                "time_slot": "breakfast",
+                "is_quick": True,
+                "is_vegetarian": True,
+                "calories": 200,
+                "prep_time": 5,
+                "difficulty": "easy",
+                "rating": 4.0,
+                "category_id": category_name_to_id["이탈리아 요리"],
+            },
+            {
+                "name": "오트밀",
+                "description": "건강한 귀리를 우유와 함께 끓인 영양식",
+                "time_slot": "breakfast",
+                "is_healthy": True,
+                "is_vegetarian": True,
+                "calories": 150,
+                "prep_time": 10,
+                "difficulty": "easy",
+                "rating": 3.8,
+                "category_id": category_name_to_id["이탈리아 요리"],
+            },
+            # 점심 메뉴 (한식/중식)
+            {
+                "name": "비빔밥",
+                "description": "다양한 나물과 고추장을 비빈 한국 전통 요리",
+                "time_slot": "lunch",
+                "is_healthy": True,
+                "has_rice": True,
+                "is_vegetarian": True,
+                "calories": 500,
+                "prep_time": 20,
+                "difficulty": "medium",
+                "rating": 4.7,
+                "category_id": category_name_to_id["한국 전통 요리"],
+            },
+            {
+                "name": "불고기",
+                "description": "달콤하게 양념한 소고기 구이",
+                "time_slot": "lunch",
+                "has_meat": True,
+                "calories": 600,
+                "prep_time": 30,
+                "difficulty": "medium",
+                "rating": 4.8,
+                "category_id": category_name_to_id["한국 전통 요리"],
+            },
+            {
+                "name": "된장찌개",
+                "description": "구수한 된장의 맛이 일품인 국물 요리",
+                "time_slot": "lunch",
+                "has_soup": True,
+                "is_healthy": True,
+                "calories": 200,
+                "prep_time": 25,
+                "difficulty": "easy",
+                "rating": 4.3,
+                "category_id": category_name_to_id["한국 전통 요리"],
+            },
+            # 저녁 메뉴 (한식/중식/일식/동남아식 등 다양화 가능)
+            {
+                "name": "삼겹살",
+                "description": "구워서 먹는 대표적인 한국 고기 요리",
+                "time_slot": "dinner",
+                "has_meat": True,
+                "calories": 700,
+                "prep_time": 20,
+                "difficulty": "easy",
+                "rating": 4.9,
+                "category_id": category_name_to_id["한국 전통 요리"],
+            },
+            {
+                "name": "김치찌개",
+                "description": "매콤한 김치로 끓인 뜨끈한 찌개",
+                "time_slot": "dinner",
+                "is_spicy": True,
+                "has_soup": True,
+                "calories": 350,
+                "prep_time": 30,
+                "difficulty": "easy",
+                "rating": 4.6,
+                "category_id": category_name_to_id["한국 전통 요리"],
+            },
+            {
+                "name": "샐러드",
+                "description": "신선한 야채로 만든 건강한 샐러드",
+                "time_slot": "dinner",
+                "is_healthy": True,
+                "is_vegetarian": True,
+                "calories": 100,
+                "prep_time": 10,
+                "difficulty": "easy",
+                "rating": 4.2,
+                "category_id": category_name_to_id["이탈리아 요리"],
+            },
+        ]
+
+        # 메뉴 데이터 저장 (카테고리 연관관계 반영)
+        for menu_data in sample_menus:
+            menu = Menu(**menu_data)
+            db.add(menu)
+
+        # 샘플 질문 데이터
+        sample_questions = [
+            {
+                "text": "매운 음식을 좋아하시나요?",
+                "order": 1,
+                "options": ["매운맛", "순한맛"],
+                "weight_map": {
+                    "매운맛": {"is_spicy": 1.0},
+                    "순한맛": {"is_spicy": -1.0},
+                },
+            },
+            {
+                "text": "어떤 식단을 선호하시나요?",
+                "order": 2,
+                "options": ["건강식", "일반식", "채식"],
+                "weight_map": {
+                    "건강식": {"is_healthy": 1.0},
+                    "채식": {"is_vegetarian": 1.0},
+                    "일반식": {},
+                },
+            },
+            {
+                "text": "조리 시간은 어느 정도를 원하시나요?",
+                "order": 3,
+                "options": ["빠른조리", "일반조리"],
+                "weight_map": {"빠른조리": {"is_quick": 1.0}, "일반조리": {}},
+            },
+            {
+                "text": "어떤 종류의 음식을 좋아하시나요?",
+                "order": 4,
+                "options": ["밥류", "국물요리", "고기요리"],
+                "weight_map": {
+                    "밥류": {"has_rice": 1.0},
+                    "국물요리": {"has_soup": 1.0},
+                    "고기요리": {"has_meat": 1.0},
+                },
+            },
+        ]
+
+        # 질문 데이터 저장
+        for question_data in sample_questions:
+            question = Question(**question_data)
+            db.add(question)
 
         await db.commit()
         print("샘플 데이터가 성공적으로 생성되었습니다.")
