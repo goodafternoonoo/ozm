@@ -33,7 +33,7 @@ class Question(Base):
     order = Column(Integer, nullable=False)
     options = Column(JSON, nullable=False)
     weight_map = Column(JSON)  # 각 답변의 가중치 맵
-    category = Column(String(50), nullable=False)
+    category = Column(String(50), nullable=True)
 
     def __repr__(self):
         return f"<Question(text='{self.text[:30]}...', order={self.order})>"
