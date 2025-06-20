@@ -1,20 +1,21 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.models.menu import Menu, TimeSlot
 from app.schemas.menu import MenuCreate, MenuUpdate
 import uuid
+from enum import Enum
+
 
 class MenuService:
 
     @staticmethod
     async def get_menus_by_time_slot(
-        db: AsyncSession, 
-        time_slot: TimeSlot, 
-        limit: int = 10
+        db: AsyncSession, time_slot: Union[str, Enum], limit: int = 10
     ) -> List[Menu]:
         """시간대별 메뉴 조회"""
-        stmt = select(Menu).where(Menu.time_slot == time_slot).limit(limit)
+        slot = time_slot.value if isinstance(time_slot, Enum) else time_slot
+        stmt = select(Menu).where(Menu.time_slot == slot).limit(limit)
         result = await db.execute(stmt)
         return result.scalars().all()
 
@@ -36,9 +37,7 @@ class MenuService:
 
     @staticmethod
     async def update_menu(
-        db: AsyncSession, 
-        menu_id: uuid.UUID, 
-        menu_data: MenuUpdate
+        db: AsyncSession, menu_id: uuid.UUID, menu_data: MenuUpdate
     ) -> Optional[Menu]:
         """메뉴 업데이트"""
         stmt = select(Menu).where(Menu.id == menu_id)
@@ -71,7 +70,9 @@ class MenuService:
         return True
 
     @staticmethod
-    async def get_all_menus(db: AsyncSession, skip: int = 0, limit: int = 100) -> List[Menu]:
+    async def get_all_menus(
+        db: AsyncSession, skip: int = 0, limit: int = 100
+    ) -> List[Menu]:
         """모든 메뉴 조회 (페이징)"""
         stmt = select(Menu).offset(skip).limit(limit)
         result = await db.execute(stmt)

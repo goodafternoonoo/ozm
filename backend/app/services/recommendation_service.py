@@ -9,18 +9,17 @@ from app.schemas.menu import MenuRecommendation
 import uuid
 import random
 
+
 class RecommendationService:
 
     @staticmethod
     async def get_simple_recommendations(
-        db: AsyncSession,
-        time_slot: TimeSlot,
-        session_id: str,
-        limit: int = 5
+        db: AsyncSession, time_slot: TimeSlot, session_id: str, limit: int = 5
     ) -> List[MenuRecommendation]:
         """시간대별 간단 추천"""
-        # 해당 시간대의 메뉴들 조회
-        stmt = select(Menu).where(Menu.time_slot == time_slot)
+        # Enum이면 value로 변환
+        slot = time_slot.value if hasattr(time_slot, "value") else time_slot
+        stmt = select(Menu).where(Menu.time_slot == slot).limit(limit)
         result = await db.execute(stmt)
         menus = result.scalars().all()
 
@@ -32,11 +31,13 @@ class RecommendationService:
 
         recommendations = []
         for menu in selected_menus:
-            recommendations.append(MenuRecommendation(
-                menu=menu,
-                score=random.uniform(0.7, 1.0),
-                reason=f"{time_slot.value}에 적합한 메뉴입니다."
-            ))
+            recommendations.append(
+                MenuRecommendation(
+                    menu=menu,
+                    score=random.uniform(0.7, 1.0),
+                    reason=f"{time_slot.value}에 적합한 메뉴입니다.",
+                )
+            )
 
         # 추천 로그 저장
         await RecommendationService._save_recommendation_log(
@@ -47,10 +48,7 @@ class RecommendationService:
 
     @staticmethod
     async def get_quiz_recommendations(
-        db: AsyncSession,
-        answers: Dict[str, str],
-        session_id: str,
-        limit: int = 5
+        db: AsyncSession, answers: Dict[str, str], session_id: str, limit: int = 5
     ) -> List[MenuRecommendation]:
         """질답 기반 맞춤 추천"""
         # 모든 메뉴 조회
@@ -69,7 +67,9 @@ class RecommendationService:
         # 각 메뉴에 대해 점수 계산
         menu_scores = []
         for menu in menus:
-            score = RecommendationService._calculate_menu_score(menu, answers, questions)
+            score = RecommendationService._calculate_menu_score(
+                menu, answers, questions
+            )
             if score > 0:
                 menu_scores.append((menu, score))
 
@@ -79,18 +79,19 @@ class RecommendationService:
         # 상위 N개 추천
         recommendations = []
         for menu, score in menu_scores[:limit]:
-            reason = RecommendationService._generate_recommendation_reason(menu, answers)
-            recommendations.append(MenuRecommendation(
-                menu=menu,
-                score=min(score / 10.0, 1.0),  # 0-1 범위로 정규화
-                reason=reason
-            ))
+            reason = RecommendationService._generate_recommendation_reason(
+                menu, answers
+            )
+            recommendations.append(
+                MenuRecommendation(
+                    menu=menu,
+                    score=min(score / 10.0, 1.0),  # 0-1 범위로 정규화
+                    reason=reason,
+                )
+            )
 
         # 사용자 답변 저장
-        user_answer = UserAnswer(
-            session_id=session_id,
-            answers=answers
-        )
+        user_answer = UserAnswer(session_id=session_id, answers=answers)
         db.add(user_answer)
 
         # 추천 로그 저장
@@ -103,7 +104,9 @@ class RecommendationService:
         return recommendations
 
     @staticmethod
-    def _calculate_menu_score(menu: Menu, answers: Dict[str, str], questions: List[Question]) -> float:
+    def _calculate_menu_score(
+        menu: Menu, answers: Dict[str, str], questions: List[Question]
+    ) -> float:
         """메뉴 점수 계산"""
         total_score = 0.0
 
@@ -168,7 +171,7 @@ class RecommendationService:
         session_id: str,
         answers: Dict[str, str],
         recommendations: List[MenuRecommendation],
-        rec_type: str
+        rec_type: str,
     ):
         """추천 로그 저장"""
         menu_data = [
@@ -176,7 +179,7 @@ class RecommendationService:
                 "menu_id": str(rec.menu.id),
                 "menu_name": rec.menu.name,
                 "score": rec.score,
-                "reason": rec.reason
+                "reason": rec.reason,
             }
             for rec in recommendations
         ]
@@ -185,6 +188,6 @@ class RecommendationService:
             session_id=session_id,
             user_answers=answers,
             recommended_menus=menu_data,
-            recommendation_type=rec_type
+            recommendation_type=rec_type,
         )
         db.add(log)

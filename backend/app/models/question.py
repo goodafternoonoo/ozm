@@ -1,16 +1,39 @@
+import uuid
 from sqlalchemy import Column, Integer, String, Text, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.database import Base
-import uuid
+import sqlalchemy.types as types
+
+
+class GUID(types.TypeDecorator):
+    """플랫폼에 따라 UUID를 String으로 변환"""
+
+    impl = String(36)
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(UUID())
+        else:
+            return dialect.type_descriptor(String(36))
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            return str(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        return value
+
 
 class Question(Base):
     __tablename__ = "questions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    text = Column(Text, nullable=False)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    text = Column(String(255), nullable=False)
     order = Column(Integer, nullable=False)
-    options = Column(JSON)  # 선택지들을 JSON으로 저장
+    options = Column(JSON, nullable=False)
     weight_map = Column(JSON)  # 각 답변의 가중치 맵
+    category = Column(String(50), nullable=False)
 
     def __repr__(self):
         return f"<Question(text='{self.text[:30]}...', order={self.order})>"

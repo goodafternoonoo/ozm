@@ -3,10 +3,12 @@ from typing import Optional, List
 from enum import Enum
 import uuid
 
+
 class TimeSlot(str, Enum):
     BREAKFAST = "breakfast"
     LUNCH = "lunch"
     DINNER = "dinner"
+
 
 class MenuBase(BaseModel):
     name: str = Field(..., max_length=100)
@@ -24,12 +26,14 @@ class MenuBase(BaseModel):
     carbs: Optional[float] = None
     fat: Optional[float] = None
     prep_time: Optional[int] = None
-    difficulty: Optional[int] = Field(None, ge=1, le=5)
+    difficulty: Optional[str] = "easy"
     rating: Optional[float] = Field(0.0, ge=0.0, le=5.0)
     image_url: Optional[str] = None
 
+
 class MenuCreate(MenuBase):
     pass
+
 
 class MenuUpdate(BaseModel):
     name: Optional[str] = None
@@ -47,15 +51,17 @@ class MenuUpdate(BaseModel):
     carbs: Optional[float] = None
     fat: Optional[float] = None
     prep_time: Optional[int] = None
-    difficulty: Optional[int] = Field(None, ge=1, le=5)
+    difficulty: Optional[str] = None
     rating: Optional[float] = Field(None, ge=0.0, le=5.0)
     image_url: Optional[str] = None
+
 
 class Menu(MenuBase):
     id: uuid.UUID
 
     class Config:
         from_attributes = True
+
 
 class MenuRecommendation(BaseModel):
     menu: Menu
