@@ -117,7 +117,7 @@ run_backend_dev() {
     fi
 
     # 가상환경 활성화
-    source venv/bin/activate
+    source venv/Scripts/activate
 
     # 의존성 설치
     echo -e "${BLUE}📦 Python 의존성 설치 중...${NC}"
