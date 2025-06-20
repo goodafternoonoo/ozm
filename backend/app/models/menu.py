@@ -1,8 +1,18 @@
 import uuid
 import enum
 import sqlalchemy.types as types
-from sqlalchemy import Column, Integer, String, Text, Boolean, Float, Enum as SQLEnum
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    Boolean,
+    Float,
+    Enum as SQLEnum,
+    ForeignKey,
+)
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from app.db.database import Base
 
 
@@ -60,6 +70,10 @@ class Menu(Base):
     difficulty = Column(String(50), default="easy")  # 1-5 난이도
     rating = Column(Float, default=0.0)
     image_url = Column(String(255))
+
+    # 카테고리와의 관계
+    category_id = Column(GUID(), ForeignKey("categories.id"), nullable=True)
+    category = relationship("Category", back_populates="menus")
 
     def __repr__(self):
         return f"<Menu(name='{self.name}', time_slot='{self.time_slot}')>"

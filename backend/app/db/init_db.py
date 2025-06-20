@@ -5,6 +5,7 @@ from app.models.menu import Menu
 from app.models.question import Question
 from app.models.user_answer import UserAnswer
 from app.models.recommendation import RecommendationLog
+from app.models.category import Category
 
 
 async def init_db():
@@ -185,6 +186,63 @@ async def create_sample_data():
         for question_data in sample_questions:
             question = Question(**question_data)
             db.add(question)
+
+        # 샘플 카테고리 데이터
+        sample_categories = [
+            {
+                "name": "한국 전통 요리",
+                "description": "한국의 전통적인 요리들",
+                "country": "한국",
+                "cuisine_type": "한식",
+                "display_order": 1,
+                "color_code": "#FF6B6B",
+            },
+            {
+                "name": "중국 요리",
+                "description": "다양한 중국 요리들",
+                "country": "중국",
+                "cuisine_type": "중식",
+                "display_order": 2,
+                "color_code": "#4ECDC4",
+            },
+            {
+                "name": "일본 요리",
+                "description": "정교한 일본 요리들",
+                "country": "일본",
+                "cuisine_type": "일식",
+                "display_order": 3,
+                "color_code": "#45B7D1",
+            },
+            {
+                "name": "이탈리아 요리",
+                "description": "풍부한 맛의 이탈리아 요리들",
+                "country": "이탈리아",
+                "cuisine_type": "양식",
+                "display_order": 4,
+                "color_code": "#96CEB4",
+            },
+            {
+                "name": "태국 요리",
+                "description": "매콤달콤한 태국 요리들",
+                "country": "태국",
+                "cuisine_type": "동남아식",
+                "display_order": 5,
+                "color_code": "#FFEAA7",
+            },
+            {
+                "name": "인도 요리",
+                "description": "향신료가 풍부한 인도 요리들",
+                "country": "인도",
+                "cuisine_type": "인도식",
+                "display_order": 6,
+                "color_code": "#DDA0DD",
+            },
+        ]
+
+        # 카테고리 데이터 저장
+        for category_data in sample_categories:
+            category = Category(**category_data)
+            db.add(category)
 
         await db.commit()
         print("샘플 데이터가 성공적으로 생성되었습니다.")
