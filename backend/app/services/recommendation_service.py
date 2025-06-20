@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, desc
 from app.models.menu import Menu, TimeSlot
 from app.models.question import Question
 from app.models.recommendation import RecommendationLog
@@ -11,20 +11,19 @@ import random
 
 
 class RecommendationService:
-    """추천 관련 비즈니스 로직 서비스"""
+    """추천 관련 비즈니스 로직 서비스 (개인화/트렌드/다양성 고도화)"""
 
     @staticmethod
     async def get_simple_recommendations(
         db: AsyncSession, time_slot: TimeSlot, session_id: str, limit: int = 5
     ) -> List[MenuRecommendation]:
-        """시간대별 간단 추천"""
+        """시간대별 간단 추천 (랜덤)"""
         slot = time_slot.value if hasattr(time_slot, "value") else time_slot
         stmt = select(Menu).where(Menu.time_slot == slot).limit(limit)
         result = await db.execute(stmt)
         menus = result.scalars().all()
         if not menus:
             return []
-        # 랜덤으로 메뉴 추천 (실제 서비스에서는 더 복잡한 로직 적용 가능)
         selected_menus = random.sample(list(menus), min(limit, len(menus)))
         recommendations = []
         for menu in selected_menus:
@@ -35,7 +34,6 @@ class RecommendationService:
                     reason=f"{time_slot.value}에 적합한 메뉴입니다.",
                 )
             )
-        # 추천 로그 저장
         await RecommendationService._save_recommendation_log(
             db, session_id, {}, recommendations, "simple"
         )
@@ -45,26 +43,63 @@ class RecommendationService:
     async def get_quiz_recommendations(
         db: AsyncSession, answers: Dict[str, str], session_id: str, limit: int = 5
     ) -> List[MenuRecommendation]:
-        """질답 기반 맞춤 추천"""
+        """
+        질답 기반 맞춤 추천 (개인화/트렌드/다양성 고도화)
+        - 최근 추천된 메뉴(동일 세션)는 제외
+        - 추천 로그 기반 인기/트렌드 가중치 반영
+        - 점수 상위 N개 중 일부 랜덤 섞기(다양성)
+        """
+        # 1. 전체 메뉴 조회
         stmt = select(Menu)
         result = await db.execute(stmt)
         menus = result.scalars().all()
         if not menus:
             return []
-        # 질문/가중치 기반 점수 계산
+        # 2. 최근(동일 세션) 추천 메뉴 제외 (반복 방지)
+        recent_menu_ids = set()
+        log_stmt = (
+            select(RecommendationLog)
+            .where(RecommendationLog.session_id == session_id)
+            .order_by(desc(RecommendationLog.created_at))
+            .limit(3)
+        )
+        log_result = await db.execute(log_stmt)
+        logs = log_result.scalars().all()
+        for log in logs:
+            if log.recommended_menus:
+                for m in log.recommended_menus:
+                    recent_menu_ids.add(m["menu_id"])
+        filtered_menus = [m for m in menus if str(m.id) not in recent_menu_ids]
+        if not filtered_menus:
+            filtered_menus = menus  # 모두 제외되면 전체 허용
+        # 3. 트렌드(추천수/조회수) 기반 가중치 계산
+        trend_scores = await RecommendationService._get_menu_trend_scores(db)
+        # 4. 질문/가중치 기반 점수 계산 + 트렌드 가중치 합산
         stmt = select(Question)
         result = await db.execute(stmt)
         questions = result.scalars().all()
         menu_scores = []
-        for menu in menus:
+        for menu in filtered_menus:
             score = RecommendationService._calculate_menu_score(
                 menu, answers, questions
             )
-            if score > 0:
-                menu_scores.append((menu, score))
+            trend_score = trend_scores.get(str(menu.id), 0.0)
+            total_score = score + trend_score  # 단순 합산(가중치 조정 가능)
+            if total_score > 0:
+                menu_scores.append((menu, total_score))
         menu_scores.sort(key=lambda x: x[1], reverse=True)
+        # 5. 다양성: 상위 N*2개 중 N개 랜덤 추출
+        top_n = limit * 2
+        top_candidates = (
+            menu_scores[:top_n] if len(menu_scores) > top_n else menu_scores
+        )
+        selected = (
+            random.sample(top_candidates, min(limit, len(top_candidates)))
+            if top_candidates
+            else []
+        )
         recommendations = []
-        for menu, score in menu_scores[:limit]:
+        for menu, score in selected:
             reason = RecommendationService._generate_recommendation_reason(
                 menu, answers
             )
@@ -86,10 +121,30 @@ class RecommendationService:
         return recommendations
 
     @staticmethod
+    async def _get_menu_trend_scores(db: AsyncSession) -> Dict[str, float]:
+        """
+        메뉴별 트렌드(추천/조회수) 기반 가중치 계산
+        - 최근 추천 로그를 집계하여 인기 메뉴에 추가 점수 부여
+        """
+        stmt = select(RecommendationLog)
+        result = await db.execute(stmt)
+        logs = result.scalars().all()
+        trend_count = {}
+        for log in logs:
+            if log.recommended_menus:
+                for m in log.recommended_menus:
+                    menu_id = m["menu_id"]
+                    trend_count[menu_id] = trend_count.get(menu_id, 0) + 1
+        # 단순 정규화(최대 3점 부여)
+        max_count = max(trend_count.values()) if trend_count else 1
+        trend_scores = {k: (v / max_count) * 3.0 for k, v in trend_count.items()}
+        return trend_scores
+
+    @staticmethod
     def _calculate_menu_score(
         menu: Menu, answers: Dict[str, str], questions: List[Question]
     ) -> float:
-        """메뉴 추천 점수 계산"""
+        """메뉴 추천 점수 계산 (속성 일치 + 평점)"""
         total_score = 0.0
         base_score = 5.0
         total_score += base_score
