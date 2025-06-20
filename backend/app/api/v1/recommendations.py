@@ -8,6 +8,7 @@ from app.schemas.recommendation import (
     QuizRecommendationRequest
 )
 from app.services.recommendation_service import RecommendationService
+from app.models.menu import TimeSlot as ModelTimeSlot
 import uuid
 
 router = APIRouter()
@@ -22,7 +23,7 @@ async def get_simple_recommendations(
 
     recommendations = await RecommendationService.get_simple_recommendations(
         db=db,
-        time_slot=request.time_slot,
+        time_slot=ModelTimeSlot(request.time_slot),
         session_id=session_id,
         limit=5
     )
