@@ -26,6 +26,15 @@ export default function RootLayout() {
         }}
       />
       <Tabs.Screen
+        name="nearby"
+        options={{
+          title: "근처 맛집",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="location" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="questions"
         options={{
           title: "질문답변",
