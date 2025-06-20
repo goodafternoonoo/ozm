@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from enum import Enum
 import uuid
+from datetime import datetime
 
 
 class TimeSlot(str, Enum):
@@ -82,3 +83,27 @@ class MenuRecommendation(BaseModel):
     menu: Menu
     score: float
     reason: str
+
+
+# 즐겨찾기(찜) 관련 스키마
+class FavoriteBase(BaseModel):
+    """즐겨찾기(찜) 공통 필드"""
+
+    session_id: str
+    menu_id: uuid.UUID
+
+
+class FavoriteCreate(FavoriteBase):
+    """즐겨찾기(찜) 생성 요청 스키마"""
+
+    pass
+
+
+class FavoriteResponse(FavoriteBase):
+    """즐겨찾기(찜) 응답 스키마"""
+
+    id: uuid.UUID
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
