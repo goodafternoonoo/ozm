@@ -2,19 +2,31 @@ from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from app.schemas.menu import MenuRecommendation, TimeSlot
 
+
 class UserAnswers(BaseModel):
+    """사용자 답변(세션별)"""
+
     answers: Dict[str, str]  # {question_id: selected_option}
     session_id: Optional[str] = None
 
+
 class SimpleRecommendationRequest(BaseModel):
+    """간단 추천 요청 스키마"""
+
     time_slot: TimeSlot
     session_id: Optional[str] = None
 
+
 class RecommendationResponse(BaseModel):
+    """추천 결과 응답 스키마"""
+
     recommendations: List[MenuRecommendation]
     session_id: str
     total_count: int
 
+
 class QuizRecommendationRequest(BaseModel):
+    """질답 기반 추천 요청 스키마"""
+
     answers: Dict[str, str]
     session_id: Optional[str] = None

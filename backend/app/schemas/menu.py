@@ -5,12 +5,16 @@ import uuid
 
 
 class TimeSlot(str, Enum):
+    """메뉴 제공 시간대 구분"""
+
     BREAKFAST = "breakfast"
     LUNCH = "lunch"
     DINNER = "dinner"
 
 
 class MenuBase(BaseModel):
+    """메뉴 공통 필드"""
+
     name: str = Field(..., max_length=100)
     description: Optional[str] = None
     time_slot: TimeSlot
@@ -33,10 +37,15 @@ class MenuBase(BaseModel):
 
 
 class MenuCreate(MenuBase):
-    pass
+    """메뉴 생성 요청 스키마"""
+
+    # 별도 필드 없음 (MenuBase 상속)
+    ...
 
 
 class MenuUpdate(BaseModel):
+    """메뉴 수정 요청 스키마 (부분 업데이트)"""
+
     name: Optional[str] = None
     description: Optional[str] = None
     time_slot: Optional[TimeSlot] = None
@@ -58,6 +67,8 @@ class MenuUpdate(BaseModel):
 
 
 class Menu(MenuBase):
+    """메뉴 응답 스키마"""
+
     id: uuid.UUID
     category_id: Optional[uuid.UUID] = None
 
@@ -66,6 +77,8 @@ class Menu(MenuBase):
 
 
 class MenuRecommendation(BaseModel):
+    """추천 결과용 메뉴 + 점수/이유"""
+
     menu: Menu
     score: float
     reason: str

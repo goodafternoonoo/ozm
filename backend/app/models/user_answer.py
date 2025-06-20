@@ -7,15 +7,14 @@ import sqlalchemy.types as types
 
 
 class GUID(types.TypeDecorator):
-    """플랫폼에 따라 UUID를 String으로 변환"""
+    """플랫폼에 따라 UUID를 String으로 변환 (PostgreSQL/SQLite 호환)"""
 
     impl = String(36)
 
     def load_dialect_impl(self, dialect):
         if dialect.name == "postgresql":
             return dialect.type_descriptor(UUID())
-        else:
-            return dialect.type_descriptor(String(36))
+        return dialect.type_descriptor(String(36))
 
     def process_bind_param(self, value, dialect):
         if value is not None:
@@ -27,6 +26,8 @@ class GUID(types.TypeDecorator):
 
 
 class UserAnswer(Base):
+    """사용자 답변 테이블"""
+
     __tablename__ = "user_answers"
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
