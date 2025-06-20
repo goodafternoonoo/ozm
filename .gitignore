@@ -37,3 +37,9 @@ docker-compose.override.yml
 
 # OS
 Thumbs.db
+
+
+
+
+# temp
+docker*
