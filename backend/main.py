@@ -25,7 +25,8 @@ app.include_router(api_router, prefix="/api/v1")
 @app.on_event("startup")
 async def startup_event():
     """애플리케이션 시작 시 실행"""
-    await init_db()
+    if settings.env != "production":
+        await init_db()
 
 @app.get("/")
 async def root():
