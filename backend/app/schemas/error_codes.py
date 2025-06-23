@@ -1,0 +1,13 @@
+from enum import Enum
+
+
+class ErrorCode(str, Enum):
+    KAKAO_TOKEN_INVALID = "E1001"
+    USER_NOT_FOUND = "E2001"
+    USER_ALREADY_EXISTS = "E2002"
+    AUTH_REQUIRED = "E2003"
+    CATEGORY_NOT_FOUND = "E3001"
+    MENU_NOT_FOUND = "E4001"
+    MENU_CREATE_FAILED = "E4002"
+    FAVORITE_DUPLICATE = "E5001"
+    # 필요한 에러 코드를 여기에 추가

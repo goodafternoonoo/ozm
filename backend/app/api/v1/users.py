@@ -10,6 +10,7 @@ import uuid
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from app.schemas.common import succeed_response, error_response
+from app.schemas.error_codes import ErrorCode
 
 router = APIRouter()
 
@@ -30,9 +31,15 @@ async def create_user(user_data: dict, db: AsyncSession = Depends(get_db)):
         select(User).where(User.username == user_data["username"])
     )
     if existing_user.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="이미 존재하는 사용자명입니다",
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    "이미 존재하는 사용자명입니다",
+                    code=400,
+                    error_code=ErrorCode.USER_ALREADY_EXISTS,
+                )
+            ),
+            status_code=400,
         )
 
     # 새 유저 생성
@@ -70,8 +77,13 @@ async def get_user_profile(
 ):
     """현재 사용자의 프로필 조회"""
     if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="인증이 필요합니다"
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    "인증이 필요합니다", code=401, error_code=ErrorCode.AUTH_REQUIRED
+                )
+            ),
+            status_code=401,
         )
 
     return JSONResponse(
@@ -97,8 +109,13 @@ async def update_user_profile(
 ):
     """사용자 프로필 업데이트"""
     if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="인증이 필요합니다"
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    "인증이 필요합니다", code=401, error_code=ErrorCode.AUTH_REQUIRED
+                )
+            ),
+            status_code=401,
         )
 
     # 세션에 current_user를 붙임
@@ -136,8 +153,13 @@ async def get_user_favorites(
 ):
     """사용자의 즐겨찾기 메뉴 목록 조회"""
     if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="인증이 필요합니다"
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    "인증이 필요합니다", code=401, error_code=ErrorCode.AUTH_REQUIRED
+                )
+            ),
+            status_code=401,
         )
 
     from app.models.favorite import Favorite

@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from typing import Any, Dict, Optional
 from datetime import datetime
 import uuid
@@ -206,8 +206,9 @@ class ErrorResponse(BaseModel):
     path: Optional[str] = None
     method: Optional[str] = None
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
+    @field_serializer("timestamp")
+    def serialize_timestamp(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value
 
 
 class ValidationErrorResponse(BaseModel):
@@ -220,8 +221,9 @@ class ValidationErrorResponse(BaseModel):
     request_id: str
     field_errors: Dict[str, str] = {}
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
+    @field_serializer("timestamp")
+    def serialize_timestamp(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value
 
 
 def create_error_response(

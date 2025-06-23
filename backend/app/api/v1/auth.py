@@ -9,12 +9,23 @@ from typing import Optional
 from app.schemas.common import succeed_response, error_response
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+from app.schemas.error_codes import ErrorCode
 
 router = APIRouter()
 
 
 class KakaoLoginRequest(BaseModel):
     access_token: str
+
+
+def user_to_dict(user: User) -> dict:
+    return {
+        "id": str(user.id),
+        "username": user.username,
+        "email": user.email,
+        "nickname": user.nickname,
+        "created_at": user.created_at,
+    }
 
 
 @router.post("/kakao-login", response_model=LoginResponse)
@@ -28,7 +39,13 @@ async def kakao_login(req: KakaoLoginRequest, db: AsyncSession = Depends(get_db)
         kakao_userinfo = AuthService.verify_kakao_token(req.access_token)
     except Exception:
         return JSONResponse(
-            content=jsonable_encoder(error_response("카카오 인증 실패", code=401)),
+            content=jsonable_encoder(
+                error_response(
+                    "카카오 인증 실패",
+                    code=401,
+                    error_code=ErrorCode.KAKAO_TOKEN_INVALID,
+                )
+            ),
             status_code=401,
         )
 
@@ -41,7 +58,7 @@ async def kakao_login(req: KakaoLoginRequest, db: AsyncSession = Depends(get_db)
                 LoginResponse(
                     access_token=jwt_token,
                     token_type="bearer",
-                    user=UserResponse.model_validate(user),
+                    user=UserResponse.model_validate(user_to_dict(user)),
                 )
             )
         )
@@ -57,18 +74,29 @@ async def get_current_user_info(
     - Authorization 헤더의 Bearer 토큰으로 사용자 식별
     """
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="유효한 인증 토큰이 필요합니다",
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    "유효한 인증 토큰이 필요합니다",
+                    code=401,
+                    error_code=ErrorCode.AUTH_REQUIRED,
+                )
+            ),
+            status_code=401,
         )
 
     token = authorization.replace("Bearer ", "")
 
     try:
         user = await AuthService.get_current_user(db, token)
-        return succeed_response(UserResponse.model_validate(user))
+        return succeed_response(UserResponse.model_validate(user_to_dict(user)))
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(str(e), code=401, error_code=ErrorCode.USER_NOT_FOUND)
+            ),
+            status_code=401,
+        )
 
 
 @router.get("/users/{user_id}", response_model=UserResponse)
@@ -82,13 +110,24 @@ async def get_user_by_id(
     - 인증된 사용자만 조회 가능
     """
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="유효한 인증 토큰이 필요합니다",
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    "유효한 인증 토큰이 필요합니다",
+                    code=401,
+                    error_code=ErrorCode.AUTH_REQUIRED,
+                )
+            ),
+            status_code=401,
         )
 
     try:
         user = await AuthService.get_user_by_id(db, user_id)
-        return succeed_response(UserResponse.model_validate(user))
+        return succeed_response(UserResponse.model_validate(user_to_dict(user)))
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(str(e), code=404, error_code=ErrorCode.USER_NOT_FOUND)
+            ),
+            status_code=404,
+        )
