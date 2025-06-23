@@ -13,6 +13,7 @@ from app.core.exceptions import RateLimitException, create_error_response
 import asyncio
 from collections import defaultdict
 import threading
+from fastapi.encoders import jsonable_encoder
 
 
 logger = get_logger(__name__)
@@ -70,7 +71,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
                 return JSONResponse(
                     status_code=500,
-                    content=error_response.model_dump(),
+                    content=jsonable_encoder(error_response),
                     headers={"X-Request-ID": request_id},
                 )
 
@@ -177,7 +178,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             )
             return JSONResponse(
                 status_code=429,
-                content=error_response.model_dump(),
+                content=jsonable_encoder(error_response),
                 headers={"X-Request-ID": request_id},
             )
         except Exception as e:
@@ -194,7 +195,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             )
             return JSONResponse(
                 status_code=500,
-                content=error_response.model_dump(),
+                content=jsonable_encoder(error_response),
                 headers={"X-Request-ID": request_id},
             )
 

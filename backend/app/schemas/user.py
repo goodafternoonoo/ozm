@@ -23,7 +23,9 @@ class UserProfile(UserBase):
 
     id: str
     created_at: datetime
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True, json_encoders={datetime: lambda v: v.isoformat()}
+    )
 
 
 class UserProfileUpdate(BaseModel):
@@ -40,7 +42,9 @@ class UserInDB(UserBase):
     id: str
     hashed_password: str
     created_at: datetime
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True, json_encoders={datetime: lambda v: v.isoformat()}
+    )
 
 
 class Token(BaseModel):
@@ -61,7 +65,9 @@ class UserResponse(UserBase):
 
     id: uuid.UUID
     created_at: datetime
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True, json_encoders={datetime: lambda v: v.isoformat()}
+    )
 
 
 class LoginResponse(BaseModel):
@@ -70,3 +76,4 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})

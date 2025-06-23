@@ -59,9 +59,10 @@ async def test_kakao_login_success(mock_kakao_get):
             "/api/v1/auth/kakao-login", json={"access_token": "fake-access-token"}
         )
         assert resp.status_code == 200
-        data = resp.json()
+        data = resp.json()["data"]
         assert "access_token" in data
-        assert data["token_type"] == "bearer"
+        assert data["user"]["nickname"] == "테스트유저"
+        assert data["user"]["email"] == "test@kakao.com"
 
 
 @pytest.mark.asyncio
@@ -74,8 +75,9 @@ async def test_kakao_login_fail(mock_kakao_get):
             "/api/v1/auth/kakao-login", json={"access_token": "invalid-token"}
         )
         assert resp.status_code == 401
-        data = resp.json()
-        assert data["detail"] == "카카오 인증 실패"
+        error = resp.json()["error"]
+        assert error["message"] == "카카오 인증 실패"
+        assert error["code"] == 401
 
 
 # ---------------- 카테고리 ----------------
@@ -95,10 +97,10 @@ async def test_create_and_get_category():
         }
         resp = await client.post("/api/v1/categories/", json=payload)
         assert resp.status_code == 201
-        cat_id = resp.json()["id"]
+        cat_id = resp.json()["data"]["id"]
         resp = await client.get(f"/api/v1/categories/{cat_id}")
         assert resp.status_code == 200
-        data = resp.json()
+        data = resp.json()["data"]
         assert data["name"] == payload["name"]
 
 
@@ -120,7 +122,7 @@ def test_create_and_get_menu(test_user):
                 "color_code": "#654321",
             }
             cat_resp = await client.post("/api/v1/categories/", json=cat_payload)
-            category_id = cat_resp.json()["id"]
+            category_id = cat_resp.json()["data"]["id"]
             menu_payload = {
                 "name": "테스트 메뉴",
                 "description": "테스트용 메뉴입니다.",
@@ -154,10 +156,10 @@ def test_create_and_get_menu(test_user):
             except Exception as e:
                 print("menu_resp.json() error:", e)
             assert menu_resp.status_code == 201
-            menu_id = menu_resp.json()["id"]
+            menu_id = menu_resp.json()["data"]["id"]
             resp = await client.get(f"/api/v1/menus/{menu_id}")
             assert resp.status_code == 200
-            data = resp.json()
+            data = resp.json()["data"]
             assert data["name"] == menu_payload["name"]
 
     import asyncio
@@ -173,7 +175,7 @@ async def test_get_questions():
     async with AsyncClient(app=app, base_url="http://test") as client:
         resp = await client.get("/api/v1/questions/")
         assert resp.status_code == 200
-        data = resp.json()
+        data = resp.json()["data"]
         assert isinstance(data, list)
         assert len(data) > 0
         assert "text" in data[0]
@@ -187,8 +189,8 @@ async def test_simple_recommendation():
     async with AsyncClient(app=app, base_url="http://test") as client:
         req = {"time_slot": "breakfast", "session_id": "test-session-123"}
         resp = await client.post("/api/v1/recommendations/simple", json=req)
-        assert resp.status_code == 200
-        data = resp.json()
+        assert resp.status_code == 201
+        data = resp.json()["data"]
         assert "recommendations" in data
         assert isinstance(data["recommendations"], list)
 
@@ -202,8 +204,8 @@ async def test_quiz_recommendation():
             "session_id": "test-session-456",
         }
         resp = await client.post("/api/v1/recommendations/quiz", json=req)
-        assert resp.status_code == 200
-        data = resp.json()
+        assert resp.status_code == 201
+        data = resp.json()["data"]
         assert "recommendations" in data
         assert isinstance(data["recommendations"], list)
 
@@ -228,7 +230,7 @@ async def test_quiz_recommendation_required_filters():
             "color_code": "#111111",
         }
         cat_resp = await client.post("/api/v1/categories/", json=cat_payload)
-        category_id = cat_resp.json()["id"]
+        category_id = cat_resp.json()["data"]["id"]
         menu_payload = {
             "name": "필수조건 메뉴",
             "description": "채식+국물+한국+아침",
@@ -263,8 +265,8 @@ async def test_quiz_recommendation_required_filters():
             "session_id": "req-filter-1",
         }
         resp = await client.post("/api/v1/recommendations/quiz", json=req)
-        assert resp.status_code == 200
-        data = resp.json()
+        assert resp.status_code == 201
+        data = resp.json()["data"]
         assert len(data["recommendations"]) > 0
         # 3. 하나라도 불일치(예: 국물 → False) → 추천 결과 없음
         req2 = {
@@ -278,8 +280,8 @@ async def test_quiz_recommendation_required_filters():
             "session_id": "req-filter-2",
         }
         resp2 = await client.post("/api/v1/recommendations/quiz", json=req2)
-        assert resp2.status_code == 200
-        data2 = resp2.json()
+        assert resp2.status_code == 201
+        data2 = resp2.json()["data"]
         print("[필수조건 미충족 추천 결과]", data2["recommendations"])
         # 국물요리 조건이 없으므로 추천 결과 없음
         assert len(data2["recommendations"]) == 0
@@ -303,7 +305,7 @@ def test_favorite_add_and_get(test_user):
                 "color_code": "#abcdef",
             }
             cat_resp = await client.post("/api/v1/categories/", json=cat_payload)
-            category_id = cat_resp.json()["id"]
+            category_id = cat_resp.json()["data"]["id"]
             menu_payload = {
                 "name": "찜 메뉴",
                 "description": "찜용 메뉴",
@@ -331,16 +333,16 @@ def test_favorite_add_and_get(test_user):
             }
             menu_resp = await client.post("/api/v1/menus/", json=menu_payload)
             assert menu_resp.status_code == 201
-            menu_id = menu_resp.json()["id"]
+            menu_id = menu_resp.json()["data"]["id"]
             # 즐겨찾기 추가
             fav_payload = {"menu_id": menu_id}
             resp = await client.post("/api/v1/menus/favorites", json=fav_payload)
             assert resp.status_code == 201
-            fav_id = resp.json()["id"]
+            fav_id = resp.json()["data"]["id"]
             # 즐겨찾기 조회
             resp = await client.get("/api/v1/menus/favorites/")
             assert resp.status_code == 200
-            data = resp.json()
+            data = resp.json()["data"]
             assert len(data) > 0
             assert data[0]["id"] == menu_id
             # 삭제
@@ -374,13 +376,13 @@ async def test_user_profile_operations(mock_kakao_get):
         login_resp = await client.post(
             "/api/v1/auth/kakao-login", json={"access_token": "fake-token"}
         )
-        token = login_resp.json()["access_token"]
+        token = login_resp.json()["data"]["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
 
         # 프로필 조회
         resp = await client.get("/api/v1/users/profile", headers=headers)
         assert resp.status_code == 200
-        profile = resp.json()
+        profile = resp.json()["data"]
         assert profile["nickname"] == "테스트유저"
 
         # 프로필 업데이트
@@ -389,7 +391,7 @@ async def test_user_profile_operations(mock_kakao_get):
             "/api/v1/users/profile", json=update_data, headers=headers
         )
         assert resp.status_code == 200
-        updated_profile = resp.json()
+        updated_profile = resp.json()["data"]
         assert updated_profile["nickname"] == "업데이트된유저"
 
 
@@ -401,7 +403,7 @@ async def test_search_menus():
         # 기본 검색
         resp = await client.get("/api/v1/search/menus")
         assert resp.status_code == 200
-        data = resp.json()
+        data = resp.json()["data"]
         assert isinstance(data, list)
 
         # 필터링 검색
@@ -409,7 +411,7 @@ async def test_search_menus():
             "/api/v1/search/menus?time_slot=breakfast&is_spicy=true"
         )
         assert resp.status_code == 200
-        data = resp.json()
+        data = resp.json()["data"]
         assert isinstance(data, list)
 
 
@@ -419,7 +421,7 @@ async def test_search_categories():
     async with AsyncClient(app=app, base_url="http://test") as client:
         resp = await client.get("/api/v1/search/categories")
         assert resp.status_code == 200
-        data = resp.json()
+        data = resp.json()["data"]
         assert isinstance(data, list)
         assert len(data) > 0
 
@@ -430,7 +432,7 @@ async def test_search_stats():
     async with AsyncClient(app=app, base_url="http://test") as client:
         resp = await client.get("/api/v1/search/stats")
         assert resp.status_code == 200
-        data = resp.json()
+        data = resp.json()["data"]
         assert "total_menus" in data
         assert "time_slot_distribution" in data
         assert "country_distribution" in data
@@ -454,11 +456,11 @@ async def test_user_favorites(mock_kakao_get):
         login_resp = await client.post(
             "/api/v1/auth/kakao-login", json={"access_token": "fake-token"}
         )
-        token = login_resp.json()["access_token"]
+        token = login_resp.json()["data"]["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
 
         # 즐겨찾기 목록 조회
         resp = await client.get("/api/v1/users/favorites", headers=headers)
         assert resp.status_code == 200
-        data = resp.json()
+        data = resp.json()["data"]
         assert isinstance(data, list)

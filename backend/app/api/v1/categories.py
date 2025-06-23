@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from uuid import UUID
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 from app.db.database import get_db
 from app.services.category_service import CategoryService
@@ -11,7 +13,7 @@ from app.schemas.category import (
     CategoryResponse,
     CategoryListResponse,
 )
-from app.schemas.common import succeed_response
+from app.schemas.common import succeed_response, error_response
 
 router = APIRouter()
 
@@ -27,7 +29,12 @@ async def create_category(
     """
     service = CategoryService(db)
     category = await service.create_category(category_data)
-    return succeed_response(CategoryResponse.model_validate(category))
+    return JSONResponse(
+        content=jsonable_encoder(
+            succeed_response(CategoryResponse.model_validate(category))
+        ),
+        status_code=status.HTTP_201_CREATED,
+    )
 
 
 @router.get("/", response_model=CategoryListResponse)
@@ -75,10 +82,15 @@ async def get_categories(
 
     total_count = await service.get_total_count(country, cuisine_type)
 
-    return succeed_response(
-        CategoryListResponse(
-            categories=categories, total_count=total_count, page=page, size=size
-        )
+    return JSONResponse(
+        content=jsonable_encoder(
+            succeed_response(
+                CategoryListResponse(
+                    categories=categories, total_count=total_count, page=page, size=size
+                )
+            )
+        ),
+        status_code=status.HTTP_200_OK,
     )
 
 
@@ -97,7 +109,12 @@ async def get_category(category_id: UUID, db: AsyncSession = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND, detail="카테고리를 찾을 수 없습니다."
         )
 
-    return succeed_response(CategoryResponse.model_validate(category))
+    return JSONResponse(
+        content=jsonable_encoder(
+            succeed_response(CategoryResponse.model_validate(category))
+        ),
+        status_code=status.HTTP_200_OK,
+    )
 
 
 @router.put("/{category_id}", response_model=CategoryResponse)
@@ -113,7 +130,12 @@ async def update_category(
             status_code=status.HTTP_404_NOT_FOUND, detail="카테고리를 찾을 수 없습니다."
         )
 
-    return succeed_response(CategoryResponse.model_validate(category))
+    return JSONResponse(
+        content=jsonable_encoder(
+            succeed_response(CategoryResponse.model_validate(category))
+        ),
+        status_code=status.HTTP_200_OK,
+    )
 
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -127,7 +149,10 @@ async def delete_category(category_id: UUID, db: AsyncSession = Depends(get_db))
             status_code=status.HTTP_404_NOT_FOUND, detail="카테고리를 찾을 수 없습니다."
         )
 
-    return succeed_response()
+    return JSONResponse(
+        content=jsonable_encoder(succeed_response()),
+        status_code=status.HTTP_204_NO_CONTENT,
+    )
 
 
 @router.get("/country/{country}", response_model=List[CategoryResponse])
@@ -135,8 +160,13 @@ async def get_categories_by_country(country: str, db: AsyncSession = Depends(get
     """국가별 카테고리 조회"""
     service = CategoryService(db)
     categories = await service.get_categories_by_country(country)
-    return succeed_response(
-        [CategoryResponse.model_validate(cat) for cat in categories]
+    return JSONResponse(
+        content=jsonable_encoder(
+            succeed_response(
+                [CategoryResponse.model_validate(cat) for cat in categories]
+            )
+        ),
+        status_code=status.HTTP_200_OK,
     )
 
 
@@ -147,6 +177,11 @@ async def get_categories_by_cuisine_type(
     """요리 타입별 카테고리 조회"""
     service = CategoryService(db)
     categories = await service.get_categories_by_cuisine_type(cuisine_type)
-    return succeed_response(
-        [CategoryResponse.model_validate(cat) for cat in categories]
+    return JSONResponse(
+        content=jsonable_encoder(
+            succeed_response(
+                [CategoryResponse.model_validate(cat) for cat in categories]
+            )
+        ),
+        status_code=status.HTTP_200_OK,
     )

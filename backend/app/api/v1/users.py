@@ -7,7 +7,9 @@ from app.services.auth_service import AuthService
 from sqlalchemy import select
 from typing import List
 import uuid
-from app.schemas.common import succeed_response
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+from app.schemas.common import succeed_response, error_response
 
 router = APIRouter()
 
@@ -46,14 +48,19 @@ async def create_user(user_data: dict, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(new_user)
 
-    return succeed_response(
-        UserResponse(
-            id=new_user.id,
-            username=new_user.username,
-            email=new_user.email,
-            nickname=new_user.nickname,
-            created_at=new_user.created_at,
-        )
+    return JSONResponse(
+        content=jsonable_encoder(
+            succeed_response(
+                UserResponse(
+                    id=new_user.id,
+                    username=new_user.username,
+                    email=new_user.email,
+                    nickname=new_user.nickname,
+                    created_at=new_user.created_at,
+                )
+            )
+        ),
+        status_code=status.HTTP_201_CREATED,
     )
 
 
@@ -67,13 +74,17 @@ async def get_user_profile(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="인증이 필요합니다"
         )
 
-    return succeed_response(
-        UserProfile(
-            id=str(current_user.id),
-            nickname=current_user.nickname,
-            username=current_user.username,
-            email=current_user.email,
-            created_at=current_user.created_at,
+    return JSONResponse(
+        content=jsonable_encoder(
+            succeed_response(
+                UserProfile(
+                    id=str(current_user.id),
+                    nickname=current_user.nickname,
+                    username=current_user.username,
+                    email=current_user.email,
+                    created_at=current_user.created_at,
+                )
+            )
         )
     )
 
@@ -104,13 +115,17 @@ async def update_user_profile(
     await db.commit()
     await db.refresh(persistent_user)
 
-    return succeed_response(
-        UserProfile(
-            id=str(persistent_user.id),
-            nickname=persistent_user.nickname,
-            username=persistent_user.username,
-            email=persistent_user.email,
-            created_at=persistent_user.created_at,
+    return JSONResponse(
+        content=jsonable_encoder(
+            succeed_response(
+                UserProfile(
+                    id=str(persistent_user.id),
+                    nickname=persistent_user.nickname,
+                    username=persistent_user.username,
+                    email=persistent_user.email,
+                    created_at=persistent_user.created_at,
+                )
+            )
         )
     )
 
@@ -152,4 +167,4 @@ async def get_user_favorites(
             }
         )
 
-    return succeed_response(favorites)
+    return JSONResponse(content=jsonable_encoder(succeed_response(favorites)))

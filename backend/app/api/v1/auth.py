@@ -6,7 +6,9 @@ from app.schemas.user import UserResponse, Token, LoginResponse
 from app.models.user import User
 from pydantic import BaseModel
 from typing import Optional
-from app.schemas.common import succeed_response
+from app.schemas.common import succeed_response, error_response
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 router = APIRouter()
 
@@ -25,18 +27,23 @@ async def kakao_login(req: KakaoLoginRequest, db: AsyncSession = Depends(get_db)
     try:
         kakao_userinfo = AuthService.verify_kakao_token(req.access_token)
     except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="카카오 인증 실패"
+        return JSONResponse(
+            content=jsonable_encoder(error_response("카카오 인증 실패", code=401)),
+            status_code=401,
         )
 
     user = await AuthService.get_or_create_user_by_kakao(db, kakao_userinfo)
     jwt_token = AuthService.create_jwt_token(user)
 
-    return succeed_response(
-        LoginResponse(
-            access_token=jwt_token,
-            token_type="bearer",
-            user=UserResponse.model_validate(user),
+    return JSONResponse(
+        content=jsonable_encoder(
+            succeed_response(
+                LoginResponse(
+                    access_token=jwt_token,
+                    token_type="bearer",
+                    user=UserResponse.model_validate(user),
+                )
+            )
         )
     )
 
