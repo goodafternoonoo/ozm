@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NearbyStyles } from '../styles/NearbyStyles';
 
@@ -14,6 +14,8 @@ export interface Restaurant {
   phone: string;
   placeUrl: string;
   roadAddress: string;
+  latitude: number;
+  longitude: number;
 }
 
 interface RestaurantListItemProps {
@@ -41,6 +43,13 @@ const renderStars = (rating: number) => {
   return <View style={{ flexDirection: 'row' }}>{stars}</View>;
 };
 
+const openKakaoMap = (name: string, lat: number, lng: number) => {
+  const url = `https://map.kakao.com/link/map/${encodeURIComponent(name)},${lat},${lng}`;
+  Linking.openURL(url).catch(() => {
+    Alert.alert('오류', '카카오맵을 열 수 없습니다.');
+  });
+};
+
 export const RestaurantListItem: React.FC<RestaurantListItemProps> = ({ restaurant, onPress, onCall, onMap }) => (
   <TouchableOpacity style={NearbyStyles.restaurantCard} onPress={() => onPress?.(restaurant)}>
     <View style={NearbyStyles.restaurantHeader}>
@@ -63,7 +72,7 @@ export const RestaurantListItem: React.FC<RestaurantListItemProps> = ({ restaura
         </TouchableOpacity>
       )}
       */}
-      <TouchableOpacity onPress={() => onMap?.(restaurant)} style={NearbyStyles.mapButton}>
+      <TouchableOpacity onPress={() => openKakaoMap(restaurant.name, restaurant.latitude, restaurant.longitude)} style={NearbyStyles.mapButton}>
         <Ionicons name="map-outline" size={18} color="#007AFF"/>
       </TouchableOpacity>
     </View>

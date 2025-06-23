@@ -40,7 +40,16 @@ export function useQuizRecommendation() {
     setLoading(true);
     try {
       const response = await axios.get('http://localhost:8000/api/v1/questions/');
-      setQuestions(response.data || []);
+      setQuestions(
+        (response.data?.data || []).map((q: any) => ({
+          ...q,
+          options: Array.isArray(q.options)
+            ? q.options
+            : typeof q.options === 'string'
+              ? JSON.parse(q.options)
+              : [],
+        }))
+      );
     } catch (err) {
       setError('질문을 불러오지 못했습니다');
     } finally {

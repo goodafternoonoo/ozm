@@ -47,7 +47,8 @@ export function useMenuRecommendations() {
   const fetchCategories = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/v1/categories?page=1&size=50');
-      setCategories(response.data.categories || []);
+      const cats = response.data?.data?.categories || [];
+      setCategories(cats);
     } catch (err) {
       setCategories([]);
     }

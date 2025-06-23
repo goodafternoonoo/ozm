@@ -149,75 +149,32 @@ const LoginScreen: React.FC = () => {
         {!loginSuccess ? (
           // 로그인 버튼 (로그인 전)
           <TouchableOpacity
-            style={{
-              backgroundColor: '#FEE500',
-              borderRadius: 8,
-              paddingVertical: 14,
-              alignItems: 'center',
-              marginTop: 16,
-              flexDirection: 'row',
-              justifyContent: 'center',
-              opacity: loading ? 0.7 : 1,
-            }}
+            style={[LoginScreenStyles.kakaoLoginButton, loading && LoginScreenStyles.kakaoLoginButtonDisabled]}
             onPress={handleKakaoLogin}
             disabled={loading}
           >
             <Ionicons name="chatbubble-ellipses" size={20} color="#3C1E1E" style={{ marginRight: 8 }} />
-            <Text style={{ color: '#3C1E1E', fontWeight: 'bold', fontSize: 16 }}>
+            <Text style={LoginScreenStyles.kakaoLoginButtonText}>
               {loading ? '로그인 중...' : '카카오로 로그인'}
             </Text>
           </TouchableOpacity>
         ) : (
           // 사용자 정보 (로그인 후)
-          <View style={{
-            alignItems: 'center',
-            marginTop: 16,
-          }}>
+          <View style={LoginScreenStyles.userInfoContainer}>
             {/* 사용자 프로필 */}
-            <View style={{
-              backgroundColor: '#F7F7F7',
-              borderRadius: 12,
-              padding: 20,
-              width: '100%',
-              alignItems: 'center',
-              marginBottom: 16,
-            }}>
-              <View style={{
-                width: 60,
-                height: 60,
-                borderRadius: 30,
-                backgroundColor: '#FEE500',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 12,
-              }}>
+            <View style={LoginScreenStyles.userProfileCard}>
+              <View style={LoginScreenStyles.userAvatar}>
                 <Ionicons name="person" size={30} color="#3C1E1E" />
               </View>
-              <Text style={{
-                fontSize: 18,
-                fontWeight: 'bold',
-                color: '#1C1C1E',
-                marginBottom: 4,
-              }}>
+              <Text style={LoginScreenStyles.userName}>
                 {userInfo?.nickname || '사용자'}
               </Text>
-              <Text style={{
-                fontSize: 14,
-                color: '#666',
-                marginBottom: 8,
-              }}>
+              <Text style={LoginScreenStyles.userEmail}>
                 {userInfo?.email || '이메일 없음'}
               </Text>
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}>
+              <View style={LoginScreenStyles.loginStatusContainer}>
                 <Ionicons name="checkmark-circle" size={16} color="#4CD964" />
-                <Text style={{
-                  fontSize: 12,
-                  color: '#4CD964',
-                  marginLeft: 4,
-                }}>
+                <Text style={LoginScreenStyles.loginStatusText}>
                   카카오 계정으로 로그인됨
                 </Text>
               </View>
@@ -225,20 +182,10 @@ const LoginScreen: React.FC = () => {
             
             {/* 로그아웃 버튼 */}
             <TouchableOpacity
-              style={{
-                backgroundColor: '#FF3B30',
-                borderRadius: 8,
-                paddingVertical: 12,
-                paddingHorizontal: 24,
-                alignItems: 'center',
-              }}
+              style={LoginScreenStyles.logoutButton}
               onPress={handleLogout}
             >
-              <Text style={{
-                color: '#fff',
-                fontWeight: 'bold',
-                fontSize: 16,
-              }}>
+              <Text style={LoginScreenStyles.logoutButtonText}>
                 로그아웃
               </Text>
             </TouchableOpacity>

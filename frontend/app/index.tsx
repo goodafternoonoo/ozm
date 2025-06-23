@@ -15,6 +15,7 @@ import { MenuRecommendationStyles } from '../styles/MenuRecommendationStyles';
 import { MenuCard, Menu } from '../components/MenuCard';
 import { useMenuRecommendations, TimeSlot } from '../hooks/useMenuRecommendations';
 import { useQuizRecommendation } from '../hooks/useQuizRecommendation';
+import QuizRecommendation from '../components/QuizRecommendation';
 
 type MenuRecommendation = {
   menu: Menu;
@@ -69,18 +70,18 @@ export default function MenuRecommendationScreen() {
         <Text style={MenuRecommendationStyles.subtitle}>시간대를 선택하고 추천받아보세요!</Text>
       </View>
 
-      <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+      <View style={MenuRecommendationStyles.modeSwitchContainer}>
         <TouchableOpacity
-          style={{ flex: 1, padding: 12, backgroundColor: mode === 'simple' ? '#007AFF' : '#E5E5EA', borderRadius: 8, marginRight: 4 }}
+          style={[MenuRecommendationStyles.modeButton, mode === 'simple' && MenuRecommendationStyles.modeButtonActive]}
           onPress={() => setMode('simple')}
         >
-          <Text style={{ color: mode === 'simple' ? '#fff' : '#1C1C1E', textAlign: 'center', fontWeight: 'bold' }}>간단 추천</Text>
+          <Text style={MenuRecommendationStyles.modeButtonText}>간단 추천</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={{ flex: 1, padding: 12, backgroundColor: mode === 'quiz' ? '#007AFF' : '#E5E5EA', borderRadius: 8, marginLeft: 4 }}
+          style={[MenuRecommendationStyles.modeButton, mode === 'quiz' && MenuRecommendationStyles.modeButtonActive]}
           onPress={() => setMode('quiz')}
         >
-          <Text style={{ color: mode === 'quiz' ? '#fff' : '#1C1C1E', textAlign: 'center', fontWeight: 'bold' }}>퀴즈 추천</Text>
+          <Text style={MenuRecommendationStyles.modeButtonText}>퀴즈 추천</Text>
         </TouchableOpacity>
       </View>
 
@@ -115,16 +116,10 @@ export default function MenuRecommendationScreen() {
           <Text style={[MenuRecommendationStyles.sectionTitle, { marginTop: 20 }]}>카테고리 선택</Text>
           <View>
             <TouchableOpacity
-              style={{
-                backgroundColor: '#E5E5EA',
-                borderRadius: 8,
-                padding: 12,
-                marginBottom: 10,
-                alignItems: 'center',
-              }}
+              style={MenuRecommendationStyles.categoryModalButton}
               onPress={() => setCategoryModalVisible(true)}
             >
-              <Text style={{ color: '#1C1C1E', fontWeight: '500' }}>
+              <Text style={[MenuRecommendationStyles.categoryModalItemText, categoryId && MenuRecommendationStyles.categoryModalItemTextActive]}>
                 {categoryId
                   ? categories.find((cat) => cat.id === categoryId)?.name
                   : '카테고리 선택'}
@@ -137,59 +132,31 @@ export default function MenuRecommendationScreen() {
               transparent={true}
               onRequestClose={() => setCategoryModalVisible(false)}
             >
-              <View style={{
-                flex: 1,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: 'rgba(0,0,0,0.3)',
-              }}>
-                <View style={{
-                  backgroundColor: '#fff',
-                  borderRadius: 16,
-                  padding: 20,
-                  width: '85%',
-                  maxHeight: '70%',
-                  elevation: 8,
-                  shadowColor: 'transparent',
-                }}>
-                  <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 16, textAlign: 'center' }}>카테고리 선택</Text>
+              <View style={MenuRecommendationStyles.categoryModalOverlay}>
+                <View style={MenuRecommendationStyles.categoryModalContent}>
+                  <Text style={MenuRecommendationStyles.categoryModalTitle}>카테고리 선택</Text>
                   <FlatList
                     data={categories}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => (
                       <TouchableOpacity
-                        style={{
-                          paddingVertical: 14,
-                          borderBottomWidth: 1,
-                          borderBottomColor: '#eee',
-                        }}
+                        style={MenuRecommendationStyles.categoryModalItem}
                         onPress={() => {
                           setCategoryId(item.id);
                           setCategoryModalVisible(false);
                         }}
                       >
-                        <Text style={{
-                          color: categoryId === item.id ? '#007AFF' : '#1C1C1E',
-                          fontWeight: categoryId === item.id ? 'bold' : 'normal',
-                          fontSize: 16,
-                          textAlign: 'center',
-                        }}>
+                        <Text style={[MenuRecommendationStyles.categoryModalItemText, categoryId === item.id && MenuRecommendationStyles.categoryModalItemTextActive]}>
                           {item.name}
                         </Text>
                       </TouchableOpacity>
                     )}
                   />
                   <TouchableOpacity
-                    style={{
-                      marginTop: 16,
-                      alignItems: 'center',
-                      padding: 12,
-                      borderRadius: 8,
-                      backgroundColor: '#E5E5EA',
-                    }}
+                    style={MenuRecommendationStyles.categoryModalCloseButton}
                     onPress={() => setCategoryModalVisible(false)}
                   >
-                    <Text style={{ color: '#1C1C1E', fontWeight: 'bold' }}>닫기</Text>
+                    <Text style={MenuRecommendationStyles.categoryModalCloseButtonText}>닫기</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -211,38 +178,13 @@ export default function MenuRecommendationScreen() {
           {quiz.loading && <ActivityIndicator size="large" color="#007AFF" style={{ marginVertical: 20 }} />}
           {quiz.error && <Text style={{ color: 'red', marginBottom: 8 }}>{quiz.error}</Text>}
           {quiz.questions.length > 0 && (
-            <>
-              {quiz.questions.map((q, idx) => (
-                <View key={q.id} style={{ marginBottom: 18 }}>
-                  <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>{idx + 1}. {q.text}</Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                    {q.options.map((opt) => (
-                      <TouchableOpacity
-                        key={opt}
-                        style={{
-                          backgroundColor: quiz.answers[q.id] === opt ? '#007AFF' : '#E5E5EA',
-                          borderRadius: 20,
-                          paddingHorizontal: 16,
-                          paddingVertical: 8,
-                          marginRight: 8,
-                          marginBottom: 8,
-                        }}
-                        onPress={() => quiz.setAnswer(q.id, opt)}
-                      >
-                        <Text style={{ color: quiz.answers[q.id] === opt ? '#fff' : '#1C1C1E', fontWeight: '500' }}>{opt}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              ))}
-              <TouchableOpacity
-                onPress={quiz.getQuizRecommendations}
-                style={{ backgroundColor: '#007AFF', borderRadius: 8, padding: 14, marginTop: 8, marginBottom: 16 }}
-                disabled={quiz.loading || Object.keys(quiz.answers).length < quiz.questions.length}
-              >
-                <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>퀴즈 기반 추천받기</Text>
-              </TouchableOpacity>
-            </>
+            <QuizRecommendation
+              questions={quiz.questions}
+              onSubmit={(answers) => {
+                Object.entries(answers).forEach(([qid, ans]) => quiz.setAnswer(qid, ans));
+                quiz.getQuizRecommendations();
+              }}
+            />
           )}
           {quiz.recommendations.length > 0 && (
             <View style={MenuRecommendationStyles.recommendationsContainer}>

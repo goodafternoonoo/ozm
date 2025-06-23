@@ -184,4 +184,96 @@ export const MenuRecommendationStyles = StyleSheet.create({
     fontWeight: '600',
     color: '#007AFF',
   },
+  modeSwitchContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  modeButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#E5E5EA',
+    marginHorizontal: 4,
+    alignItems: 'center',
+  },
+  modeButtonActive: {
+    backgroundColor: '#007AFF',
+  },
+  modeButtonText: {
+    color: '#1C1C1E',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  categoryModalButton: {
+    backgroundColor: '#E5E5EA',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  categoryModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  categoryModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    width: '85%',
+    maxHeight: '70%',
+    elevation: 8,
+    shadowColor: 'transparent',
+  },
+  categoryModalTitle: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  categoryModalItem: {
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  categoryModalItemText: {
+    color: '#1C1C1E',
+    fontWeight: 'normal',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  categoryModalItemTextActive: {
+    color: '#007AFF',
+    fontWeight: 'bold',
+  },
+  categoryModalCloseButton: {
+    marginTop: 16,
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#E5E5EA',
+  },
+  categoryModalCloseButtonText: {
+    color: '#1C1C1E',
+    fontWeight: 'bold',
+  },
+  quizOptionButton: {
+    backgroundColor: '#E5E5EA',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  quizOptionButtonActive: {
+    backgroundColor: '#007AFF',
+  },
+  quizOptionText: {
+    color: '#1C1C1E',
+    fontWeight: '500',
+  },
+  quizOptionTextActive: {
+    color: '#fff',
+  },
 }); 

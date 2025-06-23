@@ -14,6 +14,8 @@ export interface Restaurant {
   phone: string;
   placeUrl: string;
   roadAddress: string;
+  latitude: number;
+  longitude: number;
 }
 
 export function useNearbyRestaurants() {
@@ -79,7 +81,9 @@ export function useNearbyRestaurants() {
         address: place.address_name,
         phone: place.phone,
         placeUrl: place.place_url,
-        roadAddress: place.road_address_name
+        roadAddress: place.road_address_name,
+        latitude: parseFloat(place.y),
+        longitude: parseFloat(place.x),
       }));
       setRestaurants(transformedRestaurants);
     } catch (error) {

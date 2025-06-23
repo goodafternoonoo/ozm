@@ -88,6 +88,11 @@ export const LoginScreenStyles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  kakaoLoginButtonText: {
+    color: '#3C1E1E',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
   userInfoContainer: {
     alignItems: 'center',
     marginTop: 16,
