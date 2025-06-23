@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from uuid import UUID
 
@@ -51,9 +51,7 @@ class CategoryResponse(CategoryBase):
 
     id: UUID
     menu_count: Optional[int] = Field(None, description="해당 카테고리의 메뉴 개수")
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CategoryListResponse(BaseModel):

@@ -1,5 +1,5 @@
 from typing import Dict, Optional, List, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 import uuid
 
@@ -56,9 +56,7 @@ class UserPreference(UserPreferenceBase):
     session_id: str
     total_interactions: int
     last_updated: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserInteractionBase(BaseModel):
@@ -87,9 +85,7 @@ class UserInteraction(UserInteractionBase):
     session_id: str
     menu_id: Optional[uuid.UUID]
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PreferenceAnalysis(BaseModel):
