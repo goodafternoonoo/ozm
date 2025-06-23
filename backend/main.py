@@ -10,7 +10,7 @@ from app.db.init_db import init_db
 async def lifespan(app: FastAPI):
     """애플리케이션 생명주기 관리"""
     # 시작 시 실행
-    if settings.env != "production":
+    if settings.env != "prod":
         await init_db()
     yield
     # 종료 시 실행 (필요시)

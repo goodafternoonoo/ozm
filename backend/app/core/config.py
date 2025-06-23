@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     app_name: str = Field("OZM Menu Recommendation", description="애플리케이션 이름")
     version: str = Field("1.0.0", description="애플리케이션 버전")
     debug: bool = Field(False, description="디버그 모드")
+    env: str = os.getenv("ENV", "dev")  # 환경 구분 (dev/prod 등)
 
     # 데이터베이스 설정
     database_url: str = Field(
