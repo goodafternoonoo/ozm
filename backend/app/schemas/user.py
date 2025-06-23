@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, field_serializer
 from typing import Optional
 import uuid
 from datetime import datetime
@@ -23,9 +23,10 @@ class UserProfile(UserBase):
 
     id: str
     created_at: datetime
-    model_config = ConfigDict(
-        from_attributes=True, json_encoders={datetime: lambda v: v.isoformat()}
-    )
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value
 
 
 class UserProfileUpdate(BaseModel):
@@ -42,9 +43,10 @@ class UserInDB(UserBase):
     id: str
     hashed_password: str
     created_at: datetime
-    model_config = ConfigDict(
-        from_attributes=True, json_encoders={datetime: lambda v: v.isoformat()}
-    )
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value
 
 
 class Token(BaseModel):
@@ -65,9 +67,10 @@ class UserResponse(UserBase):
 
     id: uuid.UUID
     created_at: datetime
-    model_config = ConfigDict(
-        from_attributes=True, json_encoders={datetime: lambda v: v.isoformat()}
-    )
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value
 
 
 class LoginResponse(BaseModel):
@@ -76,4 +79,3 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
-    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})

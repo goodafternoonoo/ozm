@@ -18,6 +18,16 @@ class KakaoLoginRequest(BaseModel):
     access_token: str
 
 
+def user_to_dict(user: User) -> dict:
+    return {
+        "id": str(user.id),
+        "username": user.username,
+        "email": user.email,
+        "nickname": user.nickname,
+        "created_at": user.created_at,
+    }
+
+
 @router.post("/kakao-login", response_model=LoginResponse)
 async def kakao_login(req: KakaoLoginRequest, db: AsyncSession = Depends(get_db)):
     """
@@ -48,7 +58,7 @@ async def kakao_login(req: KakaoLoginRequest, db: AsyncSession = Depends(get_db)
                 LoginResponse(
                     access_token=jwt_token,
                     token_type="bearer",
-                    user=UserResponse.model_validate(user),
+                    user=UserResponse.model_validate(user_to_dict(user)),
                 )
             )
         )
@@ -79,7 +89,7 @@ async def get_current_user_info(
 
     try:
         user = await AuthService.get_current_user(db, token)
-        return succeed_response(UserResponse.model_validate(user))
+        return succeed_response(UserResponse.model_validate(user_to_dict(user)))
     except Exception as e:
         return JSONResponse(
             content=jsonable_encoder(
@@ -113,7 +123,7 @@ async def get_user_by_id(
 
     try:
         user = await AuthService.get_user_by_id(db, user_id)
-        return succeed_response(UserResponse.model_validate(user))
+        return succeed_response(UserResponse.model_validate(user_to_dict(user)))
     except Exception as e:
         return JSONResponse(
             content=jsonable_encoder(

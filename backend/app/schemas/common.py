@@ -1,5 +1,5 @@
 from typing import Any, Optional, Dict
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, field_serializer
 from datetime import datetime
 
 
@@ -7,14 +7,24 @@ class StandardResponse(BaseModel):
     success: bool = Field(..., description="성공 여부")
     data: Optional[Any] = Field(None, description="정상 데이터")
     error: Optional[Dict[str, Any]] = Field(None, description="에러 정보")
-    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
+
+    @field_serializer("data")
+    def serialize_data(self, value):
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return value
 
 
 class ErrorResponse(BaseModel):
     success: bool = Field(False, description="성공 여부")
     data: Optional[Any] = Field(None, description="정상 데이터")
     error: Dict[str, Any] = Field(..., description="에러 정보")
-    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
+
+    @field_serializer("data")
+    def serialize_data(self, value):
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return value
 
 
 def succeed_response(data: Any = None) -> dict:
