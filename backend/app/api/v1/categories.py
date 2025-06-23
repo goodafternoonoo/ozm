@@ -15,8 +15,25 @@ from app.schemas.category import (
 )
 from app.schemas.common import succeed_response, error_response
 from app.schemas.error_codes import ErrorCode
+from app.models.category import Category
 
 router = APIRouter()
+
+
+def category_to_dict(category: Category) -> dict:
+    return {
+        "id": str(category.id),
+        "name": category.name,
+        "description": category.description,
+        "country": category.country,
+        "cuisine_type": category.cuisine_type,
+        "is_active": category.is_active,
+        "display_order": category.display_order,
+        "icon_url": category.icon_url,
+        "color_code": category.color_code,
+        # menu_count는 get_categories_with_menu_count에서만 사용
+        "menu_count": getattr(category, "menu_count", None),
+    }
 
 
 @router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
@@ -32,7 +49,9 @@ async def create_category(
     category = await service.create_category(category_data)
     return JSONResponse(
         content=jsonable_encoder(
-            succeed_response(CategoryResponse.model_validate(category))
+            succeed_response(
+                CategoryResponse.model_validate(category_to_dict(category))
+            )
         ),
         status_code=status.HTTP_201_CREATED,
     )
@@ -79,7 +98,9 @@ async def get_categories(
             cuisine_type=cuisine_type,
             is_active=True,
         )
-        categories = [CategoryResponse.model_validate(cat) for cat in categories]
+        categories = [
+            CategoryResponse.model_validate(category_to_dict(cat)) for cat in categories
+        ]
 
     total_count = await service.get_total_count(country, cuisine_type)
 
@@ -119,7 +140,9 @@ async def get_category(category_id: UUID, db: AsyncSession = Depends(get_db)):
 
     return JSONResponse(
         content=jsonable_encoder(
-            succeed_response(CategoryResponse.model_validate(category))
+            succeed_response(
+                CategoryResponse.model_validate(category_to_dict(category))
+            )
         ),
         status_code=status.HTTP_200_OK,
     )
@@ -147,7 +170,9 @@ async def update_category(
 
     return JSONResponse(
         content=jsonable_encoder(
-            succeed_response(CategoryResponse.model_validate(category))
+            succeed_response(
+                CategoryResponse.model_validate(category_to_dict(category))
+            )
         ),
         status_code=status.HTTP_200_OK,
     )
@@ -185,7 +210,10 @@ async def get_categories_by_country(country: str, db: AsyncSession = Depends(get
     return JSONResponse(
         content=jsonable_encoder(
             succeed_response(
-                [CategoryResponse.model_validate(cat) for cat in categories]
+                [
+                    CategoryResponse.model_validate(category_to_dict(cat))
+                    for cat in categories
+                ]
             )
         ),
         status_code=status.HTTP_200_OK,
@@ -202,7 +230,10 @@ async def get_categories_by_cuisine_type(
     return JSONResponse(
         content=jsonable_encoder(
             succeed_response(
-                [CategoryResponse.model_validate(cat) for cat in categories]
+                [
+                    CategoryResponse.model_validate(category_to_dict(cat))
+                    for cat in categories
+                ]
             )
         ),
         status_code=status.HTTP_200_OK,

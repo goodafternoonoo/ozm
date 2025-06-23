@@ -24,6 +24,48 @@ from app.schemas.error_codes import ErrorCode
 router = APIRouter()
 
 
+def menu_to_dict(menu: Menu) -> dict:
+    return {
+        "id": str(menu.id),
+        "name": menu.name,
+        "description": menu.description,
+        "time_slot": menu.time_slot,
+        "is_spicy": menu.is_spicy,
+        "is_healthy": menu.is_healthy,
+        "is_vegetarian": menu.is_vegetarian,
+        "is_quick": menu.is_quick,
+        "has_rice": menu.has_rice,
+        "has_soup": menu.has_soup,
+        "has_meat": menu.has_meat,
+        "ingredients": menu.ingredients,
+        "cooking_time": menu.cooking_time,
+        "cuisine_type": menu.cuisine_type,
+        "spicy_level": menu.spicy_level,
+        "display_order": menu.display_order,
+        "is_active": menu.is_active,
+        "calories": menu.calories,
+        "protein": menu.protein,
+        "carbs": menu.carbs,
+        "fat": menu.fat,
+        "prep_time": menu.prep_time,
+        "difficulty": menu.difficulty,
+        "rating": menu.rating,
+        "image_url": menu.image_url,
+        "created_at": menu.created_at,
+        "updated_at": menu.updated_at,
+        "category_id": menu.category_id,
+    }
+
+
+def favorite_to_dict(favorite) -> dict:
+    return {
+        "id": str(favorite.id),
+        "user_id": str(favorite.user_id),
+        "menu_id": str(favorite.menu_id),
+        "created_at": favorite.created_at,
+    }
+
+
 @router.post("/", response_model=MenuResponse, status_code=status.HTTP_201_CREATED)
 async def create_menu(
     menu_data: MenuCreate,
@@ -35,7 +77,7 @@ async def create_menu(
         menu = await menu_service.create(db, menu_data.model_dump())
         return JSONResponse(
             content=jsonable_encoder(
-                succeed_response(MenuResponse.model_validate(menu))
+                succeed_response(MenuResponse.model_validate(menu_to_dict(menu)))
             ),
             status_code=status.HTTP_201_CREATED,
         )
@@ -68,7 +110,9 @@ async def get_menu(menu_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
             status_code=404,
         )
     return JSONResponse(
-        content=jsonable_encoder(succeed_response(MenuResponse.model_validate(menu)))
+        content=jsonable_encoder(
+            succeed_response(MenuResponse.model_validate(menu_to_dict(menu)))
+        )
     )
 
 
@@ -87,7 +131,9 @@ async def get_menus(
 
     return JSONResponse(
         content=jsonable_encoder(
-            succeed_response([MenuResponse.model_validate(menu) for menu in menus])
+            succeed_response(
+                [MenuResponse.model_validate(menu_to_dict(menu)) for menu in menus]
+            )
         )
     )
 
@@ -121,7 +167,10 @@ async def search_menus(
         content=jsonable_encoder(
             succeed_response(
                 MenuSearchResponse(
-                    items=[MenuResponse.model_validate(menu) for menu in menus],
+                    items=[
+                        MenuResponse.model_validate(menu_to_dict(menu))
+                        for menu in menus
+                    ],
                     total=total,
                     skip=skip,
                     limit=limit,
@@ -140,7 +189,9 @@ async def get_popular_menus(
     menus = await menu_service.get_popular_menus(db, limit)
     return JSONResponse(
         content=jsonable_encoder(
-            succeed_response([MenuResponse.model_validate(menu) for menu in menus])
+            succeed_response(
+                [MenuResponse.model_validate(menu_to_dict(menu)) for menu in menus]
+            )
         )
     )
 
@@ -168,7 +219,9 @@ async def update_menu(
             status_code=404,
         )
     return JSONResponse(
-        content=jsonable_encoder(succeed_response(MenuResponse.model_validate(menu))),
+        content=jsonable_encoder(
+            succeed_response(MenuResponse.model_validate(menu_to_dict(menu)))
+        ),
         status_code=status.HTTP_200_OK,
     )
 
@@ -189,7 +242,9 @@ async def add_favorite(
         )
         return JSONResponse(
             content=jsonable_encoder(
-                succeed_response(FavoriteResponse.model_validate(favorite))
+                succeed_response(
+                    FavoriteResponse.model_validate(favorite_to_dict(favorite))
+                )
             ),
             status_code=status.HTTP_201_CREATED,
         )
@@ -218,7 +273,10 @@ async def get_user_favorites(
     return JSONResponse(
         content=jsonable_encoder(
             succeed_response(
-                [MenuResponse.model_validate(favorite.menu) for favorite in favorites]
+                [
+                    MenuResponse.model_validate(menu_to_dict(favorite.menu))
+                    for favorite in favorites
+                ]
             )
         )
     )

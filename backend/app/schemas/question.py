@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator, ConfigDict
+from pydantic import BaseModel, field_validator
 from typing import List, Dict, Any, Optional
 import uuid
 import json
@@ -35,4 +35,3 @@ class Question(QuestionBase):
     """질문 응답 스키마"""
 
     id: uuid.UUID
-    model_config = ConfigDict(from_attributes=True)

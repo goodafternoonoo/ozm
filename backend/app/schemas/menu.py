@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
 from typing import List, Optional
 from enum import Enum
 import uuid
@@ -80,7 +80,13 @@ class MenuResponse(MenuBase):
     created_at: datetime
     updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    @field_serializer("created_at")
+    def serialize_created_at(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value
+
+    @field_serializer("updated_at")
+    def serialize_updated_at(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value
 
 
 class MenuSearchResponse(BaseModel):
@@ -120,4 +126,6 @@ class FavoriteResponse(FavoriteBase):
     id: uuid.UUID
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    @field_serializer("created_at")
+    def serialize_created_at(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value

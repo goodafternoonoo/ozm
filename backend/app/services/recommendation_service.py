@@ -7,7 +7,7 @@ from app.models.question import Question
 from app.models.recommendation import Recommendation
 from app.models.user_answer import UserAnswer
 from app.models.user_preference import UserPreference, UserInteraction
-from app.schemas.menu import MenuRecommendation
+from app.schemas.menu import MenuRecommendation, MenuResponse
 from app.schemas.recommendation import (
     SimpleRecommendationRequest,
     QuizRecommendationRequest,
@@ -23,6 +23,39 @@ import uuid
 import random
 import json
 from datetime import datetime, timedelta
+
+
+def menu_to_dict(menu: Menu) -> dict:
+    return {
+        "id": str(menu.id),
+        "name": menu.name,
+        "description": menu.description,
+        "time_slot": menu.time_slot,
+        "is_spicy": menu.is_spicy,
+        "is_healthy": menu.is_healthy,
+        "is_vegetarian": menu.is_vegetarian,
+        "is_quick": menu.is_quick,
+        "has_rice": menu.has_rice,
+        "has_soup": menu.has_soup,
+        "has_meat": menu.has_meat,
+        "ingredients": menu.ingredients,
+        "cooking_time": menu.cooking_time,
+        "cuisine_type": menu.cuisine_type,
+        "spicy_level": menu.spicy_level,
+        "display_order": menu.display_order,
+        "is_active": menu.is_active,
+        "calories": menu.calories,
+        "protein": menu.protein,
+        "carbs": menu.carbs,
+        "fat": menu.fat,
+        "prep_time": menu.prep_time,
+        "difficulty": menu.difficulty,
+        "rating": menu.rating,
+        "image_url": menu.image_url,
+        "created_at": menu.created_at,
+        "updated_at": menu.updated_at,
+        "category_id": menu.category_id,
+    }
 
 
 class RecommendationService:
@@ -87,7 +120,7 @@ class RecommendationService:
             )
             recommendations.append(
                 MenuRecommendation(
-                    menu=menu,
+                    menu=MenuResponse.model_validate(menu_to_dict(menu)),
                     score=min(score / 10.0, 1.0),
                     reason=reason,
                 )
@@ -174,7 +207,7 @@ class RecommendationService:
             )
             recommendations.append(
                 MenuRecommendation(
-                    menu=menu,
+                    menu=MenuResponse.model_validate(menu_to_dict(menu)),
                     score=min(score / 10.0, 1.0),
                     reason=reason,
                 )
@@ -209,7 +242,7 @@ class RecommendationService:
             if menu:
                 recommendations.append(
                     MenuRecommendation(
-                        menu=menu,
+                        menu=MenuResponse.model_validate(menu_to_dict(menu)),
                         score=min(rec.similarity_score, 1.0),
                         reason=rec.reason,
                     )

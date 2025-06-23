@@ -15,16 +15,49 @@ from app.schemas.user_preference import (
 from app.services.recommendation_service import RecommendationService
 from app.services.preference_service import PreferenceService
 from app.services.auth_service import AuthService
-from app.models.menu import TimeSlot as ModelTimeSlot
-import uuid
+from app.models.menu import TimeSlot as ModelTimeSlot, Menu
 from app.schemas.common import succeed_response, error_response
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+from app.schemas.menu import MenuRecommendation, MenuResponse
 
 router = APIRouter()
 
 # 인증 의존성
 get_current_user = AuthService.get_current_user
+
+
+def menu_to_dict(menu: Menu) -> dict:
+    return {
+        "id": str(menu.id),
+        "name": menu.name,
+        "description": menu.description,
+        "time_slot": menu.time_slot,
+        "is_spicy": menu.is_spicy,
+        "is_healthy": menu.is_healthy,
+        "is_vegetarian": menu.is_vegetarian,
+        "is_quick": menu.is_quick,
+        "has_rice": menu.has_rice,
+        "has_soup": menu.has_soup,
+        "has_meat": menu.has_meat,
+        "ingredients": menu.ingredients,
+        "cooking_time": menu.cooking_time,
+        "cuisine_type": menu.cuisine_type,
+        "spicy_level": menu.spicy_level,
+        "display_order": menu.display_order,
+        "is_active": menu.is_active,
+        "calories": menu.calories,
+        "protein": menu.protein,
+        "carbs": menu.carbs,
+        "fat": menu.fat,
+        "prep_time": menu.prep_time,
+        "difficulty": menu.difficulty,
+        "rating": menu.rating,
+        "image_url": menu.image_url,
+        "created_at": menu.created_at,
+        "updated_at": menu.updated_at,
+        "category_id": menu.category_id,
+    }
 
 
 @router.post("/simple", response_model=RecommendationResponse)
@@ -57,6 +90,14 @@ async def get_simple_recommendations(
         user_id=user_id,
         limit=5,
     )
+    recommendations = [
+        MenuRecommendation(
+            menu=MenuResponse.model_validate(menu_to_dict(r.menu)),
+            score=r.score,
+            reason=r.reason,
+        )
+        for r in recommendations
+    ]
     return JSONResponse(
         content=jsonable_encoder(
             succeed_response(
@@ -101,6 +142,14 @@ async def get_quiz_recommendations(
         user_id=user_id,
         limit=5,
     )
+    recommendations = [
+        MenuRecommendation(
+            menu=MenuResponse.model_validate(menu_to_dict(r.menu)),
+            score=r.score,
+            reason=r.reason,
+        )
+        for r in recommendations
+    ]
     return JSONResponse(
         content=jsonable_encoder(
             succeed_response(
@@ -144,6 +193,14 @@ async def get_collaborative_recommendations(
         user_id=user_id,
         limit=limit,
     )
+    recommendations = [
+        MenuRecommendation(
+            menu=MenuResponse.model_validate(menu_to_dict(r.menu)),
+            score=r.score,
+            reason=r.reason,
+        )
+        for r in recommendations
+    ]
     return JSONResponse(
         content=jsonable_encoder(
             succeed_response(

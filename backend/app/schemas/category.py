@@ -51,7 +51,6 @@ class CategoryResponse(CategoryBase):
 
     id: UUID
     menu_count: Optional[int] = Field(None, description="해당 카테고리의 메뉴 개수")
-    model_config = ConfigDict(from_attributes=True)
 
 
 class CategoryListResponse(BaseModel):

@@ -1,5 +1,5 @@
 from typing import Dict, Optional, List, Any
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
 from datetime import datetime
 import uuid
 
@@ -56,7 +56,10 @@ class UserPreference(UserPreferenceBase):
     session_id: str
     total_interactions: int
     last_updated: datetime
-    model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("last_updated")
+    def serialize_last_updated(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value
 
 
 class UserInteractionBase(BaseModel):
@@ -85,7 +88,10 @@ class UserInteraction(UserInteractionBase):
     session_id: str
     menu_id: Optional[uuid.UUID]
     created_at: datetime
-    model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value
 
 
 class PreferenceAnalysis(BaseModel):
@@ -98,6 +104,10 @@ class PreferenceAnalysis(BaseModel):
     recommendation_confidence: float
     interaction_count: int
     last_activity: datetime
+
+    @field_serializer("last_activity")
+    def serialize_last_activity(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value
 
 
 class CollaborativeRecommendation(BaseModel):
