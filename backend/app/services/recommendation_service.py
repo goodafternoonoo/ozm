@@ -1,26 +1,17 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, func
+from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
 from app.models.menu import Menu, TimeSlot
-from app.models.question import Question
 from app.models.recommendation import Recommendation
 from app.models.user_answer import UserAnswer
 from app.models.user_preference import UserPreference, UserInteraction
 from app.schemas.menu import MenuRecommendation, MenuResponse
-from app.schemas.recommendation import (
-    SimpleRecommendationRequest,
-    QuizRecommendationRequest,
-    RecommendationResponse,
-    PersonalizedRecommendationRequest,
-    HybridRecommendationRequest,
-    CollaborativeRecommendationRequest,
-    PreferenceAnalysisRequest,
-    InteractionRecordRequest,
-)
 from app.services.preference_service import PreferenceService
 import uuid
-from datetime import datetime, timedelta
+import random
+import json
+from datetime import datetime
 from app.core.utils import menu_to_dict
 
 
