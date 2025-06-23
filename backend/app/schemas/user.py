@@ -35,6 +35,14 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 
+class LoginResponse(BaseModel):
+    """로그인 응답 스키마 (토큰 + 사용자 정보)"""
+
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
 class TokenData(BaseModel):
     """JWT 토큰 내부 데이터"""
 

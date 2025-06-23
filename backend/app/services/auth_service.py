@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.user import User
 from app.schemas.user import UserCreate
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta
 import os
 
@@ -53,6 +53,30 @@ class AuthService:
         return user
 
     @staticmethod
+    async def get_user_by_id(db: AsyncSession, user_id: str) -> User:
+        """
+        사용자 ID로 사용자 정보 조회
+        """
+        stmt = select(User).where(User.id == user_id)
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
+        if not user:
+            raise Exception("사용자를 찾을 수 없습니다")
+        return user
+
+    @staticmethod
+    async def get_user_by_kakao_id(db: AsyncSession, kakao_id: str) -> User:
+        """
+        카카오 ID로 사용자 정보 조회
+        """
+        stmt = select(User).where(User.kakao_id == kakao_id)
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
+        if not user:
+            raise Exception("사용자를 찾을 수 없습니다")
+        return user
+
+    @staticmethod
     def create_jwt_token(user: User) -> str:
         """
         JWT(액세스 토큰) 발급
@@ -65,3 +89,25 @@ class AuthService:
         }
         token = jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
         return token
+
+    @staticmethod
+    def verify_jwt_token(token: str) -> dict:
+        """
+        JWT 토큰 검증 및 페이로드 반환
+        """
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            return payload
+        except JWTError:
+            raise Exception("유효하지 않은 토큰입니다")
+
+    @staticmethod
+    async def get_current_user(db: AsyncSession, token: str) -> User:
+        """
+        JWT 토큰으로 현재 사용자 정보 조회
+        """
+        payload = AuthService.verify_jwt_token(token)
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise Exception("토큰에서 사용자 ID를 찾을 수 없습니다")
+        return await AuthService.get_user_by_id(db, user_id)

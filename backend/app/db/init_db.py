@@ -13,10 +13,10 @@ async def init_db():
     데이터베이스 전체 초기화 (테이블 삭제 후 재생성)
     - 운영 환경에서는 사용 금지 (개발/테스트용)
     """
-    async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-    await create_sample_data()
+    # async with async_engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.drop_all)
+    #     await conn.run_sync(Base.metadata.create_all)
+    # await create_sample_data()
 
 
 async def create_sample_data():
