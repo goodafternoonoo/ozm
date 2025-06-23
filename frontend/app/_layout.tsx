@@ -43,6 +43,15 @@ export default function RootLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="login"
+        options={{
+          title: "로그인",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="log-in-outline" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

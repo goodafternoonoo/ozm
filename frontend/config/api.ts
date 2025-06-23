@@ -11,5 +11,7 @@ export const API_CONFIG = {
 // 카카오 API 설정
 export const KAKAO_API_CONFIG = {
   BASE_URL: 'https://dapi.kakao.com/v2/local',
-  JAVASCRIPT_KEY: '8ee1324dc133e3e2bd1b1300c2daf794',
+  JAVASCRIPT_KEY: '6553c4ff33582ddf43f9281a502247e0',
+  RESTAPI_KEY: '3922d1be075b7aeb53ba3e4766de40ad',
+  CLIENT_SECRET: 'x5kRaiBWqBZHVQiNBTTCMY0p9bNA0hLG' // TODO: 실제 Client Secret으로 교체
 }; 

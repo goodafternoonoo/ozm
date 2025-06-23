@@ -15,6 +15,8 @@ import { LocationService, LocationData } from '../utils/locationService';
 import { KakaoApiService } from '../utils/kakaoApiService';
 import { NearbyStyles } from '../styles/NearbyStyles';
 import RestaurantMap from '../components/RestaurantMap';
+import { RestaurantListItem } from '../components/RestaurantListItem';
+import { useNearbyRestaurants } from '../hooks/useNearbyRestaurants';
 
 interface Restaurant {
   id: string;
@@ -30,13 +32,20 @@ interface Restaurant {
 }
 
 export default function NearbyScreen() {
-  const [location, setLocation] = useState<LocationData | null>(null);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'loading'>('loading');
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [searchRadius, setSearchRadius] = useState(1000);
+  const {
+    location,
+    restaurants,
+    loading,
+    refreshing,
+    locationPermission,
+    searchKeyword,
+    setSearchKeyword,
+    searchRadius,
+    setSearchRadius,
+    getCurrentLocation,
+    onRefresh,
+    handleSearch,
+  } = useNearbyRestaurants();
   const [showFullAddress, setShowFullAddress] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [showMap, setShowMap] = useState(false);
@@ -44,89 +53,6 @@ export default function NearbyScreen() {
   useEffect(() => {
     getCurrentLocation();
   }, []);
-
-  const getCurrentLocation = async () => {
-    setLoading(true);
-    try {
-      const currentLocation = await LocationService.getCurrentLocation();
-      
-      if (currentLocation) {
-        setLocation(currentLocation);
-        setLocationPermission('granted');
-        
-        // 카카오 API로 근처 맛집 검색
-        await searchNearbyRestaurants(currentLocation.latitude, currentLocation.longitude);
-      } else {
-        setLocationPermission('denied');
-      }
-    } catch (error) {
-      console.error('위치 가져오기 실패:', error);
-      setLocationPermission('denied');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const searchNearbyRestaurants = async (latitude: number, longitude: number) => {
-    try {
-      let kakaoPlaces;
-      
-      if (searchKeyword.trim()) {
-        // 키워드로 검색
-        kakaoPlaces = await KakaoApiService.searchRestaurantsByKeyword(
-          searchKeyword,
-          latitude,
-          longitude,
-          searchRadius
-        );
-      } else {
-        // 카테고리로 검색 (음식점)
-        kakaoPlaces = await KakaoApiService.searchRestaurants(
-          latitude,
-          longitude,
-          searchRadius
-        );
-      }
-
-      // 데이터 변환
-      const transformedRestaurants: Restaurant[] = kakaoPlaces.map(place => ({
-        id: place.id,
-        name: place.place_name,
-        category: place.category_name,
-        distance: parseInt(place.distance),
-        distanceFormatted: KakaoApiService.formatDistance(parseInt(place.distance)),
-        rating: 4.0 + Math.random() * 1.0, // 카카오 API에는 평점이 없으므로 랜덤 생성
-        address: place.address_name,
-        phone: place.phone,
-        placeUrl: place.place_url,
-        roadAddress: place.road_address_name
-      }));
-
-      setRestaurants(transformedRestaurants);
-    } catch (error) {
-      console.error('맛집 검색 실패:', error);
-      Alert.alert('오류', '맛집 검색에 실패했습니다. 카카오 API 키를 확인해주세요.');
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    if (location) {
-      await searchNearbyRestaurants(location.latitude, location.longitude);
-    }
-    setRefreshing(false);
-  };
-
-  const handleSearch = async () => {
-    if (!location) {
-      Alert.alert('오류', '위치 정보가 없습니다.');
-      return;
-    }
-    
-    setLoading(true);
-    await searchNearbyRestaurants(location.latitude, location.longitude);
-    setLoading(false);
-  };
 
   const renderStars = (rating: number) => {
     const stars = [];
@@ -251,7 +177,7 @@ export default function NearbyScreen() {
                 onPress={() => {
                   setSearchRadius(radius);
                   if (location) {
-                    searchNearbyRestaurants(location.latitude, location.longitude);
+                    handleSearch();
                   }
                 }}
               >
@@ -282,64 +208,13 @@ export default function NearbyScreen() {
           </View>
         ) : (
           restaurants.map((restaurant) => (
-            <View key={restaurant.id} style={NearbyStyles.restaurantCard}>
-              <TouchableOpacity
-                style={NearbyStyles.restaurantContent}
-                onPress={() => {
-                  // 카드 클릭시 상세 정보 표시 (추후 구현)
-                  Alert.alert(restaurant.name, `${restaurant.address}\n거리: ${restaurant.distanceFormatted}`);
-                }}
-              >
-                <View style={NearbyStyles.restaurantHeader}>
-                  <Text style={NearbyStyles.restaurantName}>{restaurant.name}</Text>
-                  <View style={NearbyStyles.ratingContainer}>
-                    {renderStars(restaurant.rating)}
-                    <Text style={NearbyStyles.ratingText}>{restaurant.rating.toFixed(1)}</Text>
-                  </View>
-                </View>
-                
-                <View style={NearbyStyles.restaurantInfo}>
-                  <View style={NearbyStyles.categoryContainer}>
-                    <Text style={NearbyStyles.categoryText}>{restaurant.category}</Text>
-                  </View>
-                  <View style={NearbyStyles.distanceContainer}>
-                    <Ionicons name="location-outline" size={16} color="#8E8E93" />
-                    <Text style={NearbyStyles.distanceText}>{restaurant.distanceFormatted}</Text>
-                  </View>
-                </View>
-                
-                <Text style={NearbyStyles.addressText}>
-                  {restaurant.roadAddress || restaurant.address}
-                </Text>
-              </TouchableOpacity>
-              
-              {/* 지도 미리보기 썸네일 */}
-              <TouchableOpacity
-                style={NearbyStyles.mapThumbnailContainer}
-                onPress={async () => {
-                  const address = restaurant.roadAddress || restaurant.address;
-                  const encodedAddress = encodeURIComponent(address);
-                  const webUrl = `https://map.kakao.com/link/search/${encodedAddress}`;
-                  
-                  try {
-                    const supported = await Linking.canOpenURL(webUrl);
-                    if (supported) {
-                      await Linking.openURL(webUrl);
-                    } else {
-                      Alert.alert('안내', '카카오맵을 브라우저에서 열어주세요.');
-                    }
-                  } catch (error) {
-                    Alert.alert('오류', '카카오맵을 열 수 없습니다. 브라우저에서 직접 검색해주세요.');
-                  }
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={NearbyStyles.mapThumbnail}>
-                  <Ionicons name="map" size={60} color="#C7C7CC" />
-                  <Text style={NearbyStyles.mapThumbnailText}>지도에서 보기</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
+            <RestaurantListItem
+              key={restaurant.id}
+              restaurant={restaurant}
+              onPress={setSelectedRestaurant}
+              onCall={callRestaurant}
+              onMap={openMap}
+            />
           ))
         )}
       </View>
