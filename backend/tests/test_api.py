@@ -103,7 +103,6 @@ async def test_create_and_get_category():
 
 
 # ---------------- 메뉴 ----------------
-@pytest.mark.asyncio
 def test_create_and_get_menu(test_user):
     app.dependency_overrides[get_current_user] = lambda: test_user
 
@@ -287,7 +286,6 @@ async def test_quiz_recommendation_required_filters():
 
 
 # ---------------- 즐겨찾기(찜) ----------------
-@pytest.mark.asyncio
 def test_favorite_add_and_get(test_user):
     app.dependency_overrides[get_current_user] = lambda: test_user
 
