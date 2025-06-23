@@ -15,7 +15,7 @@ from app.services.preference_service import PreferenceService
 import uuid
 import random
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from app.core.utils import menu_to_dict
 from app.core.config_weights import get_weight_set
 
@@ -344,8 +344,9 @@ class RecommendationService:
 
         # 최근 상호작용에 더 높은 가중치
         recent_weight = 1.0
+        now = datetime.now(timezone.utc)
         for interaction in interactions:
-            days_old = (datetime.now() - interaction.created_at).days
+            days_old = (now - interaction.created_at).days
             if days_old < 7:
                 recent_weight += 0.5
             elif days_old < 30:
