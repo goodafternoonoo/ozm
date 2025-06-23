@@ -21,6 +21,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from app.schemas.menu import MenuRecommendation, MenuResponse
 from app.core.utils import menu_to_dict
+import uuid
 
 router = APIRouter()
 
