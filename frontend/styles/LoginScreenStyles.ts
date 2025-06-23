@@ -52,4 +52,93 @@ export const LoginScreenStyles = StyleSheet.create({
     marginBottom: 12,
     textAlign: 'center',
   },
+  // 카카오 로그인 관련 스타일
+  loginSuccessBanner: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: '#4CD964',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    zIndex: 1000,
+  },
+  loginSuccessText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  kakaoLoginButton: {
+    backgroundColor: '#FEE500',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  kakaoLoginButtonDisabled: {
+    opacity: 0.7,
+  },
+  kakaoIconContainer: {
+    marginRight: 8,
+  },
+  kakaoLoginText: {
+    color: '#3C1E1E',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  userInfoContainer: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  userProfileCard: {
+    backgroundColor: '#F7F7F7',
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  userAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#FEE500',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1C1C1E',
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  loginStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loginStatusText: {
+    fontSize: 12,
+    color: '#4CD964',
+    marginLeft: 4,
+  },
+  logoutButton: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 }); 

@@ -61,7 +61,9 @@ export function useMenuRecommendations() {
         time_slot: selectedTimeSlot,
         category_id: categoryId || undefined,
       });
-      setRecommendations(response.data.recommendations || []);
+      // 응답 구조: { success, data: { recommendations, ... }, error }
+      const recs = response.data?.data?.recommendations || [];
+      setRecommendations(recs);
     } catch (err) {
       setError('메뉴 추천을 가져오는데 실패했습니다');
       console.error('API 에러:', err);

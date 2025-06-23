@@ -155,6 +155,46 @@ export const NearbyStyles = StyleSheet.create({
   radiusButtonTextActive: {
     color: '#fff',
   },
+  sortContainer: {
+    marginBottom: 20,
+  },
+  sortLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginBottom: 12,
+  },
+  sortButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  sortButton: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  sortButtonActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  sortButtonText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  sortButtonTextActive: {
+    color: '#fff',
+  },
   sectionTitle: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -301,5 +341,57 @@ export const NearbyStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginTop: 8,
+  },
+  // 모달 스타일
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    margin: 20,
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1C1C1E',
+  },
+  sortOptions: {
+    gap: 12,
+  },
+  sortOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    backgroundColor: '#fff',
+  },
+  sortOptionActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  sortOptionText: {
+    fontSize: 16,
+    color: '#1C1C1E',
+    fontWeight: '500',
+    marginLeft: 12,
+  },
+  sortOptionTextActive: {
+    color: '#fff',
   },
 }); 

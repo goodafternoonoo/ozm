@@ -26,20 +26,29 @@ export function useNearbyRestaurants() {
   const [searchRadius, setSearchRadius] = useState(1000);
 
   const getCurrentLocation = async () => {
+    console.log('🔄 getCurrentLocation 호출됨');
     setLoading(true);
     try {
+      console.log('📍 LocationService.getCurrentLocation() 호출...');
       const currentLocation = await LocationService.getCurrentLocation();
+      console.log('📍 LocationService 결과:', currentLocation);
+      
       if (currentLocation) {
+        console.log('✅ 위치 정보 설정:', currentLocation);
         setLocation(currentLocation);
         setLocationPermission('granted');
+        console.log('📍 맛집 검색 시작...');
         await searchNearbyRestaurants(currentLocation.latitude, currentLocation.longitude);
       } else {
+        console.log('❌ 위치 정보 없음, 권한 거부됨');
         setLocationPermission('denied');
       }
     } catch (error) {
+      console.error('❌ getCurrentLocation 에러:', error);
       setLocationPermission('denied');
     } finally {
       setLoading(false);
+      console.log('🔄 getCurrentLocation 완료');
     }
   };
 
@@ -66,7 +75,7 @@ export function useNearbyRestaurants() {
         category: place.category_name,
         distance: parseInt(place.distance),
         distanceFormatted: KakaoApiService.formatDistance(parseInt(place.distance)),
-        rating: 4.0 + Math.random() * 1.0,
+        rating: Math.round((4.0 + Math.random() * 1.0) * 10) / 10,
         address: place.address_name,
         phone: place.phone,
         placeUrl: place.place_url,
@@ -74,6 +83,7 @@ export function useNearbyRestaurants() {
       }));
       setRestaurants(transformedRestaurants);
     } catch (error) {
+      console.error('❌ searchNearbyRestaurants 에러:', error);
       Alert.alert('오류', '맛집 검색에 실패했습니다. 카카오 API 키를 확인해주세요.');
     }
   };

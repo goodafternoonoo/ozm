@@ -39,7 +39,7 @@ export default function RootLayout() {
         options={{
           title: "질문답변",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubbles" size={size} color={color} />
+            <Ionicons name="chatbubble" size={size} color={color} />
           ),
         }}
       />
@@ -50,6 +50,12 @@ export default function RootLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="log-in-outline" size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="oauth/callback"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

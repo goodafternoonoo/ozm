@@ -80,7 +80,7 @@ export default function QuestionsScreen() {
           <View style={QuestionsStyles.emptyContainer}>
             <Ionicons name="chatbubbles-outline" size={80} color="#C7C7CC" />
             <Text style={QuestionsStyles.emptyText}>궁금한 점을 물어보세요!</Text>
-            <Text style={QuestionsStyles.emptySubtext}>예: "건강한 아침 메뉴 추천해줘"</Text>
+            <Text style={QuestionsStyles.emptySubtext}>예: &quot;건강한 아침 메뉴 추천해줘&quot;</Text>
           </View>
         )}
 

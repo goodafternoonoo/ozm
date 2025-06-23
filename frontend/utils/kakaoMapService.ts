@@ -10,7 +10,7 @@ export class KakaoMapService {
 
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=011fde08b6dca27806cb9186f2f75e3b&libraries=services`;
+      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=6553c4ff33582ddf43f9281a502247e0&libraries=services`;
       script.onload = () => {
         this.isKakaoMapLoaded = true;
         resolve();

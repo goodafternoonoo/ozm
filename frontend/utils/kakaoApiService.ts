@@ -2,7 +2,7 @@ import axios from 'axios';
 import { KAKAO_API_CONFIG } from '../config/api';
 
 // 카카오 JavaScript 키 (웹/앱에서 사용)
-const KAKAO_API_KEY = KAKAO_API_CONFIG.JAVASCRIPT_KEY;
+const KAKAO_API_KEY = KAKAO_API_CONFIG.RESTAPI_KEY;
 
 interface KakaoPlace {
   id: string;
@@ -206,6 +206,8 @@ export class KakaoApiService {
     longitude: number
   ): Promise<string | null> {
     try {
+      console.log('📍 좌표를 주소로 변환 시도:', { latitude, longitude });
+      
       const response = await axios.get(
         `${this.baseURL}/geo/coord2address.json`,
         {
@@ -221,14 +223,51 @@ export class KakaoApiService {
         }
       );
 
-      if (response.data.documents.length > 0) {
+      console.log('📍 coord2address 응답:', response.data);
+
+      if (response.data.documents && response.data.documents.length > 0) {
         const doc = response.data.documents[0];
-        return doc.address?.address_name || doc.road_address?.address_name || null;
+        // coord2address API는 address와 road_address 객체를 반환
+        const address = doc.address?.address_name || doc.road_address?.address_name || null;
+        console.log('✅ 주소 변환 성공:', address);
+        return address;
       }
+      
+      console.log('❌ 주소 정보 없음');
       return null;
     } catch (error) {
-      console.error('좌표 변환 실패:', error);
-      return null;
+      console.error('❌ 좌표 변환 실패:', error);
+      
+      // CORS 프록시를 통한 재시도
+      try {
+        console.log('📍 CORS 프록시로 좌표 변환 재시도...');
+        const proxyResponse = await axios.get(
+          `${this.corsProxy}${this.baseURL}/geo/coord2address.json`,
+          {
+            headers: {
+              'Authorization': `KakaoAK ${KAKAO_API_KEY}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            params: {
+              x: longitude,
+              y: latitude
+            }
+          }
+        );
+
+        if (proxyResponse.data.documents && proxyResponse.data.documents.length > 0) {
+          const doc = proxyResponse.data.documents[0];
+          const address = doc.address?.address_name || doc.road_address?.address_name || null;
+          console.log('✅ 프록시 주소 변환 성공:', address);
+          return address;
+        }
+        
+        return null;
+      } catch (proxyError) {
+        console.error('❌ 프록시 좌표 변환도 실패:', proxyError);
+        return null;
+      }
     }
   }
 

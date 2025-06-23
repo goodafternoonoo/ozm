@@ -5,6 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { KAKAO_API_CONFIG } from '@/config/api';
+import Cookies from 'js-cookie';
 
 const KAKAO_REST_API_KEY = KAKAO_API_CONFIG.RESTAPI_KEY;
 const KAKAO_CLIENT_SECRET = KAKAO_API_CONFIG.CLIENT_SECRET;
@@ -54,15 +55,19 @@ const LoginScreen: React.FC = () => {
         access_token: accessToken,
       });
 
-      // JWT 토큰 저장
-      const jwtToken = loginResponse.data.access_token;
-      // TODO: AsyncStorage.setItem('jwt_token', jwtToken);
+      // 응답 구조에 맞게 파싱
+      const { access_token, user } = loginResponse.data?.data || {};
+      // TODO: AsyncStorage.setItem('jwt_token', access_token);
       
       // 사용자 정보 설정 (백엔드에서 받은 정보 또는 카카오에서 직접 조회)
       setUserInfo({
-        nickname: loginResponse.data.user?.nickname || '사용자',
-        email: loginResponse.data.user?.email || '이메일 없음'
+        nickname: user?.nickname || '사용자',
+        email: user?.email || '이메일 없음'
       });
+
+      // 쿠키에 저장
+      Cookies.set('ozm_nickname', user?.nickname || '사용자', { expires: 7 });
+      Cookies.set('ozm_email', user?.email || '이메일 없음', { expires: 7 });
       
       setLoginSuccess(true);
       Alert.alert('로그인 성공', '카카오 로그인이 완료되었습니다!');
@@ -79,8 +84,21 @@ const LoginScreen: React.FC = () => {
     setLoginSuccess(false);
     setUserInfo(null);
     // TODO: AsyncStorage.removeItem('jwt_token');
+    // 쿠키에서 삭제
+    Cookies.remove('ozm_nickname');
+    Cookies.remove('ozm_email');
     Alert.alert('로그아웃', '로그아웃되었습니다.');
   };
+
+  useEffect(() => {
+    // 페이지 새로고침 시 쿠키에서 사용자 정보 복원
+    const nickname = Cookies.get('ozm_nickname');
+    const email = Cookies.get('ozm_email');
+    if (nickname && email) {
+      setUserInfo({ nickname, email });
+      setLoginSuccess(true);
+    }
+  }, []);
 
   const handleKakaoLogin = async () => {
     setLoading(true);

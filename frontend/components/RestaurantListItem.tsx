@@ -26,38 +26,45 @@ interface RestaurantListItemProps {
 const renderStars = (rating: number) => {
   const stars = [];
   for (let i = 1; i <= 5; i++) {
+    const starName = i <= Math.floor(rating) ? 'star' : 'star-outline';
+    const starColor = i <= Math.floor(rating) ? '#FFD700' : '#C7C7CC';
+    
     stars.push(
       <Ionicons
         key={i}
-        name={i <= rating ? 'star' : 'star-outline'}
+        name={starName}
         size={16}
-        color={i <= rating ? '#FFD700' : '#C7C7CC'}
+        color={starColor}
       />
     );
   }
-  return stars;
+  return <View style={{ flexDirection: 'row' }}>{stars}</View>;
 };
 
 export const RestaurantListItem: React.FC<RestaurantListItemProps> = ({ restaurant, onPress, onCall, onMap }) => (
   <TouchableOpacity style={NearbyStyles.restaurantCard} onPress={() => onPress?.(restaurant)}>
     <View style={NearbyStyles.restaurantHeader}>
       <Text style={NearbyStyles.restaurantName}>{restaurant.name}</Text>
-      <View style={NearbyStyles.ratingContainer}>
-        {renderStars(restaurant.rating)}
-        <Text style={NearbyStyles.ratingText}>{restaurant.rating.toFixed(1)}</Text>
-      </View>
+      {
+       <View style={NearbyStyles.ratingContainer}>
+         {renderStars(restaurant.rating)}
+         <Text style={NearbyStyles.ratingText}>{restaurant.rating.toFixed(1)}</Text>
+       </View>
+      }
     </View>
     <Text style={NearbyStyles.categoryText}>{restaurant.category}</Text>
     <Text style={NearbyStyles.addressText}>{restaurant.address}</Text>
     <View style={NearbyStyles.cardFooter}>
       <Text style={NearbyStyles.distanceText}>{restaurant.distanceFormatted}</Text>
+      {/* 전화 버튼 제거 - 조건부 렌더링 문제로 인해
       {restaurant.phone && (
-        <TouchableOpacity onPress={() => onCall?.(restaurant.phone)} style={NearbyStyles.phoneButton}>
-          <Ionicons name="call-outline" size={18} color="#007AFF" />
+        <TouchableOpacity style={NearbyStyles.phoneButton}>
+          <Ionicons name="call-outline" size={18} color="#007AFF"/>
         </TouchableOpacity>
       )}
+      */}
       <TouchableOpacity onPress={() => onMap?.(restaurant)} style={NearbyStyles.mapButton}>
-        <Ionicons name="map-outline" size={18} color="#007AFF" />
+        <Ionicons name="map-outline" size={18} color="#007AFF"/>
       </TouchableOpacity>
     </View>
   </TouchableOpacity>
