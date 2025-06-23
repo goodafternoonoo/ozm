@@ -139,3 +139,10 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="인증 실패"
             )
+
+get_current_user = AuthService.get_current_user
+
+__all__ = [
+    "AuthService",
+    "get_current_user",
+]

@@ -73,6 +73,14 @@ class Menu(Base):
     has_soup = Column(Boolean, default=False, index=True)
     has_meat = Column(Boolean, default=False, index=True)
 
+    # 추가: 재료, 조리시간, 요리타입, 매운맛, 표시순서, 활성화
+    ingredients = Column(String(1000), nullable=True)
+    cooking_time = Column(Integer, nullable=True)
+    cuisine_type = Column(String(50), nullable=True)
+    spicy_level = Column(Integer, nullable=True)
+    display_order = Column(Integer, nullable=True, index=True)
+    is_active = Column(Boolean, default=True, index=True)
+
     # 영양 정보
     calories = Column(Integer, nullable=True)
     protein = Column(Float, nullable=True)
@@ -84,8 +92,15 @@ class Menu(Base):
     difficulty = Column(String(20), nullable=True, index=True)  # easy, medium, hard
     rating = Column(Float, default=0.0)
     image_url = Column(String(500), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
 
     # 카테고리 연관관계
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)

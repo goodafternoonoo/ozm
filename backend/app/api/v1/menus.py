@@ -1,148 +1,185 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
+from app.models.menu import Menu
+from app.models.favorite import Favorite
 from app.schemas.menu import (
-    Menu,
+    MenuResponse,
     MenuCreate,
     MenuUpdate,
-    TimeSlot,
     FavoriteCreate,
     FavoriteResponse,
+    MenuSearchResponse,
 )
-from app.services.menu_service import MenuService, FavoriteService
+from app.services.menu_service import menu_service, favorite_service
+from app.services.auth_service import get_current_user
+from app.models.user import User
 import uuid
 
 router = APIRouter()
 
-# ------------------- 즐겨찾기(찜) API -------------------
+
+@router.post("/", response_model=MenuResponse, status_code=status.HTTP_201_CREATED)
+async def create_menu(
+    menu_data: MenuCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """새 메뉴 생성"""
+    try:
+        menu = await menu_service.create(db, menu_data.model_dump())
+        return MenuResponse.model_validate(menu)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"메뉴 생성 실패: {str(e)}"
+        )
 
 
+@router.get("/{menu_id}", response_model=MenuResponse)
+async def get_menu(menu_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    """ID로 메뉴 조회"""
+    menu = await menu_service.get_by_id(db, menu_id, load_relationships=True)
+    if not menu:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="메뉴를 찾을 수 없습니다."
+        )
+    return MenuResponse.model_validate(menu)
+
+
+@router.get("/", response_model=List[MenuResponse])
+async def get_menus(
+    skip: int = Query(0, ge=0, description="건너뛸 레코드 수"),
+    limit: int = Query(50, ge=1, le=100, description="가져올 레코드 수"),
+    category_id: Optional[uuid.UUID] = Query(None, description="카테고리 ID"),
+    db: AsyncSession = Depends(get_db),
+):
+    """메뉴 목록 조회"""
+    if category_id:
+        menus = await menu_service.get_menus_by_category(db, category_id, skip, limit)
+    else:
+        menus = await menu_service.get_all(db, skip, limit, load_relationships=True)
+
+    return [MenuResponse.model_validate(menu) for menu in menus]
+
+
+@router.get("/search/", response_model=MenuSearchResponse)
+async def search_menus(
+    q: str = Query(..., description="검색어"),
+    category_id: Optional[uuid.UUID] = Query(None, description="카테고리 ID"),
+    cuisine_type: Optional[str] = Query(None, description="요리 타입"),
+    difficulty: Optional[str] = Query(None, description="난이도"),
+    cooking_time: Optional[int] = Query(None, ge=1, description="최대 조리 시간(분)"),
+    skip: int = Query(0, ge=0, description="건너뛸 레코드 수"),
+    limit: int = Query(50, ge=1, le=100, description="가져올 레코드 수"),
+    db: AsyncSession = Depends(get_db),
+):
+    """메뉴 검색"""
+    menus = await menu_service.search_menus(
+        db=db,
+        query=q,
+        category_id=category_id,
+        cuisine_type=cuisine_type,
+        difficulty=difficulty,
+        cooking_time=cooking_time,
+        skip=skip,
+        limit=limit,
+    )
+
+    total = await menu_service.count(db)
+
+    return MenuSearchResponse(
+        items=[MenuResponse.model_validate(menu) for menu in menus],
+        total=total,
+        skip=skip,
+        limit=limit,
+    )
+
+
+@router.get("/popular/", response_model=List[MenuResponse])
+async def get_popular_menus(
+    limit: int = Query(10, ge=1, le=50, description="가져올 레코드 수"),
+    db: AsyncSession = Depends(get_db),
+):
+    """인기 메뉴 조회"""
+    menus = await menu_service.get_popular_menus(db, limit)
+    return [MenuResponse.model_validate(menu) for menu in menus]
+
+
+@router.put("/{menu_id}", response_model=MenuResponse)
+async def update_menu(
+    menu_id: uuid.UUID,
+    menu_data: MenuUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """메뉴 업데이트"""
+    menu = await menu_service.update(
+        db, menu_id, menu_data.model_dump(exclude_unset=True)
+    )
+    if not menu:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="메뉴를 찾을 수 없습니다."
+        )
+    return MenuResponse.model_validate(menu)
+
+
+# 즐겨찾기 관련 엔드포인트
 @router.post(
     "/favorites", response_model=FavoriteResponse, status_code=status.HTTP_201_CREATED
 )
 async def add_favorite(
-    favorite_data: FavoriteCreate, db: AsyncSession = Depends(get_db)
+    favorite_data: FavoriteCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """
-    즐겨찾기(찜) 추가 (user_id 기반)
-    - 입력: FavoriteCreate(user_id, menu_id)
-    - 출력: FavoriteResponse
-    """
-    favorite = await FavoriteService.add_favorite(db, favorite_data)
-    return FavoriteResponse.model_validate(favorite)
+    """즐겨찾기 추가"""
+    try:
+        favorite = await favorite_service.add_favorite(
+            db, current_user.id, favorite_data.menu_id
+        )
+        return FavoriteResponse.model_validate(favorite)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.get("/favorites/", response_model=List[MenuResponse])
+async def get_user_favorites(
+    skip: int = Query(0, ge=0, description="건너뛸 레코드 수"),
+    limit: int = Query(50, ge=1, le=100, description="가져올 레코드 수"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """사용자의 즐겨찾기 목록 조회"""
+    favorites = await favorite_service.get_user_favorites(
+        db, current_user.id, skip, limit
+    )
+    return [MenuResponse.model_validate(favorite.menu) for favorite in favorites]
 
 
 @router.delete("/favorites", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_favorite(
-    user_id: uuid.UUID = Query(..., description="유저 ID"),
     menu_id: uuid.UUID = Query(..., description="찜 해제할 메뉴 ID"),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """
-    즐겨찾기(찜) 삭제 (user_id 기반)
-    - 입력: user_id, menu_id
-    - 출력: 없음(204)
-    """
-    success = await FavoriteService.remove_favorite(db, user_id, menu_id)
+    """즐겨찾기 제거"""
+    success = await favorite_service.remove_favorite(db, current_user.id, menu_id)
     if not success:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Favorite not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="즐겨찾기를 찾을 수 없습니다."
         )
-
-
-@router.get("/favorites", response_model=List[FavoriteResponse])
-async def get_favorites(
-    user_id: uuid.UUID = Query(..., description="유저 ID"),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    회원별 즐겨찾기(찜) 목록 조회 (user_id 기반)
-    - 입력: user_id
-    - 출력: List[FavoriteResponse]
-    """
-    favorites = await FavoriteService.get_favorites_by_user(db, user_id)
-    return [FavoriteResponse.model_validate(fav) for fav in favorites]
-
-
-# ------------------- 메뉴 API -------------------
-
-
-@router.get("/", response_model=List[Menu])
-async def get_menus(
-    skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)
-):
-    """
-    모든 메뉴 목록 조회
-    - 입력: skip, limit
-    - 출력: List[Menu]
-    """
-    return await MenuService.get_all_menus(db, skip=skip, limit=limit)
-
-
-@router.get("/time-slot/{time_slot}", response_model=List[Menu])
-async def get_menus_by_time_slot(
-    time_slot: TimeSlot, limit: int = 10, db: AsyncSession = Depends(get_db)
-):
-    """
-    시간대별 메뉴 목록 조회
-    - 입력: time_slot, limit
-    - 출력: List[Menu]
-    """
-    return await MenuService.get_menus_by_time_slot(db, time_slot, limit)
-
-
-@router.get("/{menu_id}", response_model=Menu)
-async def get_menu(menu_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    """
-    특정 메뉴 상세 조회
-    - 입력: menu_id
-    - 출력: Menu
-    """
-    menu = await MenuService.get_menu_by_id(db, menu_id)
-    if not menu:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Menu not found"
-        )
-    return menu
-
-
-@router.post("/", response_model=Menu, status_code=status.HTTP_201_CREATED)
-async def create_menu(menu_data: MenuCreate, db: AsyncSession = Depends(get_db)):
-    """
-    새 메뉴 생성
-    - 입력: MenuCreate
-    - 출력: Menu
-    """
-    return await MenuService.create_menu(db, menu_data)
-
-
-@router.put("/{menu_id}", response_model=Menu)
-async def update_menu(
-    menu_id: uuid.UUID, menu_data: MenuUpdate, db: AsyncSession = Depends(get_db)
-):
-    """
-    메뉴 정보 수정
-    - 입력: menu_id, MenuUpdate
-    - 출력: Menu
-    """
-    menu = await MenuService.update_menu(db, menu_id, menu_data)
-    if not menu:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Menu not found"
-        )
-    return menu
 
 
 @router.delete("/{menu_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_menu(menu_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    """
-    메뉴 삭제
-    - 입력: menu_id
-    - 출력: 없음(204)
-    """
-    success = await MenuService.delete_menu(db, menu_id)
+async def delete_menu(
+    menu_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """메뉴 삭제"""
+    success = await menu_service.delete(db, menu_id)
     if not success:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Menu not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="메뉴를 찾을 수 없습니다."
         )

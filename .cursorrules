@@ -41,7 +41,6 @@
 
 ## 테스트 규칙
 - **백엔드**: pytest + pytest-asyncio 사용
-- **테스트 DB**: SQLite in-memory 사용
 - **커버리지**: 최소 80% 이상 유지
 - **통합 테스트**: API 엔드포인트 테스트 포함
 

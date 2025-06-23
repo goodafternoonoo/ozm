@@ -98,7 +98,7 @@ ENV=development
 
 # 데이터베이스
 DATABASE_URL=postgresql://user:password@localhost:5432/menu_recommendation
-TEST_DATABASE_URL=sqlite:///./test.db
+TEST_DATABASE_URL=postgresql://user:password@localhost:5432/menu_recommendation
 
 # 보안
 SECRET_KEY=your-secret-key-here

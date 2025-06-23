@@ -1,128 +1,199 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
-from app.models.menu import Menu, TimeSlot
+from sqlalchemy import select, and_, or_, func
+from sqlalchemy.orm import selectinload
+from app.models.menu import Menu
+from app.models.category import Category
 from app.models.favorite import Favorite
-from app.schemas.menu import MenuCreate, MenuUpdate, FavoriteCreate
+from app.services.base_service import BaseService
 import uuid
-from enum import Enum
 
 
-class MenuService:
-    """메뉴 관련 비즈니스 로직 서비스"""
+class MenuService(BaseService[Menu]):
+    """메뉴 관련 서비스"""
 
-    @staticmethod
-    async def get_menus_by_time_slot(
-        db: AsyncSession, time_slot: Union[str, Enum], limit: int = 10
+    def __init__(self):
+        super().__init__(Menu)
+
+    async def get_menus_by_category(
+        self, db: AsyncSession, category_id: uuid.UUID, skip: int = 0, limit: int = 50
     ) -> List[Menu]:
-        """시간대별 메뉴 조회"""
-        slot = time_slot.value if isinstance(time_slot, Enum) else time_slot
-        stmt = select(Menu).where(Menu.time_slot == slot).limit(limit)
+        """카테고리별 메뉴 조회"""
+        stmt = (
+            select(Menu)
+            .where(Menu.category_id == category_id)
+            .order_by(Menu.display_order, Menu.name)
+            .offset(skip)
+            .limit(limit)
+        )
         result = await db.execute(stmt)
         return result.scalars().all()
 
-    @staticmethod
-    async def get_menu_by_id(db: AsyncSession, menu_id: uuid.UUID) -> Optional[Menu]:
-        """ID로 메뉴 조회"""
-        stmt = select(Menu).where(Menu.id == menu_id)
+    async def search_menus(
+        self,
+        db: AsyncSession,
+        query: str,
+        category_id: Optional[uuid.UUID] = None,
+        cuisine_type: Optional[str] = None,
+        difficulty: Optional[str] = None,
+        cooking_time: Optional[int] = None,
+        skip: int = 0,
+        limit: int = 50,
+    ) -> List[Menu]:
+        """메뉴 검색 (다중 조건 지원)"""
+        conditions = []
+
+        # 텍스트 검색
+        if query:
+            search_condition = or_(
+                Menu.name.ilike(f"%{query}%"),
+                Menu.description.ilike(f"%{query}%"),
+                Menu.ingredients.ilike(f"%{query}%"),
+            )
+            conditions.append(search_condition)
+
+        # 카테고리 필터
+        if category_id:
+            conditions.append(Menu.category_id == category_id)
+
+        # 요리 타입 필터
+        if cuisine_type:
+            conditions.append(Menu.cuisine_type == cuisine_type)
+
+        # 난이도 필터
+        if difficulty:
+            conditions.append(Menu.difficulty == difficulty)
+
+        # 조리 시간 필터
+        if cooking_time:
+            conditions.append(Menu.cooking_time <= cooking_time)
+
+        # 활성 메뉴만 조회
+        conditions.append(Menu.is_active == True)
+
+        stmt = (
+            select(Menu)
+            .where(and_(*conditions))
+            .order_by(Menu.display_order, Menu.name)
+            .offset(skip)
+            .limit(limit)
+        )
+
+        result = await db.execute(stmt)
+        return result.scalars().all()
+
+    async def get_popular_menus(self, db: AsyncSession, limit: int = 10) -> List[Menu]:
+        """인기 메뉴 조회 (즐겨찾기 수 기준)"""
+        stmt = (
+            select(Menu, func.count(Favorite.id).label("favorite_count"))
+            .outerjoin(Favorite, Menu.id == Favorite.menu_id)
+            .where(Menu.is_active == True)
+            .group_by(Menu.id)
+            .order_by(func.count(Favorite.id).desc(), Menu.name)
+            .limit(limit)
+        )
+
+        result = await db.execute(stmt)
+        return [row[0] for row in result.all()]
+
+    async def get_menus_by_attributes(
+        self,
+        db: AsyncSession,
+        attributes: Dict[str, Any],
+        skip: int = 0,
+        limit: int = 50,
+    ) -> List[Menu]:
+        """속성별 메뉴 조회"""
+        conditions = [Menu.is_active == True]
+
+        # 매운맛 필터
+        if attributes.get("spicy_level"):
+            conditions.append(Menu.spicy_level == attributes["spicy_level"])
+
+        # 건강식 필터
+        if attributes.get("is_healthy"):
+            conditions.append(Menu.is_healthy == attributes["is_healthy"])
+
+        # 채식 필터
+        if attributes.get("is_vegetarian"):
+            conditions.append(Menu.is_vegetarian == attributes["is_vegetarian"])
+
+        # 빠른조리 필터
+        if attributes.get("is_quick"):
+            conditions.append(Menu.cooking_time <= 30)
+
+        stmt = (
+            select(Menu)
+            .where(and_(*conditions))
+            .order_by(Menu.display_order, Menu.name)
+            .offset(skip)
+            .limit(limit)
+        )
+
+        result = await db.execute(stmt)
+        return result.scalars().all()
+
+
+class FavoriteService(BaseService[Favorite]):
+    """즐겨찾기 관련 서비스"""
+
+    def __init__(self):
+        super().__init__(Favorite)
+
+    async def add_favorite(
+        self, db: AsyncSession, user_id: uuid.UUID, menu_id: uuid.UUID
+    ) -> Favorite:
+        """즐겨찾기 추가"""
+        # 중복 체크
+        existing = await self.get_favorite_by_user_and_menu(db, user_id, menu_id)
+        if existing:
+            raise ValueError("이미 찜한 메뉴입니다.")
+
+        favorite_data = {"user_id": user_id, "menu_id": menu_id, "is_active": True}
+        return await self.create(db, favorite_data)
+
+    async def get_favorite_by_user_and_menu(
+        self, db: AsyncSession, user_id: uuid.UUID, menu_id: uuid.UUID
+    ) -> Optional[Favorite]:
+        """사용자와 메뉴로 즐겨찾기 조회"""
+        stmt = select(Favorite).where(
+            and_(
+                Favorite.user_id == user_id,
+                Favorite.menu_id == menu_id,
+                Favorite.is_active == True,
+            )
+        )
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
-    @staticmethod
-    async def create_menu(db: AsyncSession, menu_data: MenuCreate) -> Menu:
-        """새 메뉴 생성"""
-        db_menu = Menu(**menu_data.model_dump())
-        db.add(db_menu)
-        await db.commit()
-        await db.refresh(db_menu)
-        return db_menu
-
-    @staticmethod
-    async def update_menu(
-        db: AsyncSession, menu_id: uuid.UUID, menu_data: MenuUpdate
-    ) -> Optional[Menu]:
-        """메뉴 업데이트"""
-        stmt = select(Menu).where(Menu.id == menu_id)
-        result = await db.execute(stmt)
-        db_menu = result.scalar_one_or_none()
-        if not db_menu:
-            return None
-        update_data = menu_data.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(db_menu, field, value)
-        await db.commit()
-        await db.refresh(db_menu)
-        return db_menu
-
-    @staticmethod
-    async def delete_menu(db: AsyncSession, menu_id: uuid.UUID) -> bool:
-        """메뉴 삭제"""
-        stmt = select(Menu).where(Menu.id == menu_id)
-        result = await db.execute(stmt)
-        db_menu = result.scalar_one_or_none()
-        if not db_menu:
-            return False
-        await db.delete(db_menu)
-        await db.commit()
-        return True
-
-    @staticmethod
-    async def get_all_menus(
-        db: AsyncSession, skip: int = 0, limit: int = 100
-    ) -> List[Menu]:
-        """모든 메뉴 조회 (페이징)"""
-        stmt = select(Menu).offset(skip).limit(limit)
+    async def get_user_favorites(
+        self, db: AsyncSession, user_id: uuid.UUID, skip: int = 0, limit: int = 50
+    ) -> List[Favorite]:
+        """사용자의 즐겨찾기 목록 조회"""
+        stmt = (
+            select(Favorite)
+            .options(selectinload(Favorite.menu))
+            .where(and_(Favorite.user_id == user_id, Favorite.is_active == True))
+            .order_by(Favorite.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
         result = await db.execute(stmt)
         return result.scalars().all()
 
-
-class FavoriteService:
-    """즐겨찾기(찜) 관련 비즈니스 로직 서비스"""
-
-    @staticmethod
-    async def add_favorite(db: AsyncSession, favorite_data):
-        """즐겨찾기(찜) 추가 (user_id 기반)"""
-        from app.models.favorite import Favorite
-
-        # 중복 체크
-        exists = await db.execute(
-            select(Favorite).where(
-                Favorite.user_id == favorite_data.user_id,
-                Favorite.menu_id == favorite_data.menu_id,
-            )
-        )
-        if exists.scalar_one_or_none():
-            raise Exception("이미 찜한 메뉴입니다.")
-        favorite = Favorite(
-            user_id=favorite_data.user_id,
-            menu_id=favorite_data.menu_id,
-            is_active=True,
-        )
-        db.add(favorite)
-        await db.commit()
-        await db.refresh(favorite)
-        return favorite
-
-    @staticmethod
-    async def get_favorites_by_user(db: AsyncSession, user_id):
-        from app.models.favorite import Favorite
-
-        result = await db.execute(select(Favorite).where(Favorite.user_id == user_id))
-        return result.scalars().all()
-
-    @staticmethod
-    async def remove_favorite(db: AsyncSession, user_id, menu_id):
-        from app.models.favorite import Favorite
-
-        result = await db.execute(
-            select(Favorite).where(
-                Favorite.user_id == user_id,
-                Favorite.menu_id == menu_id,
-            )
-        )
-        favorite = result.scalar_one_or_none()
+    async def remove_favorite(
+        self, db: AsyncSession, user_id: uuid.UUID, menu_id: uuid.UUID
+    ) -> bool:
+        """즐겨찾기 제거"""
+        favorite = await self.get_favorite_by_user_and_menu(db, user_id, menu_id)
         if not favorite:
             return False
-        await db.delete(favorite)
-        await db.commit()
+
+        # 논리적 삭제 (is_active = False)
+        await self.update(db, favorite.id, {"is_active": False})
         return True
+
+
+# 서비스 인스턴스 생성
+menu_service = MenuService()
+favorite_service = FavoriteService()

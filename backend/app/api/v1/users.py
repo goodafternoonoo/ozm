@@ -65,7 +65,7 @@ async def get_user_profile(
         )
 
     return UserProfile(
-        id=current_user.id,
+        id=str(current_user.id),
         nickname=current_user.nickname,
         username=current_user.username,
         email=current_user.email,
@@ -100,7 +100,7 @@ async def update_user_profile(
     await db.refresh(persistent_user)
 
     return UserProfile(
-        id=persistent_user.id,
+        id=str(persistent_user.id),
         nickname=persistent_user.nickname,
         username=persistent_user.username,
         email=persistent_user.email,

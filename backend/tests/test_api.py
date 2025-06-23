@@ -1,12 +1,14 @@
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock, AsyncMock
 from main import app
-from app.db.database import async_engine, Base
+from app.db.database import async_engine, Base, AsyncSessionLocal
 from app.db.init_db import init_db
+from app.models.user import User
 import uuid
 import os
+from app.services.auth_service import get_current_user
 
 
 @pytest_asyncio.fixture(autouse=True, scope="function")
@@ -21,6 +23,24 @@ async def setup_db():
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     await init_db()
+
+
+# 테스트용 사용자 생성
+@pytest_asyncio.fixture
+async def test_user():
+    """테스트용 사용자 생성"""
+    user = User(
+        id=uuid.uuid4(),
+        username="testuser",
+        email="test@example.com",
+        nickname="테스트유저",
+        kakao_id="123456789",
+        is_active=True,
+    )
+    async with AsyncSessionLocal() as session:
+        session.add(user)
+        await session.commit()
+    return user
 
 
 # ---------------- 카카오 로그인 ----------------
@@ -84,50 +104,67 @@ async def test_create_and_get_category():
 
 # ---------------- 메뉴 ----------------
 @pytest.mark.asyncio
-async def test_create_and_get_menu():
-    """메뉴 생성 및 조회"""
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        # 카테고리 먼저 생성
-        cat_payload = {
-            "name": "테스트 메뉴 카테고리",
-            "description": "테스트용 카테고리",
-            "country": "한국",
-            "cuisine_type": "한식",
-            "is_active": True,
-            "display_order": 1,
-            "icon_url": None,
-            "color_code": "#654321",
-        }
-        cat_resp = await client.post("/api/v1/categories/", json=cat_payload)
-        category_id = cat_resp.json()["id"]
-        menu_payload = {
-            "name": "테스트 메뉴",
-            "description": "테스트용 메뉴입니다.",
-            "time_slot": "breakfast",
-            "is_spicy": True,
-            "is_healthy": False,
-            "is_vegetarian": False,
-            "is_quick": True,
-            "has_rice": True,
-            "has_soup": False,
-            "has_meat": True,
-            "calories": 500,
-            "protein": 20.5,
-            "carbs": 60.0,
-            "fat": 10.0,
-            "prep_time": 20,
-            "difficulty": "easy",
-            "rating": 4.2,
-            "image_url": None,
-            "category_id": category_id,
-        }
-        resp = await client.post("/api/v1/menus/", json=menu_payload)
-        assert resp.status_code == 201
-        menu_id = resp.json()["id"]
-        resp = await client.get(f"/api/v1/menus/{menu_id}")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["name"] == menu_payload["name"]
+def test_create_and_get_menu(test_user):
+    app.dependency_overrides[get_current_user] = lambda: test_user
+
+    async def run():
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            # 카테고리 먼저 생성
+            cat_payload = {
+                "name": "테스트 메뉴 카테고리",
+                "description": "테스트용 카테고리",
+                "country": "한국",
+                "cuisine_type": "한식",
+                "is_active": True,
+                "display_order": 1,
+                "icon_url": None,
+                "color_code": "#654321",
+            }
+            cat_resp = await client.post("/api/v1/categories/", json=cat_payload)
+            category_id = cat_resp.json()["id"]
+            menu_payload = {
+                "name": "테스트 메뉴",
+                "description": "테스트용 메뉴입니다.",
+                "ingredients": "김치, 밥, 계란",
+                "cooking_time": 20,
+                "difficulty": "easy",
+                "cuisine_type": "한식",
+                "spicy_level": 3,
+                "is_healthy": False,
+                "is_vegetarian": False,
+                "calories": 500,
+                "protein": 20.5,
+                "carbs": 60.0,
+                "fat": 10.0,
+                "image_url": None,
+                "display_order": 1,
+                "is_active": True,
+                "time_slot": "breakfast",
+                "is_spicy": True,
+                "is_quick": True,
+                "has_rice": True,
+                "has_soup": False,
+                "has_meat": True,
+                "category_id": category_id,
+            }
+            menu_resp = await client.post("/api/v1/menus/", json=menu_payload)
+            print("menu_resp.status_code=", menu_resp.status_code)
+            print("menu_resp.text=", menu_resp.text)
+            try:
+                print("menu_resp.json()=", menu_resp.json())
+            except Exception as e:
+                print("menu_resp.json() error:", e)
+            assert menu_resp.status_code == 201
+            menu_id = menu_resp.json()["id"]
+            resp = await client.get(f"/api/v1/menus/{menu_id}")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["name"] == menu_payload["name"]
+
+    import asyncio
+
+    asyncio.run(run())
+    app.dependency_overrides = {}
 
 
 # ---------------- 질문 ----------------
@@ -251,72 +288,75 @@ async def test_quiz_recommendation_required_filters():
 
 # ---------------- 즐겨찾기(찜) ----------------
 @pytest.mark.asyncio
-async def test_favorite_add_and_get():
-    """즐겨찾기(찜) 추가 및 조회 (user_id 기반)"""
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        # 테스트용 유저 생성
-        user_payload = {
-            "username": "testuser",
-            "email": "test@example.com",
-            "nickname": "테스트유저",
-        }
-        user_resp = await client.post("/api/v1/users/", json=user_payload)
-        user_id = user_resp.json()["id"]
+def test_favorite_add_and_get(test_user):
+    app.dependency_overrides[get_current_user] = lambda: test_user
 
-        # 카테고리/메뉴 생성
-        cat_payload = {
-            "name": "찜 카테고리",
-            "description": "찜용 카테고리",
-            "country": "한국",
-            "cuisine_type": "한식",
-            "is_active": True,
-            "display_order": 1,
-            "icon_url": None,
-            "color_code": "#abcdef",
-        }
-        cat_resp = await client.post("/api/v1/categories/", json=cat_payload)
-        category_id = cat_resp.json()["id"]
-        menu_payload = {
-            "name": "찜 메뉴",
-            "description": "찜용 메뉴",
-            "time_slot": "lunch",
-            "is_spicy": False,
-            "is_healthy": True,
-            "is_vegetarian": True,
-            "is_quick": False,
-            "has_rice": False,
-            "has_soup": True,
-            "has_meat": False,
-            "calories": 350,
-            "protein": 12.0,
-            "carbs": 45.0,
-            "fat": 8.0,
-            "prep_time": 15,
-            "difficulty": "medium",
-            "rating": 3.8,
-            "image_url": None,
-            "category_id": category_id,
-        }
-        menu_resp = await client.post("/api/v1/menus/", json=menu_payload)
-        menu_id = menu_resp.json()["id"]
+    async def run():
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            # 카테고리/메뉴 생성
+            cat_payload = {
+                "name": "찜 카테고리",
+                "description": "찜용 카테고리",
+                "country": "한국",
+                "cuisine_type": "한식",
+                "is_active": True,
+                "display_order": 1,
+                "icon_url": None,
+                "color_code": "#abcdef",
+            }
+            cat_resp = await client.post("/api/v1/categories/", json=cat_payload)
+            category_id = cat_resp.json()["id"]
+            menu_payload = {
+                "name": "찜 메뉴",
+                "description": "찜용 메뉴",
+                "ingredients": "두부, 고추장, 마늘",
+                "cooking_time": 15,
+                "difficulty": "medium",
+                "cuisine_type": "한식",
+                "spicy_level": 2,
+                "is_healthy": True,
+                "is_vegetarian": True,
+                "calories": 350,
+                "protein": 12.0,
+                "carbs": 45.0,
+                "fat": 8.0,
+                "image_url": None,
+                "display_order": 1,
+                "is_active": True,
+                "time_slot": "lunch",
+                "is_spicy": False,
+                "is_quick": False,
+                "has_rice": True,
+                "has_soup": False,
+                "has_meat": False,
+                "category_id": category_id,
+            }
+            menu_resp = await client.post("/api/v1/menus/", json=menu_payload)
+            assert menu_resp.status_code == 201
+            menu_id = menu_resp.json()["id"]
+            # 즐겨찾기 추가
+            fav_payload = {"menu_id": menu_id}
+            resp = await client.post("/api/v1/menus/favorites", json=fav_payload)
+            assert resp.status_code == 201
+            fav_id = resp.json()["id"]
+            # 즐겨찾기 조회
+            resp = await client.get("/api/v1/menus/favorites/")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert len(data) > 0
+            assert data[0]["id"] == menu_id
+            # 삭제
+            print(f"menu_id for delete: {menu_id}, type: {type(menu_id)}")
+            resp = await client.delete(
+                "/api/v1/menus/favorites", params={"menu_id": menu_id}
+            )
+            print("delete resp.text=", resp.text)
+            assert resp.status_code == 204
 
-        # 즐겨찾기 추가
-        fav_payload = {"user_id": user_id, "menu_id": menu_id}
-        resp = await client.post("/api/v1/menus/favorites", json=fav_payload)
-        assert resp.status_code == 201
-        fav_id = resp.json()["id"]
+    import asyncio
 
-        # 즐겨찾기 조회
-        resp = await client.get(f"/api/v1/menus/favorites?user_id={user_id}")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data[0]["menu_id"] == menu_id
-
-        # 삭제
-        resp = await client.delete(
-            f"/api/v1/menus/favorites?user_id={user_id}&menu_id={menu_id}"
-        )
-        assert resp.status_code == 204
+    asyncio.run(run())
+    app.dependency_overrides = {}
 
 
 # ---------------- 사용자 프로필 ----------------
