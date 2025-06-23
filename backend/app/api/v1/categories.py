@@ -14,6 +14,7 @@ from app.schemas.category import (
     CategoryListResponse,
 )
 from app.schemas.common import succeed_response, error_response
+from app.schemas.error_codes import ErrorCode
 
 router = APIRouter()
 
@@ -105,8 +106,15 @@ async def get_category(category_id: UUID, db: AsyncSession = Depends(get_db)):
     category = await service.get_category_by_id(category_id)
 
     if not category:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="카테고리를 찾을 수 없습니다."
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    "카테고리를 찾을 수 없습니다.",
+                    code=404,
+                    error_code=ErrorCode.CATEGORY_NOT_FOUND,
+                )
+            ),
+            status_code=404,
         )
 
     return JSONResponse(
@@ -126,8 +134,15 @@ async def update_category(
     category = await service.update_category(category_id, category_data)
 
     if not category:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="카테고리를 찾을 수 없습니다."
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    "카테고리를 찾을 수 없습니다.",
+                    code=404,
+                    error_code=ErrorCode.CATEGORY_NOT_FOUND,
+                )
+            ),
+            status_code=404,
         )
 
     return JSONResponse(
@@ -145,8 +160,15 @@ async def delete_category(category_id: UUID, db: AsyncSession = Depends(get_db))
     success = await service.delete_category(category_id)
 
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="카테고리를 찾을 수 없습니다."
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    "카테고리를 찾을 수 없습니다.",
+                    code=404,
+                    error_code=ErrorCode.CATEGORY_NOT_FOUND,
+                )
+            ),
+            status_code=404,
         )
 
     return JSONResponse(

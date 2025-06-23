@@ -23,9 +23,16 @@ def succeed_response(data: Any = None) -> dict:
     )
 
 
-def error_response(message: str, code: int = 400, detail: Any = None) -> dict:
+def error_response(
+    message: str, code: int = 400, error_code: str = None, detail: Any = None
+) -> dict:
     return ErrorResponse(
         success=False,
         data=None,
-        error={"message": message, "code": code, "detail": detail},
+        error={
+            "message": message,
+            "code": error_code or code,
+            "http_status": code,
+            "detail": detail,
+        },
     ).model_dump(by_alias=True)

@@ -77,7 +77,8 @@ async def test_kakao_login_fail(mock_kakao_get):
         assert resp.status_code == 401
         error = resp.json()["error"]
         assert error["message"] == "카카오 인증 실패"
-        assert error["code"] == 401
+        assert error["code"] == "E1001"
+        assert error["http_status"] == 401
 
 
 # ---------------- 카테고리 ----------------

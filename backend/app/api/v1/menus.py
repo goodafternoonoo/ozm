@@ -19,6 +19,7 @@ import uuid
 from app.schemas.common import succeed_response, error_response
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+from app.schemas.error_codes import ErrorCode
 
 router = APIRouter()
 
@@ -39,8 +40,15 @@ async def create_menu(
             status_code=status.HTTP_201_CREATED,
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=f"메뉴 생성 실패: {str(e)}"
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    f"메뉴 생성 실패: {str(e)}",
+                    code=400,
+                    error_code=ErrorCode.MENU_CREATE_FAILED,
+                )
+            ),
+            status_code=400,
         )
 
 
@@ -49,8 +57,15 @@ async def get_menu(menu_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """ID로 메뉴 조회"""
     menu = await menu_service.get_by_id(db, menu_id, load_relationships=True)
     if not menu:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="메뉴를 찾을 수 없습니다."
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    "메뉴를 찾을 수 없습니다.",
+                    code=404,
+                    error_code=ErrorCode.MENU_NOT_FOUND,
+                )
+            ),
+            status_code=404,
         )
     return JSONResponse(
         content=jsonable_encoder(succeed_response(MenuResponse.model_validate(menu)))
@@ -142,8 +157,15 @@ async def update_menu(
         db, menu_id, menu_data.model_dump(exclude_unset=True)
     )
     if not menu:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="메뉴를 찾을 수 없습니다."
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    "메뉴를 찾을 수 없습니다.",
+                    code=404,
+                    error_code=ErrorCode.MENU_NOT_FOUND,
+                )
+            ),
+            status_code=404,
         )
     return JSONResponse(
         content=jsonable_encoder(succeed_response(MenuResponse.model_validate(menu))),
@@ -172,7 +194,14 @@ async def add_favorite(
             status_code=status.HTTP_201_CREATED,
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    str(e), code=400, error_code=ErrorCode.FAVORITE_DUPLICATE
+                )
+            ),
+            status_code=400,
+        )
 
 
 @router.get("/favorites/", response_model=List[MenuResponse])
