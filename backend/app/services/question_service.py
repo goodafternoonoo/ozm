@@ -10,8 +10,32 @@ class QuestionService:
 
     @staticmethod
     async def get_all_questions(db: AsyncSession) -> List[Question]:
-        """모든 질문 조회 (order 순)"""
-        stmt = select(Question).order_by(Question.order)
+        """모든 질문 조회 (display_order 순)"""
+        stmt = select(Question).order_by(Question.display_order)
+        result = await db.execute(stmt)
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_active_questions(db: AsyncSession) -> List[Question]:
+        """활성화된 질문만 조회 (display_order 순)"""
+        stmt = (
+            select(Question)
+            .where(Question.is_active == True)
+            .order_by(Question.display_order)
+        )
+        result = await db.execute(stmt)
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_questions_by_type(
+        db: AsyncSession, question_type: str
+    ) -> List[Question]:
+        """타입별 질문 조회 (display_order 순)"""
+        stmt = (
+            select(Question)
+            .where(Question.question_type == question_type, Question.is_active == True)
+            .order_by(Question.display_order)
+        )
         result = await db.execute(stmt)
         return result.scalars().all()
 

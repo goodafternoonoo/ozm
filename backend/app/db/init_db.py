@@ -1,11 +1,25 @@
+import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.db.database import async_engine, Base
-from app.models.menu import Menu
+from app.db.database import async_engine, Base, AsyncSessionLocal
+from app.models import (
+    User,
+    Menu,
+    Category,
+    Question,
+    UserAnswer,
+    Recommendation,
+    Favorite,
+    UserPreference,
+    UserInteraction,
+)
+from app.models.menu import TimeSlot
 from app.models.question import Question
 from app.models.user_answer import UserAnswer
-from app.models.recommendation import RecommendationLog
+from app.models.recommendation import Recommendation
 from app.models.category import Category
+import uuid
+import json
 
 
 async def init_db():
@@ -90,9 +104,15 @@ async def create_sample_data():
         for category_data in sample_categories:
             category = Category(**category_data)
             db.add(category)
-            await db.flush()  # id 확보
+        await db.commit()  # 카테고리 ID 확보를 위해 commit
+
+        # 생성된 카테고리들의 ID를 다시 조회하여 매핑
+        for category_data in sample_categories:
+            result = await db.execute(
+                select(Category).where(Category.name == category_data["name"])
+            )
+            category = result.scalar_one()
             category_name_to_id[category_data["name"]] = category.id
-        await db.commit()
         # 샘플 메뉴 데이터 (카테고리 연관관계 반영)
         sample_menus = [
             # 한식(한국 전통 요리) - 10개 이상
@@ -529,58 +549,39 @@ async def create_sample_data():
         sample_questions = [
             {
                 "text": "매운 음식을 좋아하시나요?",
-                "order": 1,
-                "options": ["매운맛", "순한맛"],
-                "weight_map": {
-                    "매운맛": {"is_spicy": 1.0},
-                    "순한맛": {"is_spicy": -1.0},
-                },
+                "question_type": "preference",
+                "options": json.dumps(["매운맛", "순한맛"]),
+                "display_order": 1,
             },
             {
                 "text": "어떤 식단을 선호하시나요?",
-                "order": 2,
-                "options": ["건강식", "일반식", "채식"],
-                "weight_map": {
-                    "건강식": {"is_healthy": 1.0},
-                    "채식": {"is_vegetarian": 1.0},
-                    "일반식": {},
-                },
+                "question_type": "preference",
+                "options": json.dumps(["건강식", "일반식", "채식"]),
+                "display_order": 2,
             },
             {
                 "text": "조리 시간은 어느 정도를 원하시나요?",
-                "order": 3,
-                "options": ["빠른조리", "일반조리"],
-                "weight_map": {"빠른조리": {"is_quick": 1.0}, "일반조리": {}},
+                "question_type": "preference",
+                "options": json.dumps(["빠른조리", "일반조리"]),
+                "display_order": 3,
             },
             {
                 "text": "어떤 종류의 음식을 좋아하시나요?",
-                "order": 4,
-                "options": ["밥류", "국물요리", "고기요리"],
-                "weight_map": {
-                    "밥류": {"has_rice": 1.0},
-                    "국물요리": {"has_soup": 1.0},
-                    "고기요리": {"has_meat": 1.0},
-                },
+                "question_type": "preference",
+                "options": json.dumps(["밥류", "국물요리", "고기요리"]),
+                "display_order": 4,
             },
             {
                 "text": "식사 시간대는 언제인가요?",
-                "order": 5,
-                "options": ["아침", "점심", "저녁"],
-                "weight_map": {
-                    "아침": {"time_slot": "breakfast"},
-                    "점심": {"time_slot": "lunch"},
-                    "저녁": {"time_slot": "dinner"},
-                },
+                "question_type": "filter",
+                "options": json.dumps(["아침", "점심", "저녁"]),
+                "display_order": 5,
             },
             {
                 "text": "선호하는 난이도는?",
-                "order": 6,
-                "options": ["쉬움", "보통", "어려움"],
-                "weight_map": {
-                    "쉬움": {"difficulty": "easy"},
-                    "보통": {"difficulty": "medium"},
-                    "어려움": {"difficulty": "hard"},
-                },
+                "question_type": "preference",
+                "options": json.dumps(["쉬움", "보통", "어려움"]),
+                "display_order": 6,
             },
         ]
         for question_data in sample_questions:
@@ -588,3 +589,7 @@ async def create_sample_data():
             db.add(question)
         await db.commit()
         print("샘플 데이터가 성공적으로 생성되었습니다.")
+
+
+if __name__ == "__main__":
+    asyncio.run(init_db())

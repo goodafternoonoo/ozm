@@ -87,21 +87,20 @@ class MenuRecommendation(BaseModel):
 
 # 즐겨찾기(찜) 관련 스키마
 class FavoriteBase(BaseModel):
-    """즐겨찾기(찜) 공통 필드"""
+    """즐겨찾기(찜) 공통 필드 (user_id 기반)"""
 
-    session_id: Optional[str] = None
-    user_id: Optional[uuid.UUID] = None
+    user_id: uuid.UUID
     menu_id: uuid.UUID
 
 
 class FavoriteCreate(FavoriteBase):
-    """즐겨찾기(찜) 생성 요청 스키마"""
+    """즐겨찾기(찜) 생성 요청 스키마 (user_id 기반)"""
 
     pass
 
 
 class FavoriteResponse(FavoriteBase):
-    """즐겨찾기(찜) 응답 스키마"""
+    """즐겨찾기(찜) 응답 스키마 (user_id 기반)"""
 
     id: uuid.UUID
     created_at: datetime

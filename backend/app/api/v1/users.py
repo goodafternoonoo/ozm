@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import AsyncSessionLocal
 from app.models.user import User
-from app.schemas.user import UserProfile, UserProfileUpdate
+from app.schemas.user import UserProfile, UserProfileUpdate, UserResponse
 from app.services.auth_service import AuthService
 from sqlalchemy import select
 from typing import List
+import uuid
 
 router = APIRouter()
 
@@ -16,6 +17,41 @@ async def get_db():
 
 
 get_current_user = AuthService.get_current_user
+
+
+@router.post("/", response_model=UserResponse)
+async def create_user(user_data: dict, db: AsyncSession = Depends(get_db)):
+    """사용자 생성 (테스트용)"""
+    # 중복 체크
+    existing_user = await db.execute(
+        select(User).where(User.username == user_data["username"])
+    )
+    if existing_user.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="이미 존재하는 사용자명입니다",
+        )
+
+    # 새 유저 생성
+    new_user = User(
+        id=uuid.uuid4(),
+        username=user_data["username"],
+        email=user_data["email"],
+        nickname=user_data["nickname"],
+        is_active=True,
+    )
+
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+
+    return UserResponse(
+        id=new_user.id,
+        username=new_user.username,
+        email=new_user.email,
+        nickname=new_user.nickname,
+        created_at=new_user.created_at,
+    )
 
 
 @router.get("/profile", response_model=UserProfile)

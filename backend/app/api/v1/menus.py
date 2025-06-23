@@ -25,8 +25,8 @@ async def add_favorite(
     favorite_data: FavoriteCreate, db: AsyncSession = Depends(get_db)
 ):
     """
-    즐겨찾기(찜) 추가
-    - 입력: FavoriteCreate(session_id, menu_id)
+    즐겨찾기(찜) 추가 (user_id 기반)
+    - 입력: FavoriteCreate(user_id, menu_id)
     - 출력: FavoriteResponse
     """
     favorite = await FavoriteService.add_favorite(db, favorite_data)
@@ -35,16 +35,16 @@ async def add_favorite(
 
 @router.delete("/favorites", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_favorite(
-    session_id: str = Query(..., description="세션 ID"),
+    user_id: uuid.UUID = Query(..., description="유저 ID"),
     menu_id: uuid.UUID = Query(..., description="찜 해제할 메뉴 ID"),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    즐겨찾기(찜) 삭제
-    - 입력: session_id, menu_id
+    즐겨찾기(찜) 삭제 (user_id 기반)
+    - 입력: user_id, menu_id
     - 출력: 없음(204)
     """
-    success = await FavoriteService.remove_favorite(db, session_id, menu_id)
+    success = await FavoriteService.remove_favorite(db, user_id, menu_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Favorite not found"
@@ -53,15 +53,15 @@ async def remove_favorite(
 
 @router.get("/favorites", response_model=List[FavoriteResponse])
 async def get_favorites(
-    session_id: str = Query(..., description="세션 ID"),
+    user_id: uuid.UUID = Query(..., description="유저 ID"),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    세션별 즐겨찾기(찜) 목록 조회
-    - 입력: session_id
+    회원별 즐겨찾기(찜) 목록 조회 (user_id 기반)
+    - 입력: user_id
     - 출력: List[FavoriteResponse]
     """
-    favorites = await FavoriteService.get_favorites_by_session(db, session_id)
+    favorites = await FavoriteService.get_favorites_by_user(db, user_id)
     return [FavoriteResponse.model_validate(fav) for fav in favorites]
 
 

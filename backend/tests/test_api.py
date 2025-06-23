@@ -6,10 +6,17 @@ from main import app
 from app.db.database import async_engine, Base
 from app.db.init_db import init_db
 import uuid
+import os
 
 
 @pytest_asyncio.fixture(autouse=True, scope="function")
 async def setup_db():
+    # 테스트 환경 설정
+    os.environ["TESTING"] = "true"
+    os.environ["DATABASE_URL"] = (
+        "postgresql://user:password@localhost:5432/menu_recommendation_test"
+    )
+
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
@@ -245,8 +252,17 @@ async def test_quiz_recommendation_required_filters():
 # ---------------- 즐겨찾기(찜) ----------------
 @pytest.mark.asyncio
 async def test_favorite_add_and_get():
-    """즐겨찾기(찜) 추가 및 조회"""
+    """즐겨찾기(찜) 추가 및 조회 (user_id 기반)"""
     async with AsyncClient(app=app, base_url="http://test") as client:
+        # 테스트용 유저 생성
+        user_payload = {
+            "username": "testuser",
+            "email": "test@example.com",
+            "nickname": "테스트유저",
+        }
+        user_resp = await client.post("/api/v1/users/", json=user_payload)
+        user_id = user_resp.json()["id"]
+
         # 카테고리/메뉴 생성
         cat_payload = {
             "name": "찜 카테고리",
@@ -283,23 +299,22 @@ async def test_favorite_add_and_get():
         }
         menu_resp = await client.post("/api/v1/menus/", json=menu_payload)
         menu_id = menu_resp.json()["id"]
-        session_id = "fav-session-1"
-        fav_payload = {"session_id": session_id, "menu_id": menu_id}
+
+        # 즐겨찾기 추가
+        fav_payload = {"user_id": user_id, "menu_id": menu_id}
         resp = await client.post("/api/v1/menus/favorites", json=fav_payload)
-        print(resp.text)  # 422 에러 상세 메시지 확인
         assert resp.status_code == 201
         fav_id = resp.json()["id"]
-        # 조회 (session_id만 전달, 경로 명확히)
-        resp = await client.get(
-            "/api/v1/menus/favorites", params={"session_id": session_id}
-        )
-        print(resp.text)  # 422 에러 상세 메시지 확인
+
+        # 즐겨찾기 조회
+        resp = await client.get(f"/api/v1/menus/favorites?user_id={user_id}")
         assert resp.status_code == 200
         data = resp.json()
-        assert any(fav["id"] == fav_id for fav in data)
+        assert data[0]["menu_id"] == menu_id
+
         # 삭제
         resp = await client.delete(
-            f"/api/v1/menus/favorites?session_id={session_id}&menu_id={menu_id}"
+            f"/api/v1/menus/favorites?user_id={user_id}&menu_id={menu_id}"
         )
         assert resp.status_code == 204
 

@@ -80,48 +80,49 @@ class FavoriteService:
     """즐겨찾기(찜) 관련 비즈니스 로직 서비스"""
 
     @staticmethod
-    async def add_favorite(db: AsyncSession, favorite_data: FavoriteCreate) -> Favorite:
-        """즐겨찾기(찜) 추가"""
-        favorite = Favorite(**favorite_data.model_dump())
+    async def add_favorite(db: AsyncSession, favorite_data):
+        """즐겨찾기(찜) 추가 (user_id 기반)"""
+        from app.models.favorite import Favorite
+
+        # 중복 체크
+        exists = await db.execute(
+            select(Favorite).where(
+                Favorite.user_id == favorite_data.user_id,
+                Favorite.menu_id == favorite_data.menu_id,
+            )
+        )
+        if exists.scalar_one_or_none():
+            raise Exception("이미 찜한 메뉴입니다.")
+        favorite = Favorite(
+            user_id=favorite_data.user_id,
+            menu_id=favorite_data.menu_id,
+            is_active=True,
+        )
         db.add(favorite)
         await db.commit()
         await db.refresh(favorite)
         return favorite
 
     @staticmethod
-    async def remove_favorite(
-        db: AsyncSession,
-        session_id: str = None,
-        menu_id: uuid.UUID = None,
-        user_id: uuid.UUID = None,
-    ) -> bool:
-        """즐겨찾기(찜) 삭제 (user_id 또는 session_id 기반)"""
-        if user_id:
-            stmt = delete(Favorite).where(
-                Favorite.user_id == str(user_id), Favorite.menu_id == str(menu_id)
+    async def get_favorites_by_user(db: AsyncSession, user_id):
+        from app.models.favorite import Favorite
+
+        result = await db.execute(select(Favorite).where(Favorite.user_id == user_id))
+        return result.scalars().all()
+
+    @staticmethod
+    async def remove_favorite(db: AsyncSession, user_id, menu_id):
+        from app.models.favorite import Favorite
+
+        result = await db.execute(
+            select(Favorite).where(
+                Favorite.user_id == user_id,
+                Favorite.menu_id == menu_id,
             )
-        else:
-            stmt = delete(Favorite).where(
-                Favorite.session_id == session_id, Favorite.menu_id == str(menu_id)
-            )
-        result = await db.execute(stmt)
+        )
+        favorite = result.scalar_one_or_none()
+        if not favorite:
+            return False
+        await db.delete(favorite)
         await db.commit()
-        return result.rowcount > 0
-
-    @staticmethod
-    async def get_favorites_by_session(
-        db: AsyncSession, session_id: str
-    ) -> List[Favorite]:
-        """세션별 즐겨찾기(찜) 목록 조회"""
-        stmt = select(Favorite).where(Favorite.session_id == session_id)
-        result = await db.execute(stmt)
-        return result.scalars().all()
-
-    @staticmethod
-    async def get_favorites_by_user(
-        db: AsyncSession, user_id: uuid.UUID
-    ) -> List[Favorite]:
-        """회원별 즐겨찾기(찜) 목록 조회"""
-        stmt = select(Favorite).where(Favorite.user_id == str(user_id))
-        result = await db.execute(stmt)
-        return result.scalars().all()
+        return True

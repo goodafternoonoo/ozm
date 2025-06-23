@@ -30,3 +30,41 @@ class QuizRecommendationRequest(BaseModel):
 
     answers: Dict[str, str]
     session_id: Optional[str] = None
+
+
+class PersonalizedRecommendationRequest(BaseModel):
+    """개인화 추천 요청 스키마"""
+
+    session_id: str
+    limit: Optional[int] = 10
+
+
+class HybridRecommendationRequest(BaseModel):
+    """하이브리드 추천 요청 스키마"""
+
+    answers: Dict[str, str]
+    session_id: str
+    limit: Optional[int] = 10
+
+
+class CollaborativeRecommendationRequest(BaseModel):
+    """협업 필터링 추천 요청 스키마"""
+
+    session_id: str
+    limit: Optional[int] = 10
+
+
+class PreferenceAnalysisRequest(BaseModel):
+    """선호도 분석 요청 스키마"""
+
+    session_id: str
+
+
+class InteractionRecordRequest(BaseModel):
+    """상호작용 기록 요청 스키마"""
+
+    session_id: str
+    menu_id: Optional[str] = None
+    interaction_type: str  # click, favorite, search, recommend_select
+    interaction_strength: Optional[float] = 1.0
+    extra_data: Optional[Dict[str, Any]] = None

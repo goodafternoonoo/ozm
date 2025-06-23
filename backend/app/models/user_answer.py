@@ -1,46 +1,32 @@
 import uuid
-from sqlalchemy import Column, String, DateTime, JSON
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
-import sqlalchemy.types as types
-
-
-class GUID(types.TypeDecorator):
-    """
-    플랫폼에 따라 UUID를 String으로 변환 (PostgreSQL/SQLite 호환)
-    """
-
-    impl = String(36)
-
-    def load_dialect_impl(self, dialect):
-        if dialect.name == "postgresql":
-            from sqlalchemy.dialects.postgresql import UUID
-
-            return dialect.type_descriptor(UUID())
-        return dialect.type_descriptor(String(36))
-
-    def process_bind_param(self, value, dialect):
-        if value is not None:
-            return str(value)
-        return value
-
-    def process_result_value(self, value, dialect):
-        return value
 
 
 class UserAnswer(Base):
-    """
-    사용자 답변 테이블
-    - session_id: 세션별 식별자
-    - answers: 모든 답변(JSON)
-    """
+    """사용자 답변 모델"""
 
     __tablename__ = "user_answers"
 
-    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    session_id = Column(String(100), nullable=False, index=True)
-    answers = Column(JSON, nullable=False)  # 모든 답변을 JSON으로 저장
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )  # 익명 사용자 허용
+    question_id = Column(
+        UUID(as_uuid=True), ForeignKey("questions.id"), nullable=True
+    )  # 일반 답변 허용
+    answer = Column(Text, nullable=False)  # 사용자의 답변
+    session_id = Column(String(100), nullable=True, index=True)  # 세션 식별자
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    # 연관관계
+    user = relationship("User", back_populates="answers")
+    question = relationship("Question")
+
     def __repr__(self):
-        return f"<UserAnswer(session_id='{self.session_id}', created_at='{self.created_at}')>"
+        return (
+            f"<UserAnswer(user_id='{self.user_id}', question_id='{self.question_id}')>"
+        )

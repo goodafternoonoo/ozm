@@ -12,7 +12,9 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = "postgresql://user:password@localhost:5432/menu_recommendation"
-    test_database_url: str = "sqlite:///./test.db"
+    test_database_url: str = (
+        "postgresql://user:password@localhost:5432/menu_recommendation_test"
+    )
 
     # API
     api_host: str = "0.0.0.0"

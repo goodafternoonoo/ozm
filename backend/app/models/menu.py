@@ -9,9 +9,11 @@ from sqlalchemy import (
     Boolean,
     Float,
     ForeignKey,
+    DateTime,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from app.db.database import Base
 
 
@@ -55,35 +57,50 @@ class Menu(Base):
 
     __tablename__ = "menus"
 
-    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    name = Column(String(100), nullable=False, index=True)
-    description = Column(Text)
-    time_slot = Column(String(9), nullable=False, index=True)  # 아침/점심/저녁
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(200), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    time_slot = Column(
+        String(20), nullable=False, index=True
+    )  # breakfast, lunch, dinner, snack
 
     # 메뉴 속성
-    is_spicy = Column(Boolean, default=False)
-    is_healthy = Column(Boolean, default=False)
-    is_vegetarian = Column(Boolean, default=False)
-    is_quick = Column(Boolean, default=False)
-    has_rice = Column(Boolean, default=False)
-    has_soup = Column(Boolean, default=False)
-    has_meat = Column(Boolean, default=False)
+    is_spicy = Column(Boolean, default=False, index=True)
+    is_healthy = Column(Boolean, default=False, index=True)
+    is_vegetarian = Column(Boolean, default=False, index=True)
+    is_quick = Column(Boolean, default=False, index=True)  # 빠른 조리
+    has_rice = Column(Boolean, default=False, index=True)
+    has_soup = Column(Boolean, default=False, index=True)
+    has_meat = Column(Boolean, default=False, index=True)
 
     # 영양 정보
-    calories = Column(Integer, default=0)
-    protein = Column(Float, default=0.0)
-    carbs = Column(Float, default=0.0)
-    fat = Column(Float, default=0.0)
+    calories = Column(Integer, nullable=True)
+    protein = Column(Float, nullable=True)
+    carbs = Column(Float, nullable=True)
+    fat = Column(Float, nullable=True)
 
     # 기타 정보
-    prep_time = Column(Integer, default=0)  # 준비 시간(분)
-    difficulty = Column(String(50), default="easy")  # 난이도
+    prep_time = Column(Integer, nullable=True)  # 조리 시간 (분)
+    difficulty = Column(String(20), nullable=True, index=True)  # easy, medium, hard
     rating = Column(Float, default=0.0)
-    image_url = Column(String(255))
+    image_url = Column(String(500), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # 카테고리 연관관계
-    category_id = Column(GUID(), ForeignKey("categories.id"), nullable=True)
+    category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
     category = relationship("Category", back_populates="menus")
+
+    # 연관관계
+    favorites = relationship(
+        "Favorite", back_populates="menu", cascade="all, delete-orphan"
+    )
+    interactions = relationship(
+        "UserInteraction", back_populates="menu", cascade="all, delete-orphan"
+    )
+    recommendations = relationship(
+        "Recommendation", back_populates="menu", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Menu(name='{self.name}', time_slot='{self.time_slot}')>"

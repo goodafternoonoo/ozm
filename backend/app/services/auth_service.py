@@ -59,8 +59,11 @@ class AuthService:
         user = result.scalar_one_or_none()
         if user:
             return user
-        # 신규 생성
-        user = User(kakao_id=kakao_id, nickname=nickname, email=email)
+        # 신규 생성 - username 필드 설정 (NOT NULL 제약 만족)
+        username = nickname or f"user_{kakao_id}"
+        user = User(
+            kakao_id=kakao_id, nickname=nickname, email=email, username=username
+        )
         db.add(user)
         await db.commit()
         await db.refresh(user)
