@@ -9,9 +9,18 @@ from app.models.user import User
 import uuid
 import os
 from app.services.auth_service import get_current_user
+import asyncio
+import random
 
 
-@pytest_asyncio.fixture(autouse=True, scope="function")
+@pytest.fixture(scope="session")
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest_asyncio.fixture(autouse=True, scope="session")
 async def setup_db():
     # 테스트 환경 설정
     os.environ["TESTING"] = "true"
@@ -28,13 +37,13 @@ async def setup_db():
 # 테스트용 사용자 생성
 @pytest_asyncio.fixture
 async def test_user():
-    """테스트용 사용자 생성"""
+    """테스트용 사용자 생성 (고유 값 사용)"""
     user = User(
         id=uuid.uuid4(),
-        username="testuser",
-        email="test@example.com",
+        username=f"testuser_{uuid.uuid4()}",
+        email=f"test_{random.randint(1, 100000)}@example.com",
         nickname="테스트유저",
-        kakao_id="123456789",
+        kakao_id=str(uuid.uuid4()),
         is_active=True,
     )
     async with AsyncSessionLocal() as session:
@@ -162,8 +171,6 @@ def test_create_and_get_menu(test_user):
             assert resp.status_code == 200
             data = resp.json()["data"]
             assert data["name"] == menu_payload["name"]
-
-    import asyncio
 
     asyncio.run(run())
     app.dependency_overrides = {}
@@ -353,8 +360,6 @@ def test_favorite_add_and_get(test_user):
             )
             print("delete resp.text=", resp.text)
             assert resp.status_code == 204
-
-    import asyncio
 
     asyncio.run(run())
     app.dependency_overrides = {}
