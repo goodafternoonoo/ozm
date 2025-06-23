@@ -16,24 +16,9 @@ from app.schemas.category import (
 from app.schemas.common import succeed_response, error_response
 from app.schemas.error_codes import ErrorCode
 from app.models.category import Category
+from app.core.utils import category_to_dict
 
 router = APIRouter()
-
-
-def category_to_dict(category: Category) -> dict:
-    return {
-        "id": str(category.id),
-        "name": category.name,
-        "description": category.description,
-        "country": category.country,
-        "cuisine_type": category.cuisine_type,
-        "is_active": category.is_active,
-        "display_order": category.display_order,
-        "icon_url": category.icon_url,
-        "color_code": category.color_code,
-        # menu_count는 get_categories_with_menu_count에서만 사용
-        "menu_count": getattr(category, "menu_count", None),
-    }
 
 
 @router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)

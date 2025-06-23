@@ -20,50 +20,9 @@ from app.schemas.common import succeed_response, error_response
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from app.schemas.error_codes import ErrorCode
+from app.core.utils import menu_to_dict, favorite_to_dict
 
 router = APIRouter()
-
-
-def menu_to_dict(menu: Menu) -> dict:
-    return {
-        "id": str(menu.id),
-        "name": menu.name,
-        "description": menu.description,
-        "time_slot": menu.time_slot,
-        "is_spicy": menu.is_spicy,
-        "is_healthy": menu.is_healthy,
-        "is_vegetarian": menu.is_vegetarian,
-        "is_quick": menu.is_quick,
-        "has_rice": menu.has_rice,
-        "has_soup": menu.has_soup,
-        "has_meat": menu.has_meat,
-        "ingredients": menu.ingredients,
-        "cooking_time": menu.cooking_time,
-        "cuisine_type": menu.cuisine_type,
-        "spicy_level": menu.spicy_level,
-        "display_order": menu.display_order,
-        "is_active": menu.is_active,
-        "calories": menu.calories,
-        "protein": menu.protein,
-        "carbs": menu.carbs,
-        "fat": menu.fat,
-        "prep_time": menu.prep_time,
-        "difficulty": menu.difficulty,
-        "rating": menu.rating,
-        "image_url": menu.image_url,
-        "created_at": menu.created_at,
-        "updated_at": menu.updated_at,
-        "category_id": menu.category_id,
-    }
-
-
-def favorite_to_dict(favorite) -> dict:
-    return {
-        "id": str(favorite.id),
-        "user_id": str(favorite.user_id),
-        "menu_id": str(favorite.menu_id),
-        "created_at": favorite.created_at,
-    }
 
 
 @router.post("/", response_model=MenuResponse, status_code=status.HTTP_201_CREATED)
