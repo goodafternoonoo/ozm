@@ -19,25 +19,28 @@ class Settings(BaseSettings):
     app_name: str = Field("OZM Menu Recommendation", description="애플리케이션 이름")
     version: str = Field("1.0.0", description="애플리케이션 버전")
     debug: bool = Field(False, description="디버그 모드")
-    env: str = os.getenv("ENV", "dev")  # 환경 구분 (dev/prod 등)
+    env: str = Field("dev", description="환경 구분 (dev/prod)")
 
     # 데이터베이스 설정
     database_url: str = Field(
-        os.getenv("DATABASE_URL"),
+        ...,  # 필수값으로 변경
         description="메인 데이터베이스 URL",
     )
     test_database_url: str = Field(
-        os.getenv("TEST_DATABASE_URL"),
+        ...,  # 필수값으로 변경
         description="테스트 데이터베이스 URL",
     )
 
     # JWT 설정
     jwt_secret_key: str = Field(
-        "your-super-secret-jwt-key-that-is-at-least-32-characters-long",
-        description="JWT 시크릿 키",
+        "your-super-secret-jwt-key-that-is-at-least-32-characters-long-for-development-only",
+        description="JWT 시크릿 키 (최소 32자)",
     )
     jwt_algorithm: str = Field("HS256", description="JWT 알고리즘")
     jwt_expire_minutes: int = Field(10080, description="JWT 만료 시간(분)")  # 7일
+    jwt_refresh_expire_minutes: int = Field(
+        43200, description="JWT 리프레시 만료 시간(분)"
+    )  # 30일
 
     # 카카오 설정
     kakao_client_id: Optional[str] = Field(None, description="카카오 클라이언트 ID")
@@ -51,6 +54,11 @@ class Settings(BaseSettings):
         ["http://localhost:3000", "http://localhost:8080"],
         description="CORS 허용 오리진",
     )
+    cors_allow_credentials: bool = Field(True, description="CORS 자격 증명 허용")
+    cors_allow_methods: list = Field(
+        ["GET", "POST", "PUT", "DELETE", "OPTIONS"], description="CORS 허용 메서드"
+    )
+    cors_allow_headers: list = Field(["*"], description="CORS 허용 헤더")
 
     # API 설정
     api_prefix: str = Field("/api/v1", description="API 접두사")
@@ -73,6 +81,12 @@ class Settings(BaseSettings):
     allowed_file_types: list = Field(
         ["jpg", "jpeg", "png", "gif"], description="허용된 파일 타입"
     )
+
+    # 보안 설정
+    rate_limit_per_minute: int = Field(60, description="분당 요청 제한")
+    rate_limit_per_hour: int = Field(1000, description="시간당 요청 제한")
+    password_min_length: int = Field(8, description="최소 비밀번호 길이")
+    session_timeout_minutes: int = Field(30, description="세션 타임아웃(분)")
 
     @field_validator("database_url", "test_database_url")
     @classmethod
@@ -106,6 +120,23 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in v.split(",")]
         return v
 
+    @field_validator("env")
+    @classmethod
+    def validate_env(cls, v):
+        """환경 설정 검증"""
+        if v not in ["dev", "prod", "test"]:
+            raise ValueError("환경은 dev, prod, test 중 하나여야 합니다.")
+        return v
+
+    def get_cors_origins(self) -> list:
+        """환경별 CORS 오리진 반환"""
+        if self.env == "prod":
+            # 프로덕션에서는 설정된 오리진만 허용
+            return self.cors_origins
+        else:
+            # 개발/테스트 환경에서는 모든 오리진 허용
+            return ["*"]
+
 
 @lru_cache()
 def get_settings() -> Settings:
@@ -120,6 +151,11 @@ settings = get_settings()
 def is_testing() -> bool:
     """테스트 환경인지 확인"""
     return os.getenv("TESTING", "false").lower() == "true"
+
+
+def is_production() -> bool:
+    """프로덕션 환경인지 확인"""
+    return settings.env == "prod"
 
 
 def get_database_url() -> str:
