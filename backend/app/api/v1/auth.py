@@ -6,6 +6,7 @@ from app.schemas.user import UserResponse, Token, LoginResponse
 from app.models.user import User
 from pydantic import BaseModel
 from typing import Optional
+from app.schemas.common import succeed_response
 
 router = APIRouter()
 
@@ -31,10 +32,12 @@ async def kakao_login(req: KakaoLoginRequest, db: AsyncSession = Depends(get_db)
     user = await AuthService.get_or_create_user_by_kakao(db, kakao_userinfo)
     jwt_token = AuthService.create_jwt_token(user)
 
-    return LoginResponse(
-        access_token=jwt_token,
-        token_type="bearer",
-        user=UserResponse.model_validate(user),
+    return succeed_response(
+        LoginResponse(
+            access_token=jwt_token,
+            token_type="bearer",
+            user=UserResponse.model_validate(user),
+        )
     )
 
 
@@ -56,7 +59,7 @@ async def get_current_user_info(
 
     try:
         user = await AuthService.get_current_user(db, token)
-        return UserResponse.model_validate(user)
+        return succeed_response(UserResponse.model_validate(user))
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
@@ -79,6 +82,6 @@ async def get_user_by_id(
 
     try:
         user = await AuthService.get_user_by_id(db, user_id)
-        return UserResponse.model_validate(user)
+        return succeed_response(UserResponse.model_validate(user))
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

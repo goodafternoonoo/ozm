@@ -17,6 +17,7 @@ from app.services.preference_service import PreferenceService
 from app.services.auth_service import AuthService
 from app.models.menu import TimeSlot as ModelTimeSlot
 import uuid
+from app.schemas.common import succeed_response
 
 router = APIRouter()
 
@@ -54,10 +55,12 @@ async def get_simple_recommendations(
         user_id=user_id,
         limit=5,
     )
-    return RecommendationResponse(
-        recommendations=recommendations,
-        session_id=session_id,
-        total_count=len(recommendations),
+    return succeed_response(
+        RecommendationResponse(
+            recommendations=recommendations,
+            session_id=session_id,
+            total_count=len(recommendations),
+        )
     )
 
 
@@ -91,10 +94,12 @@ async def get_quiz_recommendations(
         user_id=user_id,
         limit=5,
     )
-    return RecommendationResponse(
-        recommendations=recommendations,
-        session_id=session_id,
-        total_count=len(recommendations),
+    return succeed_response(
+        RecommendationResponse(
+            recommendations=recommendations,
+            session_id=session_id,
+            total_count=len(recommendations),
+        )
     )
 
 
@@ -127,10 +132,12 @@ async def get_collaborative_recommendations(
         user_id=user_id,
         limit=limit,
     )
-    return RecommendationResponse(
-        recommendations=recommendations,
-        session_id=session_id,
-        total_count=len(recommendations),
+    return succeed_response(
+        RecommendationResponse(
+            recommendations=recommendations,
+            session_id=session_id,
+            total_count=len(recommendations),
+        )
     )
 
 
@@ -159,7 +166,7 @@ async def get_preference_analysis(
     analysis = await PreferenceService.get_preference_analysis(
         db=db, session_id=session_id, user_id=user_id
     )
-    return analysis
+    return succeed_response(analysis)
 
 
 @router.post("/interaction")
@@ -191,11 +198,13 @@ async def record_interaction(
         db=db, interaction_data=interaction
     )
 
-    return {
-        "message": "상호작용이 성공적으로 기록되었습니다",
-        "interaction_id": str(recorded_interaction.id),
-        "preference_updated": True,
-    }
+    return succeed_response(
+        {
+            "message": "상호작용이 성공적으로 기록되었습니다",
+            "interaction_id": str(recorded_interaction.id),
+            "preference_updated": True,
+        }
+    )
 
 
 @router.get("/collaborative-users", response_model=List[CollaborativeRecommendation])

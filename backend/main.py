@@ -6,6 +6,7 @@ from app.core.logging import get_logger, setup_logging
 from app.core.middleware import setup_middleware
 from app.api.v1.router import api_router
 from app.db.init_db import init_db
+from app.schemas.common import error_response
 import time
 
 # 로깅 설정 초기화
@@ -96,12 +97,9 @@ async def not_found_handler(request: Request, exc):
     """404 에러 핸들러"""
     return JSONResponse(
         status_code=404,
-        content={
-            "error": "Not Found",
-            "detail": "요청한 리소스를 찾을 수 없습니다.",
-            "path": str(request.url.path),
-            "method": request.method,
-        },
+        content=error_response(
+            message="Not Found", code=404, detail="요청한 리소스를 찾을 수 없습니다."
+        ),
     )
 
 
@@ -111,12 +109,11 @@ async def internal_error_handler(request: Request, exc):
     logger.error(f"Internal server error: {str(exc)}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={
-            "error": "Internal Server Error",
-            "detail": "서버 내부 오류가 발생했습니다.",
-            "path": str(request.url.path),
-            "method": request.method,
-        },
+        content=error_response(
+            message="Internal Server Error",
+            code=500,
+            detail="서버 내부 오류가 발생했습니다.",
+        ),
     )
 
 

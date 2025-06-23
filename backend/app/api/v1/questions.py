@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.schemas.question import Question, QuestionCreate
 from app.services.question_service import QuestionService
+from app.schemas.common import succeed_response
 
 router = APIRouter()
 

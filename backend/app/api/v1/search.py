@@ -6,6 +6,7 @@ from app.models.menu import Menu
 from app.models.category import Category
 from typing import List, Optional
 from app.schemas.menu import MenuResponse
+from app.schemas.common import succeed_response
 
 router = APIRouter()
 
@@ -108,7 +109,7 @@ async def search_menus(
     result = await db.execute(query)
     menus = result.scalars().all()
 
-    return menus
+    return succeed_response([MenuResponse.model_validate(menu) for menu in menus])
 
 
 @router.get("/categories", response_model=List[dict])
@@ -138,18 +139,20 @@ async def search_categories(
     result = await db.execute(query)
     categories = result.scalars().all()
 
-    return [
-        {
-            "id": cat.id,
-            "name": cat.name,
-            "description": cat.description,
-            "country": cat.country,
-            "cuisine_type": cat.cuisine_type,
-            "color_code": cat.color_code,
-            "icon_url": cat.icon_url,
-        }
-        for cat in categories
-    ]
+    return succeed_response(
+        [
+            {
+                "id": cat.id,
+                "name": cat.name,
+                "description": cat.description,
+                "country": cat.country,
+                "cuisine_type": cat.cuisine_type,
+                "color_code": cat.color_code,
+                "icon_url": cat.icon_url,
+            }
+            for cat in categories
+        ]
+    )
 
 
 @router.get("/stats", response_model=dict)
@@ -181,9 +184,11 @@ async def get_search_stats(db: AsyncSession = Depends(get_db)):
     ratings = [r for r in rating_result.scalars().all() if r is not None]
     avg_rating = sum(ratings) / len(ratings) if ratings else 0
 
-    return {
-        "total_menus": total_menus,
-        "time_slot_distribution": time_slot_stats,
-        "country_distribution": country_stats,
-        "average_rating": round(avg_rating, 2),
-    }
+    return succeed_response(
+        {
+            "total_menus": total_menus,
+            "time_slot_distribution": time_slot_stats,
+            "country_distribution": country_stats,
+            "average_rating": round(avg_rating, 2),
+        }
+    )

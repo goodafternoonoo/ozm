@@ -16,6 +16,7 @@ from app.services.menu_service import menu_service, favorite_service
 from app.services.auth_service import get_current_user
 from app.models.user import User
 import uuid
+from app.schemas.common import succeed_response
 
 router = APIRouter()
 
@@ -29,7 +30,7 @@ async def create_menu(
     """새 메뉴 생성"""
     try:
         menu = await menu_service.create(db, menu_data.model_dump())
-        return MenuResponse.model_validate(menu)
+        return succeed_response(MenuResponse.model_validate(menu))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=f"메뉴 생성 실패: {str(e)}"
@@ -44,7 +45,7 @@ async def get_menu(menu_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="메뉴를 찾을 수 없습니다."
         )
-    return MenuResponse.model_validate(menu)
+    return succeed_response(MenuResponse.model_validate(menu))
 
 
 @router.get("/", response_model=List[MenuResponse])
@@ -60,7 +61,7 @@ async def get_menus(
     else:
         menus = await menu_service.get_all(db, skip, limit, load_relationships=True)
 
-    return [MenuResponse.model_validate(menu) for menu in menus]
+    return succeed_response([MenuResponse.model_validate(menu) for menu in menus])
 
 
 @router.get("/search/", response_model=MenuSearchResponse)
@@ -88,11 +89,13 @@ async def search_menus(
 
     total = await menu_service.count(db)
 
-    return MenuSearchResponse(
-        items=[MenuResponse.model_validate(menu) for menu in menus],
-        total=total,
-        skip=skip,
-        limit=limit,
+    return succeed_response(
+        MenuSearchResponse(
+            items=[MenuResponse.model_validate(menu) for menu in menus],
+            total=total,
+            skip=skip,
+            limit=limit,
+        )
     )
 
 
@@ -103,7 +106,7 @@ async def get_popular_menus(
 ):
     """인기 메뉴 조회"""
     menus = await menu_service.get_popular_menus(db, limit)
-    return [MenuResponse.model_validate(menu) for menu in menus]
+    return succeed_response([MenuResponse.model_validate(menu) for menu in menus])
 
 
 @router.put("/{menu_id}", response_model=MenuResponse)
@@ -121,7 +124,7 @@ async def update_menu(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="메뉴를 찾을 수 없습니다."
         )
-    return MenuResponse.model_validate(menu)
+    return succeed_response(MenuResponse.model_validate(menu))
 
 
 # 즐겨찾기 관련 엔드포인트
@@ -138,7 +141,7 @@ async def add_favorite(
         favorite = await favorite_service.add_favorite(
             db, current_user.id, favorite_data.menu_id
         )
-        return FavoriteResponse.model_validate(favorite)
+        return succeed_response(FavoriteResponse.model_validate(favorite))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -154,7 +157,9 @@ async def get_user_favorites(
     favorites = await favorite_service.get_user_favorites(
         db, current_user.id, skip, limit
     )
-    return [MenuResponse.model_validate(favorite.menu) for favorite in favorites]
+    return succeed_response(
+        [MenuResponse.model_validate(favorite.menu) for favorite in favorites]
+    )
 
 
 @router.delete("/favorites", status_code=status.HTTP_204_NO_CONTENT)
@@ -169,6 +174,7 @@ async def remove_favorite(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="즐겨찾기를 찾을 수 없습니다."
         )
+    return succeed_response()
 
 
 @router.delete("/{menu_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -183,3 +189,4 @@ async def delete_menu(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="메뉴를 찾을 수 없습니다."
         )
+    return succeed_response()
