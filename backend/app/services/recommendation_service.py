@@ -5,7 +5,11 @@ from sqlalchemy.orm import selectinload
 from app.models.menu import Menu, TimeSlot
 from app.models.recommendation import Recommendation
 from app.models.user_answer import UserAnswer
-from app.models.user_preference import UserPreference, UserInteraction
+from app.models.user_preference import (
+    UserPreference,
+    UserInteraction,
+    RecommendationLog,
+)
 from app.schemas.menu import MenuRecommendation, MenuResponse
 from app.services.preference_service import PreferenceService
 import uuid
@@ -13,6 +17,7 @@ import random
 import json
 from datetime import datetime
 from app.core.utils import menu_to_dict
+from app.core.config_weights import get_weight_set
 
 
 class RecommendationService:
@@ -236,24 +241,29 @@ class RecommendationService:
     def _calculate_personalized_score(
         menu: Menu, preference: UserPreference, time_weight: float
     ) -> float:
-        """개인화 점수 계산"""
+        """
+        ab_group별로 가중치 세트 다르게 적용 (config_weights.py 연동)
+        """
+        ab_group = getattr(preference, "ab_group", None) or "A"
+        weights = get_weight_set(ab_group)
+
         score = 5.0  # 기본 점수
 
-        # 메뉴 속성과 선호도 매칭
+        # 메뉴 속성별 가중치 적용
         if menu.is_spicy:
-            score += preference.spicy_preference * 3.0
+            score += preference.spicy_preference * weights["spicy"]
         if menu.is_healthy:
-            score += preference.healthy_preference * 3.0
+            score += preference.healthy_preference * weights["healthy"]
         if menu.is_vegetarian:
-            score += preference.vegetarian_preference * 4.0
+            score += preference.vegetarian_preference * weights["vegetarian"]
         if menu.is_quick:
-            score += preference.quick_preference * 2.0
+            score += preference.quick_preference * weights["quick"]
         if menu.has_rice:
-            score += preference.rice_preference * 2.0
+            score += preference.rice_preference * weights["rice"]
         if menu.has_soup:
-            score += preference.soup_preference * 2.0
+            score += preference.soup_preference * weights["soup"]
         if menu.has_meat:
-            score += preference.meat_preference * 2.0
+            score += preference.meat_preference * weights["meat"]
 
         # 시간대 가중치 적용
         score *= time_weight
@@ -501,7 +511,7 @@ class RecommendationService:
         recommendations: List[MenuRecommendation],
         rec_type: str,
     ):
-        """추천 로그 저장"""
+        """추천 로그 저장 (Recommendation + RecommendationLog)"""
         # 각 추천 메뉴에 대해 개별 Recommendation 레코드 생성
         for rec in recommendations:
             log = Recommendation(
@@ -512,3 +522,89 @@ class RecommendationService:
                 reason=rec.reason,
             )
             db.add(log)
+
+        # ab_group, 가중치 세트, 추천 메뉴 리스트 등 RecommendationLog에 저장
+        # (UserPreference에서 ab_group, 가중치 세트 추출)
+        stmt = (
+            select(UserPreference)
+            .where(UserPreference.session_id == session_id)
+            .limit(1)
+        )
+        result = await db.execute(stmt)
+        preference = result.scalar_one_or_none()
+        ab_group = getattr(preference, "ab_group", None) if preference else None
+        weight_set = get_weight_set(ab_group)
+        import json as _json
+
+        recommended_menus = _json.dumps(
+            [
+                {
+                    "menu_id": str(rec.menu.id),
+                    "menu_name": rec.menu.name,
+                    "score": rec.score,
+                }
+                for rec in recommendations
+            ],
+            ensure_ascii=False,
+        )
+        log_entry = RecommendationLog(
+            user_id=getattr(preference, "user_id", None),
+            session_id=session_id,
+            ab_group=ab_group,
+            weight_set=_json.dumps(weight_set, ensure_ascii=False),
+            recommended_menus=recommended_menus,
+            action_type=rec_type,
+        )
+        db.add(log_entry)
+        await db.commit()
+
+    @staticmethod
+    async def get_ab_group_statistics(
+        db: AsyncSession,
+        days: int = 7,
+        action_types: list = ["click", "favorite", "recommend_select"],
+    ) -> dict:
+        """
+        ab_group별 추천 성공률(클릭률, 즐겨찾기율 등) 집계
+        - 최근 days일 기준, action_types별로 집계
+        - 반환: {ab_group: {action_type: 비율, ...}, ...}
+        """
+        from sqlalchemy import func
+        from datetime import datetime, timedelta
+
+        since = datetime.now() - timedelta(days=days)
+        # 전체 추천 로그 중 기간 내 ab_group/action_type별 카운트 집계
+        stmt = (
+            db.query(
+                RecommendationLog.ab_group,
+                RecommendationLog.action_type,
+                func.count().label("cnt"),
+            )
+            .filter(RecommendationLog.created_at >= since)
+            .filter(RecommendationLog.action_type.in_(action_types))
+            .group_by(RecommendationLog.ab_group, RecommendationLog.action_type)
+        )
+        result = await db.execute(stmt)
+        rows = result.fetchall()
+
+        # 전체 ab_group별 추천 로그 수
+        total_stmt = (
+            db.query(RecommendationLog.ab_group, func.count().label("total"))
+            .filter(RecommendationLog.created_at >= since)
+            .group_by(RecommendationLog.ab_group)
+        )
+        total_result = await db.execute(total_stmt)
+        total_rows = total_result.fetchall()
+        total_map = {row.ab_group: row.total for row in total_rows}
+
+        # 비율 계산
+        stats = {}
+        for row in rows:
+            ab_group = row.ab_group or "A"
+            action_type = row.action_type
+            cnt = row.cnt
+            total = total_map.get(ab_group, 1)
+            if ab_group not in stats:
+                stats[ab_group] = {}
+            stats[ab_group][action_type] = cnt / total
+        return stats

@@ -24,12 +24,16 @@ class UserPreferenceBase(BaseModel):
     # 국가별 선호도
     country_preferences: Dict[str, float] = Field(default_factory=dict)
 
+    # A/B 테스트 그룹 (예: 'A', 'B', 'C')
+    ab_group: Optional[str] = None
+
 
 class UserPreferenceCreate(UserPreferenceBase):
     """사용자 선호도 생성 스키마"""
 
     user_id: Optional[uuid.UUID] = None
     session_id: str
+    ab_group: Optional[str] = None
 
 
 class UserPreferenceUpdate(BaseModel):
@@ -46,6 +50,7 @@ class UserPreferenceUpdate(BaseModel):
     lunch_preference: Optional[float] = Field(None, ge=0.0, le=1.0)
     dinner_preference: Optional[float] = Field(None, ge=0.0, le=1.0)
     country_preferences: Optional[Dict[str, float]] = None
+    ab_group: Optional[str] = None
 
 
 class UserPreference(UserPreferenceBase):
@@ -56,6 +61,7 @@ class UserPreference(UserPreferenceBase):
     session_id: str
     total_interactions: int
     last_updated: datetime
+    ab_group: Optional[str] = None
 
     @field_serializer("last_updated")
     def serialize_last_updated(self, value):

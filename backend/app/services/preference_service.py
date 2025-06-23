@@ -16,6 +16,7 @@ from app.schemas.user_preference import (
 )
 import numpy as np
 from datetime import datetime, timedelta
+import random
 
 
 class PreferenceService:
@@ -39,7 +40,11 @@ class PreferenceService:
         preference = result.scalar_one_or_none()
 
         if not preference:
-            preference = UserPreference(session_id=session_id, user_id=user_id)
+            ab_group = random.choice(["A", "B", "C"])
+            # A/B 테스트 그룹 무작위 할당
+            preference = UserPreference(
+                session_id=session_id, user_id=user_id, ab_group=ab_group
+            )
             db.add(preference)
             await db.commit()
             await db.refresh(preference)
