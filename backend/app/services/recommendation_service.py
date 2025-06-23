@@ -20,8 +20,6 @@ from app.schemas.recommendation import (
 )
 from app.services.preference_service import PreferenceService
 import uuid
-import random
-import json
 from datetime import datetime, timedelta
 from app.core.utils import menu_to_dict
 

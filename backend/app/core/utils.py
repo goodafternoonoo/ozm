@@ -1,19 +1,20 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 from sqlalchemy.orm import DeclarativeMeta
 import uuid
 from datetime import datetime
 
 
-def orm_to_dict(obj: Any, fields: list[str]) -> Dict[str, Any]:
+def orm_to_dict(obj: Any, fields: List[str]) -> Dict[str, Any]:
     """
     SQLAlchemy ORM 객체를 dict로 변환합니다.
+
     Args:
-        obj: SQLAlchemy ORM 인스턴스
-        fields: 변환할 필드명 리스트
+        obj (Any): SQLAlchemy ORM 인스턴스
+        fields (List[str]): 변환할 필드명 리스트
     Returns:
-        dict: 변환된 딕셔너리
+        Dict[str, Any]: 변환된 딕셔너리
     """
-    result = {}
+    result: Dict[str, Any] = {}
     for field in fields:
         value = getattr(obj, field, None)
         # UUID, datetime 등은 그대로 넘기고, Pydantic에서 직렬화
@@ -21,9 +22,14 @@ def orm_to_dict(obj: Any, fields: list[str]) -> Dict[str, Any]:
     return result
 
 
-def category_to_dict(category: Any) -> dict:
+def category_to_dict(category: Any) -> Dict[str, Any]:
     """
     Category ORM 객체를 dict로 변환합니다.
+
+    Args:
+        category (Any): Category ORM 인스턴스
+    Returns:
+        Dict[str, Any]: 변환된 딕셔너리
     """
     fields = [
         "id",
@@ -45,9 +51,14 @@ def category_to_dict(category: Any) -> dict:
     return d
 
 
-def menu_to_dict(menu: Any) -> dict:
+def menu_to_dict(menu: Any) -> Dict[str, Any]:
     """
     Menu ORM 객체를 dict로 변환합니다.
+
+    Args:
+        menu (Any): Menu ORM 인스턴스
+    Returns:
+        Dict[str, Any]: 변환된 딕셔너리
     """
     fields = [
         "id",
@@ -82,9 +93,14 @@ def menu_to_dict(menu: Any) -> dict:
     return orm_to_dict(menu, fields)
 
 
-def favorite_to_dict(favorite: Any) -> dict:
+def favorite_to_dict(favorite: Any) -> Dict[str, Any]:
     """
     Favorite ORM 객체를 dict로 변환합니다.
+
+    Args:
+        favorite (Any): Favorite ORM 인스턴스
+    Returns:
+        Dict[str, Any]: 변환된 딕셔너리
     """
     fields = ["id", "user_id", "menu_id", "created_at"]
     return orm_to_dict(favorite, fields)
