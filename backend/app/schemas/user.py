@@ -5,17 +5,59 @@ from datetime import datetime
 
 
 class UserBase(BaseModel):
-    """사용자 공통 필드"""
+    """사용자 기본 스키마"""
 
-    kakao_id: str
-    nickname: Optional[str] = None
+    username: Optional[str] = None
     email: Optional[EmailStr] = None
+    nickname: Optional[str] = None
 
 
 class UserCreate(UserBase):
-    """카카오 로그인 기반 사용자 생성 요청"""
+    """사용자 생성 스키마"""
 
-    pass
+    password: str
+
+
+class UserProfile(UserBase):
+    """사용자 프로필 스키마"""
+
+    id: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UserProfileUpdate(BaseModel):
+    """사용자 프로필 업데이트 스키마"""
+
+    nickname: Optional[str] = None
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+
+class UserInDB(UserBase):
+    """데이터베이스 사용자 스키마"""
+
+    id: str
+    hashed_password: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class Token(BaseModel):
+    """토큰 스키마"""
+
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    """토큰 데이터 스키마"""
+
+    username: Optional[str] = None
 
 
 class UserResponse(UserBase):
@@ -28,23 +70,9 @@ class UserResponse(UserBase):
         from_attributes = True
 
 
-class Token(BaseModel):
-    """JWT 토큰 응답 스키마"""
-
-    access_token: str
-    token_type: str = "bearer"
-
-
 class LoginResponse(BaseModel):
     """로그인 응답 스키마 (토큰 + 사용자 정보)"""
 
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
-
-
-class TokenData(BaseModel):
-    """JWT 토큰 내부 데이터"""
-
-    user_id: Optional[str] = None
-    kakao_id: Optional[str] = None

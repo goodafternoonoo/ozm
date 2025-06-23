@@ -302,3 +302,110 @@ async def test_favorite_add_and_get():
             f"/api/v1/menus/favorites?session_id={session_id}&menu_id={menu_id}"
         )
         assert resp.status_code == 204
+
+
+# ---------------- 사용자 프로필 ----------------
+@pytest.mark.asyncio
+@patch("app.services.auth_service.requests.get")
+async def test_user_profile_operations(mock_kakao_get):
+    """사용자 프로필 조회 및 업데이트"""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        # 먼저 로그인하여 토큰 획득
+        mock_kakao_get.return_value.status_code = 200
+        mock_kakao_get.return_value.json.return_value = {
+            "id": "123456789",
+            "properties": {"nickname": "테스트유저"},
+            "kakao_account": {"email": "test@kakao.com"},
+        }
+
+        login_resp = await client.post(
+            "/api/v1/auth/kakao-login", json={"access_token": "fake-token"}
+        )
+        token = login_resp.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # 프로필 조회
+        resp = await client.get("/api/v1/users/profile", headers=headers)
+        assert resp.status_code == 200
+        profile = resp.json()
+        assert profile["nickname"] == "테스트유저"
+
+        # 프로필 업데이트
+        update_data = {"nickname": "업데이트된유저"}
+        resp = await client.put(
+            "/api/v1/users/profile", json=update_data, headers=headers
+        )
+        assert resp.status_code == 200
+        updated_profile = resp.json()
+        assert updated_profile["nickname"] == "업데이트된유저"
+
+
+# ---------------- 검색 API ----------------
+@pytest.mark.asyncio
+async def test_search_menus():
+    """메뉴 검색 API 테스트"""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        # 기본 검색
+        resp = await client.get("/api/v1/search/menus")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+
+        # 필터링 검색
+        resp = await client.get(
+            "/api/v1/search/menus?time_slot=breakfast&is_spicy=true"
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+
+
+@pytest.mark.asyncio
+async def test_search_categories():
+    """카테고리 검색 API 테스트"""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        resp = await client.get("/api/v1/search/categories")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) > 0
+
+
+@pytest.mark.asyncio
+async def test_search_stats():
+    """검색 통계 API 테스트"""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        resp = await client.get("/api/v1/search/stats")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "total_menus" in data
+        assert "time_slot_distribution" in data
+        assert "country_distribution" in data
+        assert "average_rating" in data
+
+
+# ---------------- 즐겨찾기 ----------------
+@pytest.mark.asyncio
+@patch("app.services.auth_service.requests.get")
+async def test_user_favorites(mock_kakao_get):
+    """사용자 즐겨찾기 API 테스트"""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        # 먼저 로그인
+        mock_kakao_get.return_value.status_code = 200
+        mock_kakao_get.return_value.json.return_value = {
+            "id": "123456789",
+            "properties": {"nickname": "테스트유저"},
+            "kakao_account": {"email": "test@kakao.com"},
+        }
+
+        login_resp = await client.post(
+            "/api/v1/auth/kakao-login", json={"access_token": "fake-token"}
+        )
+        token = login_resp.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # 즐겨찾기 목록 조회
+        resp = await client.get("/api/v1/users/favorites", headers=headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)

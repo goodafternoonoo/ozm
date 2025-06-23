@@ -1,0 +1,112 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.database import AsyncSessionLocal
+from app.models.user import User
+from app.schemas.user import UserProfile, UserProfileUpdate
+from app.services.auth_service import AuthService
+from sqlalchemy import select
+from typing import List
+
+router = APIRouter()
+
+
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        yield session
+
+
+get_current_user = AuthService.get_current_user
+
+
+@router.get("/profile", response_model=UserProfile)
+async def get_user_profile(
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    """현재 사용자의 프로필 조회"""
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="인증이 필요합니다"
+        )
+
+    return UserProfile(
+        id=current_user.id,
+        nickname=current_user.nickname,
+        username=current_user.username,
+        email=current_user.email,
+        created_at=current_user.created_at,
+    )
+
+
+@router.put("/profile", response_model=UserProfile)
+async def update_user_profile(
+    profile_update: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """사용자 프로필 업데이트"""
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="인증이 필요합니다"
+        )
+
+    # 세션에 current_user를 붙임
+    persistent_user = await db.merge(current_user)
+
+    # 업데이트할 필드만 적용
+    if profile_update.nickname is not None:
+        persistent_user.nickname = profile_update.nickname
+    if profile_update.username is not None:
+        persistent_user.username = profile_update.username
+    if profile_update.email is not None:
+        persistent_user.email = profile_update.email
+
+    await db.commit()
+    await db.refresh(persistent_user)
+
+    return UserProfile(
+        id=persistent_user.id,
+        nickname=persistent_user.nickname,
+        username=persistent_user.username,
+        email=persistent_user.email,
+        created_at=persistent_user.created_at,
+    )
+
+
+@router.get("/favorites", response_model=List[dict])
+async def get_user_favorites(
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    """사용자의 즐겨찾기 메뉴 목록 조회"""
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="인증이 필요합니다"
+        )
+
+    from app.models.favorite import Favorite
+    from app.models.menu import Menu
+
+    # 사용자의 즐겨찾기 메뉴 조회
+    result = await db.execute(
+        select(Favorite, Menu)
+        .join(Menu, Favorite.menu_id == Menu.id)
+        .where(Favorite.user_id == current_user.id)
+        .order_by(Favorite.created_at.desc())
+    )
+
+    favorites = []
+    for favorite, menu in result.all():
+        favorites.append(
+            {
+                "id": favorite.id,
+                "menu": {
+                    "id": menu.id,
+                    "name": menu.name,
+                    "description": menu.description,
+                    "image_url": menu.image_url,
+                    "rating": menu.rating,
+                },
+                "created_at": favorite.created_at,
+            }
+        )
+
+    return favorites

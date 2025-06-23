@@ -6,11 +6,25 @@ from app.schemas.user import UserCreate
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 import os
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from app.db.database import AsyncSessionLocal
 
 KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me"
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "testsecret")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = 60 * 24 * 7  # 7일
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/kakao-login")
+
+
+async def get_db():
+    """데이터베이스 세션 의존성"""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
 
 
 class AuthService:
@@ -102,12 +116,23 @@ class AuthService:
             raise Exception("유효하지 않은 토큰입니다")
 
     @staticmethod
-    async def get_current_user(db: AsyncSession, token: str) -> User:
+    async def get_current_user(
+        db: AsyncSession = Depends(get_db),
+        token: str = Depends(oauth2_scheme),
+    ) -> User:
         """
         JWT 토큰으로 현재 사용자 정보 조회
         """
-        payload = AuthService.verify_jwt_token(token)
-        user_id = payload.get("sub")
-        if user_id is None:
-            raise Exception("토큰에서 사용자 ID를 찾을 수 없습니다")
-        return await AuthService.get_user_by_id(db, user_id)
+        try:
+            payload = AuthService.verify_jwt_token(token)
+            user_id = payload.get("sub")
+            if user_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="토큰 오류"
+                )
+            user = await AuthService.get_user_by_id(db, user_id)
+            return user
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="인증 실패"
+            )

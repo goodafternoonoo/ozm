@@ -108,3 +108,6 @@ class FavoriteResponse(FavoriteBase):
 
     class Config:
         from_attributes = True
+
+
+MenuResponse = Menu
