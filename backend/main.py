@@ -8,6 +8,8 @@ from app.api.v1.router import api_router
 from app.db.init_db import init_db
 from app.schemas.common import error_response
 import time
+from sqlalchemy.exc import IntegrityError
+import asyncpg
 
 # 로깅 설정 초기화
 setup_logging()
@@ -113,6 +115,42 @@ async def internal_error_handler(request: Request, exc):
             message="Internal Server Error",
             code=500,
             detail="서버 내부 오류가 발생했습니다.",
+        ),
+    )
+
+
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request: Request, exc: IntegrityError):
+    msg = str(exc).lower()
+    orig = getattr(exc, "orig", None)
+    orig_msg = str(orig).lower()
+    if (
+        "foreignkeyviolation" in msg
+        or "foreignkeyviolation" in orig_msg
+        or "foreign key constraint" in msg
+        or "foreign key constraint" in orig_msg
+        or "violates foreign key constraint" in msg
+        or "violates foreign key constraint" in orig_msg
+        or (orig and orig.__class__.__name__ == "ForeignKeyViolationError")
+    ):
+        from app.schemas.error_codes import ErrorCode
+
+        return JSONResponse(
+            status_code=404,
+            content=error_response(
+                "존재하지 않는 메뉴입니다.",
+                code=404,
+                error_code=ErrorCode.MENU_NOT_FOUND,
+            ),
+        )
+    from app.schemas.error_codes import ErrorCode
+
+    return JSONResponse(
+        status_code=400,
+        content=error_response(
+            f"DB 무결성 오류: {str(exc)}",
+            code=400,
+            error_code=ErrorCode.FAVORITE_DUPLICATE,
         ),
     )
 

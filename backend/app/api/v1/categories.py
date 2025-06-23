@@ -31,7 +31,15 @@ async def create_category(
     - 출력: CategoryResponse
     """
     service = CategoryService(db)
-    category = await service.create_category(category_data)
+    try:
+        category = await service.create_category(category_data)
+    except ValueError as e:
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(str(e), code=400, error_code="CATEGORY_ALREADY_EXISTS")
+            ),
+            status_code=400,
+        )
     return JSONResponse(
         content=jsonable_encoder(
             succeed_response(

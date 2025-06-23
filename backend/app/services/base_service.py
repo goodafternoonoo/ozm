@@ -133,57 +133,19 @@ class BaseService(Generic[ModelType]):
         Returns:
             생성된 엔티티
         """
-        try:
-            self.logger.debug(f"{self.model.__name__} 생성 시작")
+        self.logger.debug(f"{self.model.__name__} 생성 시작")
 
-            # ID가 없으면 생성
-            if "id" not in obj_in:
-                obj_in["id"] = uuid.uuid4()
+        # ID가 없으면 생성
+        if "id" not in obj_in:
+            obj_in["id"] = uuid.uuid4()
 
-            entity = self.model(**obj_in)
-            db.add(entity)
-            await db.commit()
-            await db.refresh(entity)
+        entity = self.model(**obj_in)
+        db.add(entity)
+        await db.commit()
+        await db.refresh(entity)
 
-            self.logger.info(f"{self.model.__name__} 생성 성공: {entity.id}")
-            return entity
-
-        except IntegrityError as e:
-            await db.rollback()
-            self.logger.error(
-                f"중복 데이터 오류 - {self.model.__name__} 생성 실패: {str(e)}"
-            )
-
-            # 중복 키 오류 메시지 파싱
-            error_msg = str(e)
-            if (
-                "duplicate key" in error_msg.lower()
-                or "unique constraint" in error_msg.lower()
-            ):
-                # 어떤 필드가 중복인지 파싱 (PostgreSQL 기준)
-                if "username" in error_msg:
-                    raise DuplicateException(
-                        "사용자", "사용자명", obj_in.get("username")
-                    )
-                elif "email" in error_msg:
-                    raise DuplicateException("사용자", "이메일", obj_in.get("email"))
-                else:
-                    raise DuplicateException(
-                        self.model.__name__, "ID", obj_in.get("id")
-                    )
-            else:
-                raise DatabaseException(
-                    f"{self.model.__name__} 생성 중 데이터베이스 오류가 발생했습니다."
-                )
-
-        except SQLAlchemyError as e:
-            await db.rollback()
-            self.logger.error(
-                f"데이터베이스 오류 - {self.model.__name__} 생성 실패: {str(e)}"
-            )
-            raise DatabaseException(
-                f"{self.model.__name__} 생성 중 데이터베이스 오류가 발생했습니다."
-            )
+        self.logger.info(f"{self.model.__name__} 생성 성공: {entity.id}")
+        return entity
 
     async def update(
         self, db: AsyncSession, id: uuid.UUID, obj_in: Dict[str, Any]

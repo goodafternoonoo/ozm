@@ -21,6 +21,8 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from app.schemas.error_codes import ErrorCode
 from app.core.utils import menu_to_dict, favorite_to_dict
+from sqlalchemy.exc import IntegrityError
+import asyncpg
 
 router = APIRouter()
 
@@ -208,10 +210,30 @@ async def add_favorite(
             status_code=status.HTTP_201_CREATED,
         )
     except ValueError as e:
+        if str(e) == "존재하지 않는 메뉴입니다.":
+            return JSONResponse(
+                content=jsonable_encoder(
+                    error_response(
+                        str(e), code=404, error_code=ErrorCode.MENU_NOT_FOUND
+                    )
+                ),
+                status_code=404,
+            )
         return JSONResponse(
             content=jsonable_encoder(
                 error_response(
                     str(e), code=400, error_code=ErrorCode.FAVORITE_DUPLICATE
+                )
+            ),
+            status_code=400,
+        )
+    except Exception as e:
+        return JSONResponse(
+            content=jsonable_encoder(
+                error_response(
+                    f"즐겨찾기 추가 실패: {str(e)}",
+                    code=400,
+                    error_code=ErrorCode.FAVORITE_DUPLICATE,
                 )
             ),
             status_code=400,

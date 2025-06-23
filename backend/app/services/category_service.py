@@ -16,7 +16,20 @@ class CategoryService:
         self.db = db
 
     async def create_category(self, category_data: CategoryCreate) -> Category:
-        """카테고리 생성"""
+        """
+        카테고리 생성 (name+country+cuisine_type 중복 방지)
+        """
+        # 중복 체크
+        result = await self.db.execute(
+            select(Category).where(
+                (Category.name == category_data.name)
+                & (Category.country == category_data.country)
+                & (Category.cuisine_type == category_data.cuisine_type)
+            )
+        )
+        exists = result.scalar_one_or_none()
+        if exists:
+            raise ValueError("이미 동일한 카테고리가 존재합니다.")
         category = Category(**category_data.model_dump())
         self.db.add(category)
         await self.db.commit()

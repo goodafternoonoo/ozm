@@ -470,3 +470,83 @@ async def test_user_favorites(mock_kakao_get):
         assert resp.status_code == 200
         data = resp.json()["data"]
         assert isinstance(data, list)
+
+
+@pytest.mark.asyncio
+async def test_protected_api_without_auth():
+    """인증 없이 보호된 API 접근 시 401 반환"""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        resp = await client.post("/api/v1/menus/", json={})
+        assert resp.status_code == 401 or resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_get_category_invalid_uuid():
+    """잘못된 UUID로 카테고리 조회 시 422 반환"""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        resp = await client.get("/api/v1/categories/invalid-uuid")
+        assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_get_menu_not_found():
+    """존재하지 않는 메뉴 조회 시 404 반환"""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        random_id = str(uuid.uuid4())
+        resp = await client.get(f"/api/v1/menus/{random_id}")
+        assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_create_category_duplicate():
+    """중복 카테고리 생성 시 400 반환"""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        payload = {
+            "name": "중복카테고리",
+            "description": "중복 테스트",
+            "country": "한국",
+            "cuisine_type": "한식",
+            "is_active": True,
+            "display_order": 1,
+            "icon_url": None,
+            "color_code": "#111111",
+        }
+        resp1 = await client.post("/api/v1/categories/", json=payload)
+        resp2 = await client.post("/api/v1/categories/", json=payload)
+        assert resp2.status_code in (400, 409)
+
+
+@pytest.mark.asyncio
+@patch("app.services.auth_service.requests.get")
+async def test_create_menu_missing_required(mock_kakao_get):
+    """
+    필수 필드 누락 시 422 반환
+    """
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        # 카카오 로그인 mock
+        mock_kakao_get.return_value.status_code = 200
+        mock_kakao_get.return_value.json.return_value = {
+            "id": "123456789",
+            "properties": {"nickname": "테스트유저"},
+            "kakao_account": {"email": "test@kakao.com"},
+        }
+        login_resp = await client.post(
+            "/api/v1/auth/kakao-login", json={"access_token": "fake-token"}
+        )
+        token = login_resp.json()["data"]["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+        # 인증된 상태에서 필수 필드 없이 요청
+        resp = await client.post("/api/v1/menus/", json={}, headers=headers)
+        assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_favorite_nonexistent_menu(test_user):
+    """존재하지 않는 메뉴 즐겨찾기 시 404 반환"""
+    app.dependency_overrides[get_current_user] = lambda: test_user
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        payload = {"menu_id": str(uuid.uuid4())}
+        resp = await client.post("/api/v1/menus/favorites", json=payload)
+        print("RESPONSE TEXT:", resp.text)
+        assert resp.status_code == 404
+    app.dependency_overrides = {}

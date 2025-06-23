@@ -7,6 +7,7 @@ from app.models.category import Category
 from app.models.favorite import Favorite
 from app.services.base_service import BaseService
 import uuid
+from sqlalchemy.exc import IntegrityError
 
 
 class MenuService(BaseService[Menu]):
@@ -150,7 +151,24 @@ class FavoriteService(BaseService[Favorite]):
             raise ValueError("이미 찜한 메뉴입니다.")
 
         favorite_data = {"user_id": user_id, "menu_id": menu_id, "is_active": True}
-        return await self.create(db, favorite_data)
+        try:
+            return await self.create(db, favorite_data)
+        except IntegrityError as e:
+            await db.rollback()
+            orig = getattr(e, "orig", None)
+            msg = str(e).lower()
+            orig_msg = str(orig).lower()
+            if (
+                "foreignkeyviolation" in msg
+                or "foreignkeyviolation" in orig_msg
+                or "foreign key constraint" in msg
+                or "foreign key constraint" in orig_msg
+                or "violates foreign key constraint" in msg
+                or "violates foreign key constraint" in orig_msg
+                or (orig and orig.__class__.__name__ == "ForeignKeyViolationError")
+            ):
+                raise ValueError("존재하지 않는 메뉴입니다.")
+            raise
 
     async def get_favorite_by_user_and_menu(
         self, db: AsyncSession, user_id: uuid.UUID, menu_id: uuid.UUID
