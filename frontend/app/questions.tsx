@@ -16,6 +16,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { QuestionsStyles } from '../styles/QuestionsStyles';
+import { QuestionBubble } from '../components/QuestionBubble';
+import { useQuestions } from '../hooks/useQuestions';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -29,9 +31,14 @@ type Message = {
 };
 
 export default function QuestionsScreen() {
-  const [userQuestion, setUserQuestion] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(false);
+  const {
+    userQuestion,
+    setUserQuestion,
+    messages,
+    loading,
+    sendMessage,
+    clearAllMessages,
+  } = useQuestions();
   const scrollViewRef = useRef<ScrollView>(null);
   const headerHeight = useHeaderHeight();
 
@@ -45,61 +52,8 @@ export default function QuestionsScreen() {
     }
   }, [messages, loading]);
 
-  const sendMessage = async () => {
-    if (!userQuestion.trim()) {
-      return;
-    }
-
-    const currentQuestion = userQuestion;
-    const newUserMessage: Message = {
-      id: Date.now(),
-      text: currentQuestion,
-      isUser: true,
-      timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setMessages(prev => [...prev, newUserMessage]);
-    setUserQuestion('');
-    setLoading(true);
-
-    try {
-      const response = await axios.post('http://localhost:8000/api/v1/questions/', {
-        question: currentQuestion,
-      });
-
-      const newBotMessage: Message = {
-        id: Date.now() + 1,
-        text: response.data.answer || '답변을 받지 못했습니다.',
-        isUser: false,
-        timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-      };
-
-      setMessages(prev => [...prev, newBotMessage]);
-    } catch (err) {
-      console.error('API 에러:', err);
-      
-      const newBotMessage: Message = {
-        id: Date.now() + 1,
-        text: '죄송합니다. 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.',
-        isUser: false,
-        timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-      };
-
-      setMessages(prev => [...prev, newBotMessage]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getDummyAnswer = (question: string): string => {
     return '죄송합니다. 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
-  };
-
-  const clearAllMessages = () => {
-    Alert.alert('대화 기록 삭제', '모든 대화 기록을 삭제하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
-      { text: '삭제', style: 'destructive', onPress: () => setMessages([]) },
-    ]);
   };
 
   return (
@@ -131,17 +85,12 @@ export default function QuestionsScreen() {
         )}
 
         {messages.map(item => (
-          <View
+          <QuestionBubble
             key={item.id}
-            style={[QuestionsStyles.messageBubble, item.isUser ? QuestionsStyles.userMessage : QuestionsStyles.botMessage]}
-          >
-            <Text style={item.isUser ? QuestionsStyles.userMessageText : QuestionsStyles.botMessageText}>
-              {item.text}
-            </Text>
-            <Text style={item.isUser ? QuestionsStyles.userMessageTimestamp : QuestionsStyles.botMessageTimestamp}>
-              {item.timestamp}
-            </Text>
-          </View>
+            text={item.text}
+            isUser={item.isUser}
+            timestamp={item.timestamp}
+          />
         ))}
 
         {loading && (

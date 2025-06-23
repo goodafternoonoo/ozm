@@ -11,13 +11,13 @@ React Native Expo 기반의 맛집 추천 앱입니다.
 
 ## 설치 및 실행
 
-```bash
+   ```bash
 # 의존성 설치
-npm install
+   npm install
 
 # 개발 서버 시작
-npx expo start
-```
+   npx expo start
+   ```
 
 ## 카카오 API 설정
 
