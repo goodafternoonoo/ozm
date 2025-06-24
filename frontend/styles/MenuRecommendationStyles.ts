@@ -1,4 +1,4 @@
-import { StyleSheet, Platform, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 import { colors, typography, spacing, shadows } from './GlobalStyles';
 
 const { width, height } = Dimensions.get('window');

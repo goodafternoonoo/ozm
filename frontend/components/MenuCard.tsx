@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MenuRecommendationStyles } from '../styles/MenuRecommendationStyles';
 import { Menu, ABTestInfo } from '../services/recommendationService';
