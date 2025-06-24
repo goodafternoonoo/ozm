@@ -31,9 +31,10 @@ export interface SimpleRecommendationRequest {
     session_id: string;
 }
 
-export interface QuizRecommendationRequest {
-    answers: Record<string, string>;
-    session_id: string;
+export interface ChujonRecommendationRequest {
+    answers: { [questionId: string]: string };
+    timeSlot?: 'breakfast' | 'lunch' | 'dinner';
+    preferences?: string[];
 }
 
 export interface CollaborativeRecommendationRequest {
@@ -84,9 +85,9 @@ export class RecommendationService {
         }
     }
 
-    // 퀴즈 추천
-    static async getQuizRecommendations(
-        request: QuizRecommendationRequest
+    // 취존 추천
+    static async getChujonRecommendations(
+        request: ChujonRecommendationRequest
     ): Promise<RecommendationResponse> {
         try {
             return await api.post<RecommendationResponse>(
@@ -98,8 +99,8 @@ export class RecommendationService {
                 throw error;
             }
             throw new AppError(
-                '퀴즈 추천을 가져오는데 실패했습니다',
-                'QUIZ_RECOMMENDATION_ERROR'
+                '취존 추천을 가져오는데 실패했습니다',
+                'CHUJON_RECOMMENDATION_ERROR'
             );
         }
     }

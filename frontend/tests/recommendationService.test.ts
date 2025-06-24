@@ -1,7 +1,7 @@
 import {
     RecommendationService,
     SimpleRecommendationRequest,
-    QuizRecommendationRequest,
+    ChujonRecommendationRequest,
     CollaborativeRecommendationRequest,
     InteractionData,
 } from '../services/recommendationService';
@@ -102,7 +102,7 @@ describe('RecommendationService API', () => {
         expect(res).toHaveProperty('session_id');
     });
 
-    it('should get quiz recommendations', async () => {
+    it('should get chujon recommendations', async () => {
         const mockResponse = {
             recommendations: [
                 {
@@ -122,18 +122,18 @@ describe('RecommendationService API', () => {
             ab_test_info: {
                 abGroup: 'B',
                 weightSet: { spicy: 0.9, healthy: 0.3 },
-                recommendationType: 'quiz',
+                recommendationType: 'chujon',
             },
         };
 
         mockApi.post.mockResolvedValue(mockResponse);
 
-        const req: QuizRecommendationRequest = {
+        const req: ChujonRecommendationRequest = {
             answers: { taste: 'spicy' },
-            session_id: sessionId,
+            timeSlot: 'lunch',
         };
 
-        const res = await RecommendationService.getQuizRecommendations(req);
+        const res = await RecommendationService.getChujonRecommendations(req);
 
         expect(mockApi.post).toHaveBeenCalledWith(
             '/api/v1/recommendations/quiz',

@@ -20,14 +20,14 @@ import {
     useMenuRecommendations,
     TimeSlot,
 } from '../hooks/useMenuRecommendations';
-import { useQuizRecommendation } from '../hooks/useQuizRecommendation';
+import { useChujonRecommendation } from '../hooks/useChujonRecommendation';
 import { useCollaborativeRecommendations } from '../hooks/useCollaborativeRecommendations';
-import QuizRecommendation from '../components/QuizRecommendation';
+import ChujonRecommendation from '../components/ChujonRecommendation';
 import { Menu, MenuRecommendation } from '../services/recommendationService';
 import { colors } from '../styles/GlobalStyles';
 
 export default function MenuRecommendationScreen() {
-    const [mode, setMode] = useState<'simple' | 'quiz' | 'collaborative'>(
+    const [mode, setMode] = useState<'simple' | 'chujon' | 'collaborative'>(
         'simple'
     );
     const [categoryModalVisible, setCategoryModalVisible] = useState(false);
@@ -53,7 +53,7 @@ export default function MenuRecommendationScreen() {
         handleMenuClick,
     } = useMenuRecommendations();
 
-    const quiz = useQuizRecommendation();
+    const chujon = useChujonRecommendation();
     const collaborative = useCollaborativeRecommendations();
 
     const timeSlotOptions = [
@@ -101,7 +101,7 @@ export default function MenuRecommendationScreen() {
                 </Text>
 
                 {/* A/B 테스트 정보 토글 버튼 */}
-                {(abTestInfo || quiz.abTestInfo) && (
+                {(abTestInfo || chujon.abTestInfo) && (
                     <TouchableOpacity
                         style={MenuRecommendationStyles.abTestButton}
                         onPress={() => setShowABTestInfo(!showABTestInfo)}
@@ -140,19 +140,19 @@ export default function MenuRecommendationScreen() {
                 <TouchableOpacity
                     style={[
                         MenuRecommendationStyles.modeButton,
-                        mode === 'quiz' &&
+                        mode === 'chujon' &&
                             MenuRecommendationStyles.modeButtonActive,
                     ]}
-                    onPress={() => setMode('quiz')}
+                    onPress={() => setMode('chujon')}
                 >
                     <Text
                         style={[
                             MenuRecommendationStyles.modeButtonText,
-                            mode === 'quiz' &&
+                            mode === 'chujon' &&
                                 MenuRecommendationStyles.modeButtonTextActive,
                         ]}
                     >
-                        퀴즈 추천
+                        취존 추천
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -364,32 +364,29 @@ export default function MenuRecommendationScreen() {
                         </Text>
                     </TouchableOpacity>
                 </View>
-            ) : mode === 'quiz' ? (
+            ) : mode === 'chujon' ? (
                 <View style={{ marginTop: 8 }}>
-                    {quiz.loading && (
+                    {chujon.loading && (
                         <ActivityIndicator
                             size='large'
                             color='#007AFF'
                             style={{ marginVertical: 20 }}
                         />
                     )}
-                    {quiz.error && (
+                    {chujon.error && (
                         <Text style={{ color: 'red', marginBottom: 8 }}>
-                            {quiz.error}
+                            {chujon.error}
                         </Text>
                     )}
-                    {quiz.questions.length > 0 && (
-                        <QuizRecommendation
-                            questions={quiz.questions}
-                            onSubmit={(answers) => {
-                                Object.entries(answers).forEach(([qid, ans]) =>
-                                    quiz.setAnswer(qid, ans)
-                                );
-                                quiz.getQuizRecommendations();
+                    {chujon.questions.length > 0 && (
+                        <ChujonRecommendation
+                            questions={chujon.questions}
+                            onSubmit={() => {
+                                chujon.getChujonRecommendations();
                             }}
                         />
                     )}
-                    {quiz.recommendations.length > 0 && (
+                    {chujon.recommendations.length > 0 && (
                         <View
                             style={
                                 MenuRecommendationStyles.recommendationsContainer
@@ -402,7 +399,7 @@ export default function MenuRecommendationScreen() {
                             >
                                 추천 메뉴
                             </Text>
-                            {quiz.recommendations.map(({ menu, reason }) => (
+                            {chujon.recommendations.map(({ menu, reason }) => (
                                 <MenuCard
                                     key={menu.id}
                                     menu={menu}
@@ -412,7 +409,7 @@ export default function MenuRecommendationScreen() {
                                     isSaved={savedMenus.some(
                                         (m) => m.id === menu.id
                                     )}
-                                    abTestInfo={quiz.abTestInfo}
+                                    abTestInfo={chujon.abTestInfo}
                                     showABTestInfo={showABTestInfo}
                                 />
                             ))}
@@ -422,7 +419,7 @@ export default function MenuRecommendationScreen() {
             ) : (
                 // 협업 필터링 모드
                 <View style={{ marginTop: 8 }}>
-                    {collaborativeLoading && (
+                    {collaborative.loading && (
                         <ActivityIndicator
                             size='large'
                             color='#007AFF'
@@ -452,10 +449,10 @@ export default function MenuRecommendationScreen() {
                                 )
                             }
                             style={MenuRecommendationStyles.button}
-                            disabled={collaborativeLoading}
+                            disabled={collaborative.loading}
                         >
                             <Text style={MenuRecommendationStyles.buttonText}>
-                                {collaborativeLoading
+                                {collaborative.loading
                                     ? '추천 중...'
                                     : '협업 필터링 추천받기'}
                             </Text>

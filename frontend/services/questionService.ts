@@ -1,12 +1,12 @@
 import { api, AppError } from '../utils/apiClient';
 
 // 타입 정의
-export interface QuizQuestion {
+export interface ChujonQuestion {
     id: string;
     text: string;
-    order: number;
     options: string[];
     category: string;
+    weight: number;
 }
 
 export interface QuestionRequest {
@@ -18,7 +18,7 @@ export interface QuestionResponse {
 }
 
 export interface QuestionsResponse {
-    questions: QuizQuestion[];
+    questions: ChujonQuestion[];
     total_count: number;
 }
 
@@ -36,10 +36,10 @@ export interface AIQuestionResponse {
 
 // 질문 서비스 클래스
 export class QuestionService {
-    // 질문 목록 조회 (퀴즈용)
-    static async getQuestions(): Promise<QuizQuestion[]> {
+    // 질문 목록 조회 (취존용)
+    static async getQuestions(): Promise<ChujonQuestion[]> {
         try {
-            return await api.get<QuizQuestion[]>('/api/v1/questions/');
+            return await api.get<ChujonQuestion[]>('/api/v1/questions/');
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
