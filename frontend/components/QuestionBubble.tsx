@@ -1,6 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    Dimensions,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { colors, typography, spacing, shadows } from '../styles/GlobalStyles';
+
+const { width } = Dimensions.get('window');
 
 interface QuestionBubbleProps {
     text: string;
@@ -45,7 +54,7 @@ export const QuestionBubble: React.FC<QuestionBubbleProps> = ({
                         <Ionicons
                             name='sparkles-outline'
                             size={12}
-                            color='#8E8E93'
+                            color={colors.text.tertiary}
                         />
                         <Text style={styles.modelText}>
                             {model.includes('llama')
@@ -69,7 +78,7 @@ export const QuestionBubble: React.FC<QuestionBubbleProps> = ({
                                 <Ionicons
                                     name='link-outline'
                                     size={12}
-                                    color='#007AFF'
+                                    color={colors.primary}
                                 />
                                 <Text
                                     style={styles.sourceText}
@@ -99,7 +108,7 @@ export const QuestionBubble: React.FC<QuestionBubbleProps> = ({
 const styles = StyleSheet.create({
     container: {
         marginVertical: 2,
-        paddingHorizontal: 4,
+        paddingHorizontal: spacing.xs,
     },
     userContainer: {
         alignItems: 'flex-end',
@@ -108,86 +117,78 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
     },
     bubble: {
-        maxWidth: '75%',
-        padding: 16,
+        maxWidth: width * 0.75,
+        padding: spacing.md,
         borderRadius: 20,
-        marginBottom: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 1,
+        marginBottom: spacing.xs,
+        ...shadows.small,
     },
     userBubble: {
-        backgroundColor: '#007AFF',
+        backgroundColor: colors.primary,
         borderBottomRightRadius: 6,
     },
     botBubble: {
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
         borderBottomLeftRadius: 6,
         borderWidth: 1,
-        borderColor: '#E5E5EA',
+        borderColor: colors.border.light,
     },
     text: {
-        fontSize: 16,
-        lineHeight: 22,
-        fontWeight: '400',
+        ...typography.body1,
     },
     userText: {
-        color: '#FFFFFF',
+        color: colors.text.inverse,
     },
     botText: {
-        color: '#1C1C1E',
+        color: colors.text.primary,
     },
     modelInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 12,
-        paddingTop: 8,
+        marginTop: spacing.sm,
+        paddingTop: spacing.sm,
         borderTopWidth: 1,
-        borderTopColor: '#F2F2F7',
+        borderTopColor: colors.border.light,
     },
     modelText: {
-        fontSize: 12,
-        color: '#8E8E93',
-        marginLeft: 4,
-        fontWeight: '500',
+        ...typography.caption,
+        color: colors.text.tertiary,
+        marginLeft: spacing.xs,
     },
     sourcesContainer: {
-        marginTop: 12,
-        paddingTop: 8,
+        marginTop: spacing.sm,
+        paddingTop: spacing.sm,
         borderTopWidth: 1,
-        borderTopColor: '#F2F2F7',
+        borderTopColor: colors.border.light,
     },
     sourcesTitle: {
-        fontSize: 12,
-        color: '#8E8E93',
-        fontWeight: '600',
-        marginBottom: 6,
+        ...typography.caption,
+        color: colors.text.tertiary,
+        fontWeight: '600' as const,
+        marginBottom: spacing.xs,
     },
     sourceItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: spacing.xs,
     },
     sourceText: {
         fontSize: 11,
-        color: '#007AFF',
-        marginLeft: 4,
+        color: colors.primary,
+        marginLeft: spacing.xs,
         flex: 1,
-        fontWeight: '500',
+        fontWeight: '500' as const,
     },
     timestamp: {
-        fontSize: 11,
-        marginTop: 4,
-        fontWeight: '500',
+        ...typography.caption,
+        marginTop: spacing.xs,
     },
     userTimestamp: {
         color: 'rgba(255, 255, 255, 0.7)',
         textAlign: 'right',
     },
     botTimestamp: {
-        color: '#8E8E93',
+        color: colors.text.tertiary,
         textAlign: 'left',
     },
 });

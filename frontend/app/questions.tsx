@@ -93,7 +93,7 @@ export default function QuestionsScreen() {
                     <Ionicons
                         name='restaurant-outline'
                         size={28}
-                        color='#007AFF'
+                        color='#FF6B35'
                         style={{ marginRight: 8 }}
                     />
                     <Text style={QuestionsStyles.title}>냠냠이</Text>
@@ -192,7 +192,7 @@ export default function QuestionsScreen() {
                                 alignItems: 'center',
                             }}
                         >
-                            <ActivityIndicator size='small' color='#007AFF' />
+                            <ActivityIndicator size='small' color='#FF6B35' />
                             <Text
                                 style={[
                                     QuestionsStyles.botMessageText,

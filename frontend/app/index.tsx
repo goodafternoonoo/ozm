@@ -24,6 +24,7 @@ import { useQuizRecommendation } from '../hooks/useQuizRecommendation';
 import { useCollaborativeRecommendations } from '../hooks/useCollaborativeRecommendations';
 import QuizRecommendation from '../components/QuizRecommendation';
 import { Menu, MenuRecommendation } from '../services/recommendationService';
+import { colors } from '../styles/GlobalStyles';
 
 export default function MenuRecommendationScreen() {
     const [mode, setMode] = useState<'simple' | 'quiz' | 'collaborative'>(
@@ -77,7 +78,7 @@ export default function MenuRecommendationScreen() {
                     key={i}
                     name={i <= rating ? 'star' : 'star-outline'}
                     size={16}
-                    color={i <= rating ? '#FFD700' : '#C7C7CC'}
+                    color={i <= rating ? '#FFD700' : colors.text.tertiary}
                 />
             );
         }
@@ -102,29 +103,15 @@ export default function MenuRecommendationScreen() {
                 {/* A/B 테스트 정보 토글 버튼 */}
                 {(abTestInfo || quiz.abTestInfo) && (
                     <TouchableOpacity
-                        style={{
-                            backgroundColor: '#F0F8FF',
-                            padding: 8,
-                            borderRadius: 6,
-                            marginTop: 10,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
+                        style={MenuRecommendationStyles.abTestButton}
                         onPress={() => setShowABTestInfo(!showABTestInfo)}
                     >
                         <Ionicons
                             name='flask-outline'
                             size={16}
-                            color='#007AFF'
+                            color={colors.status.info}
                         />
-                        <Text
-                            style={{
-                                marginLeft: 6,
-                                color: '#007AFF',
-                                fontWeight: '600',
-                            }}
-                        >
+                        <Text style={MenuRecommendationStyles.abTestButtonText}>
                             A/B 테스트 정보 {showABTestInfo ? '숨기기' : '보기'}
                         </Text>
                     </TouchableOpacity>
@@ -140,7 +127,13 @@ export default function MenuRecommendationScreen() {
                     ]}
                     onPress={() => setMode('simple')}
                 >
-                    <Text style={MenuRecommendationStyles.modeButtonText}>
+                    <Text
+                        style={[
+                            MenuRecommendationStyles.modeButtonText,
+                            mode === 'simple' &&
+                                MenuRecommendationStyles.modeButtonTextActive,
+                        ]}
+                    >
                         간단 추천
                     </Text>
                 </TouchableOpacity>
@@ -152,7 +145,13 @@ export default function MenuRecommendationScreen() {
                     ]}
                     onPress={() => setMode('quiz')}
                 >
-                    <Text style={MenuRecommendationStyles.modeButtonText}>
+                    <Text
+                        style={[
+                            MenuRecommendationStyles.modeButtonText,
+                            mode === 'quiz' &&
+                                MenuRecommendationStyles.modeButtonTextActive,
+                        ]}
+                    >
                         퀴즈 추천
                     </Text>
                 </TouchableOpacity>
@@ -164,7 +163,13 @@ export default function MenuRecommendationScreen() {
                     ]}
                     onPress={handleCollaborativeMode}
                 >
-                    <Text style={MenuRecommendationStyles.modeButtonText}>
+                    <Text
+                        style={[
+                            MenuRecommendationStyles.modeButtonText,
+                            mode === 'collaborative' &&
+                                MenuRecommendationStyles.modeButtonTextActive,
+                        ]}
+                    >
                         협업 필터링
                     </Text>
                 </TouchableOpacity>
@@ -193,8 +198,8 @@ export default function MenuRecommendationScreen() {
                                     size={24}
                                     color={
                                         selectedTimeSlot === option.value
-                                            ? '#fff'
-                                            : '#007AFF'
+                                            ? colors.text.inverse
+                                            : colors.primary
                                     }
                                 />
                                 <Text
@@ -240,39 +245,69 @@ export default function MenuRecommendationScreen() {
 
                         <Modal
                             visible={categoryModalVisible}
-                            animationType='fade'
                             transparent={true}
+                            animationType='fade'
                             onRequestClose={() =>
                                 setCategoryModalVisible(false)
                             }
                         >
-                            <View
-                                style={
-                                    MenuRecommendationStyles.categoryModalOverlay
-                                }
-                            >
+                            <View style={MenuRecommendationStyles.modalOverlay}>
                                 <View
                                     style={
-                                        MenuRecommendationStyles.categoryModalContent
+                                        MenuRecommendationStyles.modalContent
                                     }
                                 >
+                                    <TouchableOpacity
+                                        style={
+                                            MenuRecommendationStyles.modalCloseButton
+                                        }
+                                        onPress={() =>
+                                            setCategoryModalVisible(false)
+                                        }
+                                    >
+                                        <Ionicons
+                                            name='close'
+                                            size={20}
+                                            color={colors.text.secondary}
+                                        />
+                                    </TouchableOpacity>
                                     <Text
                                         style={
-                                            MenuRecommendationStyles.categoryModalTitle
+                                            MenuRecommendationStyles.modalTitle
                                         }
                                     >
                                         카테고리 선택
                                     </Text>
-                                    <FlatList
-                                        data={categories}
-                                        keyExtractor={(item) => item.id}
-                                        renderItem={({ item }) => (
+                                    <ScrollView
+                                        showsVerticalScrollIndicator={false}
+                                    >
+                                        <TouchableOpacity
+                                            style={
+                                                MenuRecommendationStyles.categoryModalItem
+                                            }
+                                            onPress={() => {
+                                                setCategoryId(null);
+                                                setCategoryModalVisible(false);
+                                            }}
+                                        >
+                                            <Text
+                                                style={[
+                                                    MenuRecommendationStyles.categoryModalItemText,
+                                                    !categoryId &&
+                                                        MenuRecommendationStyles.categoryModalItemTextActive,
+                                                ]}
+                                            >
+                                                전체
+                                            </Text>
+                                        </TouchableOpacity>
+                                        {categories.map((category) => (
                                             <TouchableOpacity
+                                                key={category.id}
                                                 style={
                                                     MenuRecommendationStyles.categoryModalItem
                                                 }
                                                 onPress={() => {
-                                                    setCategoryId(item.id);
+                                                    setCategoryId(category.id);
                                                     setCategoryModalVisible(
                                                         false
                                                     );
@@ -282,15 +317,15 @@ export default function MenuRecommendationScreen() {
                                                     style={[
                                                         MenuRecommendationStyles.categoryModalItemText,
                                                         categoryId ===
-                                                            item.id &&
+                                                            category.id &&
                                                             MenuRecommendationStyles.categoryModalItemTextActive,
                                                     ]}
                                                 >
-                                                    {item.name}
+                                                    {category.name}
                                                 </Text>
                                             </TouchableOpacity>
-                                        )}
-                                    />
+                                        ))}
+                                    </ScrollView>
                                     <TouchableOpacity
                                         style={
                                             MenuRecommendationStyles.categoryModalCloseButton
