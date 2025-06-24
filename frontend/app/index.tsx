@@ -390,6 +390,9 @@ export default function MenuRecommendationScreen() {
                             onAnswerChange={(questionId, answer) => {
                                 chujon.setAnswer(questionId, answer);
                             }}
+                            onRestart={() => {
+                                chujon.loadQuestions();
+                            }}
                         />
                     )}
                     {chujon.recommendations.length > 0 && (

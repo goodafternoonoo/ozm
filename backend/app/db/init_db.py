@@ -548,40 +548,22 @@ async def create_sample_data():
         # 샘플 질문 데이터
         sample_questions = [
             {
-                "text": "매운 음식을 좋아하시나요?",
-                "question_type": "preference",
-                "options": json.dumps(["매운맛", "순한맛"]),
+                "text": "어떤 맛을 선호하시나요?",
+                "question_type": "chujon",
+                "options": json.dumps(["매운맛", "달콤한맛", "고소한맛", "신맛"]),
                 "display_order": 1,
             },
             {
-                "text": "어떤 식단을 선호하시나요?",
-                "question_type": "preference",
-                "options": json.dumps(["건강식", "일반식", "채식"]),
+                "text": "어떤 음식을 좋아하시나요?",
+                "question_type": "chujon",
+                "options": json.dumps(["한식", "중식", "일식", "양식"]),
                 "display_order": 2,
             },
             {
-                "text": "조리 시간은 어느 정도를 원하시나요?",
-                "question_type": "preference",
-                "options": json.dumps(["빠른조리", "일반조리"]),
+                "text": "건강을 고려한 식사를 원하시나요?",
+                "question_type": "chujon",
+                "options": json.dumps(["네", "아니오"]),
                 "display_order": 3,
-            },
-            {
-                "text": "어떤 종류의 음식을 좋아하시나요?",
-                "question_type": "preference",
-                "options": json.dumps(["밥류", "국물요리", "고기요리"]),
-                "display_order": 4,
-            },
-            {
-                "text": "식사 시간대는 언제인가요?",
-                "question_type": "filter",
-                "options": json.dumps(["아침", "점심", "저녁"]),
-                "display_order": 5,
-            },
-            {
-                "text": "선호하는 난이도는?",
-                "question_type": "preference",
-                "options": json.dumps(["쉬움", "보통", "어려움"]),
-                "display_order": 6,
             },
         ]
         for question_data in sample_questions:

@@ -15,12 +15,14 @@ interface ChujonRecommendationProps {
   questions: ChujonQuestion[];
   onSubmit: () => void;
   onAnswerChange?: (questionId: string, answer: string) => void;
+  onRestart?: () => void;
 }
 
 const ChujonRecommendation: React.FC<ChujonRecommendationProps> = ({ 
   questions, 
   onSubmit, 
-  onAnswerChange 
+  onAnswerChange,
+  onRestart
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
@@ -46,9 +48,11 @@ const ChujonRecommendation: React.FC<ChujonRecommendationProps> = ({
     }
   };
 
-  const goBack = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+  const handleRestart = () => {
+    setCurrentQuestionIndex(0);
+    setAnswers({});
+    if (onRestart) {
+      onRestart();
     }
   };
 
@@ -63,11 +67,6 @@ const ChujonRecommendation: React.FC<ChujonRecommendationProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {currentQuestionIndex > 0 && (
-          <TouchableOpacity onPress={goBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.primary} />
-          </TouchableOpacity>
-        )}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
             {currentQuestionIndex + 1} / {questions.length}
@@ -118,6 +117,10 @@ const ChujonRecommendation: React.FC<ChujonRecommendationProps> = ({
           );
         })}
       </ScrollView>
+
+      <TouchableOpacity style={styles.restartButton} onPress={handleRestart}>
+        <Text style={styles.restartButtonText}>다시하기</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -142,10 +145,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.xl,
-  },
-  backButton: {
-    marginRight: spacing.md,
-    padding: spacing.sm,
   },
   progressContainer: {
     flexDirection: 'row',
@@ -207,6 +206,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: spacing.md,
     top: spacing.md,
+  },
+  restartButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    padding: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xl,
+  },
+  restartButtonText: {
+    ...typography.button,
+    color: colors.text.inverse,
+    fontWeight: '600',
   },
 });
 

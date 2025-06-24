@@ -7,6 +7,7 @@ export interface ChujonQuestion {
     options: string[];
     category: string;
     weight: number;
+    question_type: string;
 }
 
 export interface QuestionRequest {
