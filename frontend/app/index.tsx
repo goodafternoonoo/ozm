@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
@@ -12,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MenuRecommendationStyles } from '../styles/MenuRecommendationStyles';
-import { MenuCard, Menu, ABTestInfo } from '../components/MenuCard';
+import { MenuCard } from '../components/MenuCard';
 import {
     CollaborativeMenuCard,
     CollaborativeMenu,
@@ -24,12 +23,7 @@ import {
 import { useQuizRecommendation } from '../hooks/useQuizRecommendation';
 import { useCollaborativeRecommendations } from '../hooks/useCollaborativeRecommendations';
 import QuizRecommendation from '../components/QuizRecommendation';
-
-type MenuRecommendation = {
-    menu: Menu;
-    score: number;
-    reason: string;
-};
+import { Menu, MenuRecommendation } from '../services/recommendationService';
 
 export default function MenuRecommendationScreen() {
     const [mode, setMode] = useState<'simple' | 'quiz' | 'collaborative'>(
@@ -508,7 +502,7 @@ export default function MenuRecommendationScreen() {
                 </View>
             )}
 
-            {recommendations.length > 0 && mode === 'simple' && (
+            {recommendations.length > 0 && (
                 <View style={MenuRecommendationStyles.recommendationsContainer}>
                     <Text style={MenuRecommendationStyles.recommendationsTitle}>
                         추천 메뉴

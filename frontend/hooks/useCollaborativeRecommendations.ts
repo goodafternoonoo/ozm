@@ -1,17 +1,8 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
+import { RecommendationService, Menu } from '../services/recommendationService';
+import { AppError } from '../utils/apiClient';
 
-export type CollaborativeMenu = {
-    id: number;
-    name: string;
-    description: string;
-    category: string;
-    rating: number;
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-};
+export type CollaborativeMenu = Menu;
 
 export type CollaborativeRecommendation = {
     menu: CollaborativeMenu;
@@ -36,18 +27,14 @@ export function useCollaborativeRecommendations() {
         setError(null);
 
         try {
-            const response = await axios.post(
-                'http://localhost:8000/api/v1/recommendations/collaborative',
-                {
+            const response =
+                await RecommendationService.getCollaborativeRecommendations({
                     session_id: sessionId,
                     limit: limit,
-                }
-            );
-
-            const recs = response.data?.data?.recommendations || [];
+                });
 
             // 백엔드 응답을 프론트엔드 형식으로 변환
-            const transformedRecs = recs.map((rec: any) => {
+            const transformedRecs = response.recommendations.map((rec: any) => {
                 // reason에서 유사도 점수와 유사 사용자 수 추출
                 const reason = rec.reason || '';
                 const similarityMatch = reason.match(/유사도: ([\d.]+)/);
@@ -71,10 +58,11 @@ export function useCollaborativeRecommendations() {
 
             setRecommendations(transformedRecs);
             return transformedRecs;
-        } catch (err: any) {
+        } catch (err) {
             const errorMessage =
-                err.response?.data?.message ||
-                '협업 필터링 추천을 가져오는데 실패했습니다';
+                err instanceof AppError
+                    ? err.message
+                    : '협업 필터링 추천을 가져오는데 실패했습니다';
             setError(errorMessage);
             console.error('협업 필터링 추천 에러:', err);
             return [];
@@ -91,11 +79,11 @@ export function useCollaborativeRecommendations() {
         setError(null);
 
         try {
-            const response = await axios.get(
-                `http://localhost:8000/api/v1/recommendations/collaborative-users?session_id=${sessionId}&limit=${limit}`
-            );
-
-            const recs = response.data || [];
+            const recs =
+                await RecommendationService.getCollaborativeRecommendationsRaw(
+                    sessionId,
+                    limit
+                );
 
             // 상세 정보를 포함한 협업 필터링 추천으로 변환
             const transformedRecs = recs.map((rec: any) => ({
@@ -114,10 +102,11 @@ export function useCollaborativeRecommendations() {
 
             setRecommendations(transformedRecs);
             return transformedRecs;
-        } catch (err: any) {
+        } catch (err) {
             const errorMessage =
-                err.response?.data?.message ||
-                '협업 필터링 상세 정보를 가져오는데 실패했습니다';
+                err instanceof AppError
+                    ? err.message
+                    : '협업 필터링 상세 정보를 가져오는데 실패했습니다';
             setError(errorMessage);
             console.error('협업 필터링 상세 정보 에러:', err);
             return [];

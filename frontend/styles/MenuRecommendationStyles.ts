@@ -184,6 +184,20 @@ export const MenuRecommendationStyles = StyleSheet.create({
         fontWeight: '600',
         color: '#007AFF',
     },
+    removeButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFE7E7',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+    },
+    removeButtonText: {
+        marginLeft: 6,
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#FF3B30',
+    },
     // A/B 테스트 정보 스타일
     abTestContainer: {
         backgroundColor: '#F0F8FF',

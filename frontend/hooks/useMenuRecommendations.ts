@@ -1,43 +1,17 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Alert } from 'react-native';
 import { useUserInteraction } from './useUserInteraction';
 import { useCollaborativeRecommendations } from './useCollaborativeRecommendations';
-
-export type Menu = {
-    id: number;
-    name: string;
-    description: string;
-    category: string;
-    rating: number;
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-};
-
-export type MenuRecommendation = {
-    menu: Menu;
-    score: number;
-    reason: string;
-};
+import { CategoryService, Category } from '../services/categoryService';
+import {
+    RecommendationService,
+    Menu,
+    MenuRecommendation,
+    ABTestInfo,
+} from '../services/recommendationService';
+import { AppError } from '../utils/apiClient';
 
 export type TimeSlot = 'breakfast' | 'lunch' | 'dinner';
-
-export type Category = {
-    id: string;
-    name: string;
-    cuisine_type?: string;
-    description?: string;
-    icon_url?: string;
-    color_code?: string;
-};
-
-export type ABTestInfo = {
-    abGroup: string;
-    weightSet: Record<string, number>;
-    recommendationType: string;
-};
 
 export function useMenuRecommendations() {
     const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot>('lunch');
@@ -71,12 +45,10 @@ export function useMenuRecommendations() {
 
     const fetchCategories = async () => {
         try {
-            const response = await axios.get(
-                'http://localhost:8000/api/v1/categories?page=1&size=50'
-            );
-            const cats = response.data?.data?.categories || [];
-            setCategories(cats);
+            const response = await CategoryService.getCategories(1, 50);
+            setCategories(response.categories);
         } catch (err) {
+            console.error('카테고리 조회 에러:', err);
             setCategories([]);
         }
     };
@@ -87,30 +59,22 @@ export function useMenuRecommendations() {
         setAbTestInfo(null);
 
         try {
-            const response = await axios.post(
-                'http://localhost:8000/api/v1/recommendations/simple',
-                {
+            const response =
+                await RecommendationService.getSimpleRecommendations({
                     time_slot: selectedTimeSlot,
                     category_id: categoryId || undefined,
                     session_id: sessionId,
-                }
-            );
+                });
 
-            const recs = response.data?.data?.recommendations || [];
-            setRecommendations(recs);
+            setRecommendations(response.recommendations);
 
             // A/B 테스트 정보 추출
-            if (response.data?.data?.ab_test_info) {
-                const info = response.data.data.ab_test_info;
-                setAbTestInfo({
-                    abGroup: info.ab_group,
-                    weightSet: info.weight_set ?? {},
-                    recommendationType: info.recommendation_type,
-                });
+            if (response.ab_test_info) {
+                setAbTestInfo(response.ab_test_info);
             }
 
             // 추천 선택 상호작용 기록
-            for (const rec of recs) {
+            for (const rec of response.recommendations) {
                 await recordRecommendationSelect(
                     sessionId,
                     rec.menu.id.toString(),
@@ -118,9 +82,13 @@ export function useMenuRecommendations() {
                 );
             }
 
-            return recs;
+            return response.recommendations;
         } catch (err) {
-            setError('메뉴 추천을 가져오는데 실패했습니다');
+            const errorMessage =
+                err instanceof AppError
+                    ? err.message
+                    : '메뉴 추천을 가져오는데 실패했습니다';
+            setError(errorMessage);
             console.error('API 에러:', err);
             return [];
         } finally {

@@ -2,24 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MenuRecommendationStyles } from '../styles/MenuRecommendationStyles';
-
-export type Menu = {
-    id: number;
-    name: string;
-    description: string;
-    category: string;
-    rating: number;
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-};
-
-export type ABTestInfo = {
-    abGroup: string;
-    weightSet: Record<string, number>;
-    recommendationType: string;
-};
+import { Menu, ABTestInfo } from '../services/recommendationService';
 
 interface MenuCardProps {
     menu: Menu;
@@ -228,9 +211,9 @@ export const MenuCard: React.FC<MenuCardProps> = ({
                     </TouchableOpacity>
                 )}
 
-                {isSaved && onRemove && (
+                {onRemove && isSaved && (
                     <TouchableOpacity
-                        style={MenuRecommendationStyles.addButton}
+                        style={MenuRecommendationStyles.removeButton}
                         onPress={handleRemovePress}
                     >
                         <Ionicons
@@ -238,23 +221,10 @@ export const MenuCard: React.FC<MenuCardProps> = ({
                             size={24}
                             color='#FF3B30'
                         />
-                        <Text
-                            style={[
-                                MenuRecommendationStyles.addButtonText,
-                                { color: '#FF3B30' },
-                            ]}
-                        >
-                            추가 취소
+                        <Text style={MenuRecommendationStyles.removeButtonText}>
+                            메뉴 제거
                         </Text>
                     </TouchableOpacity>
-                )}
-
-                {isSaved && !onRemove && (
-                    <Ionicons
-                        name='checkmark-circle'
-                        size={24}
-                        color='#4CD964'
-                    />
                 )}
             </View>
         </TouchableOpacity>

@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import axios from 'axios';
+import {
+    RecommendationService,
+    InteractionData,
+} from '../services/recommendationService';
+import { AppError } from '../utils/apiClient';
 
 export type InteractionType =
     | 'click'
@@ -8,14 +12,6 @@ export type InteractionType =
     | 'recommend_select'
     | 'view_detail'
     | 'share';
-
-export type InteractionData = {
-    session_id: string;
-    menu_id?: string;
-    interaction_type: InteractionType;
-    interaction_strength?: number;
-    extra_data?: Record<string, any>;
-};
 
 export function useUserInteraction() {
     const [loading, setLoading] = useState(false);
@@ -26,20 +22,15 @@ export function useUserInteraction() {
         setError(null);
 
         try {
-            const response = await axios.post(
-                'http://localhost:8000/api/v1/recommendations/interaction',
-                interactionData,
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                }
+            const response = await RecommendationService.recordInteraction(
+                interactionData
             );
-
-            return response.data;
-        } catch (err: any) {
+            return response;
+        } catch (err) {
             const errorMessage =
-                err.response?.data?.message || '상호작용 기록에 실패했습니다';
+                err instanceof AppError
+                    ? err.message
+                    : '상호작용 기록에 실패했습니다';
             setError(errorMessage);
             console.error('상호작용 기록 에러:', err);
             return null;

@@ -1,40 +1,14 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useUserInteraction } from './useUserInteraction';
-
-export type QuizQuestion = {
-    id: string;
-    text: string;
-    order: number;
-    options: string[];
-    category: string;
-};
+import { QuestionService, QuizQuestion } from '../services/questionService';
+import {
+    RecommendationService,
+    MenuRecommendation,
+    ABTestInfo,
+} from '../services/recommendationService';
+import { AppError } from '../utils/apiClient';
 
 export type QuizAnswers = { [questionId: string]: string };
-
-export type Menu = {
-    id: number;
-    name: string;
-    description: string;
-    category: string;
-    rating: number;
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-};
-
-export type MenuRecommendation = {
-    menu: Menu;
-    score: number;
-    reason: string;
-};
-
-export type ABTestInfo = {
-    abGroup: string;
-    weightSet: Record<string, number>;
-    recommendationType: string;
-};
 
 export function useQuizRecommendation() {
     const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -60,11 +34,9 @@ export function useQuizRecommendation() {
     const fetchQuestions = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(
-                'http://localhost:8000/api/v1/questions/'
-            );
+            const response = await QuestionService.getQuestions();
             setQuestions(
-                (response.data?.data || []).map((q: any) => ({
+                response.questions.map((q: any) => ({
                     ...q,
                     options: Array.isArray(q.options)
                         ? q.options
@@ -74,7 +46,11 @@ export function useQuizRecommendation() {
                 }))
             );
         } catch (err) {
-            setError('질문을 불러오지 못했습니다');
+            const errorMessage =
+                err instanceof AppError
+                    ? err.message
+                    : '질문을 불러오지 못했습니다';
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -91,29 +67,22 @@ export function useQuizRecommendation() {
         setAbTestInfo(null);
 
         try {
-            const response = await axios.post(
-                'http://localhost:8000/api/v1/recommendations/quiz',
+            const response = await RecommendationService.getQuizRecommendations(
                 {
                     answers,
                     session_id: sessionId,
                 }
             );
 
-            const recs = response.data?.data?.recommendations || [];
-            setRecommendations(recs);
+            setRecommendations(response.recommendations);
 
             // A/B 테스트 정보 추출 (백엔드 응답에서)
-            if (response.data?.data?.ab_test_info) {
-                const info = response.data.data.ab_test_info;
-                setAbTestInfo({
-                    abGroup: info.ab_group,
-                    weightSet: info.weight_set ?? {},
-                    recommendationType: info.recommendation_type,
-                });
+            if (response.ab_test_info) {
+                setAbTestInfo(response.ab_test_info);
             }
 
             // 추천 선택 상호작용 기록
-            for (const rec of recs) {
+            for (const rec of response.recommendations) {
                 await recordRecommendationSelect(
                     sessionId,
                     rec.menu.id.toString(),
@@ -121,9 +90,13 @@ export function useQuizRecommendation() {
                 );
             }
 
-            return recs;
+            return response.recommendations;
         } catch (err) {
-            setError('추천을 가져오지 못했습니다');
+            const errorMessage =
+                err instanceof AppError
+                    ? err.message
+                    : '추천을 가져오지 못했습니다';
+            setError(errorMessage);
             return [];
         } finally {
             setLoading(false);
