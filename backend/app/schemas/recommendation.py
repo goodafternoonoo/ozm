@@ -30,6 +30,7 @@ class QuizRecommendationRequest(BaseModel):
     """질답 기반 추천 요청 스키마"""
 
     answers: Dict[str, str]
+    category_id: Optional[str] = None
     session_id: Optional[str] = None
 
 

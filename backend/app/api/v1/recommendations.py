@@ -122,6 +122,7 @@ async def get_quiz_recommendations(
         db=db,
         answers=request.answers,
         session_id=session_id,
+        category_id=request.category_id,
         user_id=user_id,
         limit=5,
     )

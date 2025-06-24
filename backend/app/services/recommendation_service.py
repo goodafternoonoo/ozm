@@ -106,6 +106,7 @@ class RecommendationService:
         db: AsyncSession,
         answers: Dict[str, str],
         session_id: str,
+        category_id: Optional[str] = None,
         user_id: Optional[uuid.UUID] = None,
         limit: int = 5,
     ) -> List[MenuRecommendation]:
@@ -115,6 +116,11 @@ class RecommendationService:
         """
         # 1. 전체 메뉴 + 카테고리 join 조회
         stmt = select(Menu).options(selectinload(Menu.category))
+
+        # 카테고리 필터링 추가
+        if category_id:
+            stmt = stmt.where(Menu.category_id == category_id)
+
         result = await db.execute(stmt)
         menus = result.scalars().all()
 
