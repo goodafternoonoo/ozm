@@ -251,7 +251,7 @@ async def get_preference_analysis(
     analysis = await PreferenceService.get_preference_analysis(
         db=db, session_id=session_id, user_id=user_id
     )
-    return JSONResponse(content=jsonable_encoder(analysis))
+    return JSONResponse(content=jsonable_encoder(succeed_response(analysis)))
 
 
 @router.post("/interaction")
@@ -279,7 +279,21 @@ async def record_interaction(
     # 사용자 ID 업데이트
     interaction.user_id = user_id
 
-    interaction_dict = interaction.dict()
+    # menu_id 존재 여부 체크
+    from app.models.menu import Menu
+
+    menu_id = getattr(interaction, "menu_id", None)
+    if menu_id:
+        menu = await db.get(Menu, menu_id)
+        if not menu:
+            return JSONResponse(
+                content=jsonable_encoder(
+                    error_response("존재하지 않는 메뉴입니다", code=404)
+                ),
+                status_code=404,
+            )
+
+    interaction_dict = interaction.model_dump()
     if isinstance(interaction_dict.get("extra_data"), dict):
         interaction_dict["extra_data"] = json.dumps(
             interaction_dict["extra_data"], ensure_ascii=False
@@ -291,11 +305,13 @@ async def record_interaction(
 
     return JSONResponse(
         content=jsonable_encoder(
-            {
-                "message": "상호작용이 성공적으로 기록되었습니다",
-                "interaction_id": str(recorded_interaction.id),
-                "preference_updated": True,
-            }
+            succeed_response(
+                {
+                    "message": "상호작용이 성공적으로 기록되었습니다",
+                    "interaction_id": str(recorded_interaction.id),
+                    "preference_updated": True,
+                }
+            )
         ),
         status_code=201,
     )
@@ -326,4 +342,4 @@ async def get_collaborative_recommendations_raw(
     recommendations = await PreferenceService.get_collaborative_recommendations(
         db=db, session_id=session_id, user_id=user_id, limit=limit
     )
-    return recommendations
+    return JSONResponse(content=jsonable_encoder(succeed_response(recommendations)))

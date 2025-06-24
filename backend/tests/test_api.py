@@ -201,6 +201,9 @@ async def test_simple_recommendation():
         data = resp.json()["data"]
         assert "recommendations" in data
         assert isinstance(data["recommendations"], list)
+        assert "ab_test_info" in data
+        assert "session_id" in data
+        assert "total_count" in data
 
 
 @pytest.mark.asyncio
@@ -216,6 +219,9 @@ async def test_quiz_recommendation():
         data = resp.json()["data"]
         assert "recommendations" in data
         assert isinstance(data["recommendations"], list)
+        assert "ab_test_info" in data
+        assert "session_id" in data
+        assert "total_count" in data
 
 
 @pytest.mark.asyncio
@@ -290,9 +296,116 @@ async def test_quiz_recommendation_required_filters():
         resp2 = await client.post("/api/v1/recommendations/quiz", json=req2)
         assert resp2.status_code == 201
         data2 = resp2.json()["data"]
-        print("[필수조건 미충족 추천 결과]", data2["recommendations"])
-        # 국물요리 조건이 없으므로 추천 결과 없음
         assert len(data2["recommendations"]) == 0
+
+
+@pytest.mark.asyncio
+async def test_collaborative_recommendation():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        req = {"session_id": "test-session-collab", "limit": 3}
+        resp = await client.post("/api/v1/recommendations/collaborative", json=req)
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert "recommendations" in data
+        assert isinstance(data["recommendations"], list)
+        assert "ab_test_info" in data
+        assert "session_id" in data
+        assert "total_count" in data
+
+
+@pytest.mark.asyncio
+async def test_preference_analysis():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        resp = await client.get(
+            "/api/v1/recommendations/preference-analysis?session_id=test-session-123"
+        )
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert "preference_summary" in data
+        assert "recommendation_confidence" in data
+
+
+@pytest.mark.asyncio
+def override_get_current_user():
+    class DummyUser:
+        id = uuid.uuid4()
+        username = "dummy"
+        email = "dummy@example.com"
+        nickname = "더미"
+        kakao_id = str(uuid.uuid4())
+        is_active = True
+
+    return DummyUser()
+
+
+@pytest.mark.asyncio
+async def test_record_interaction():
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        # 테스트용 메뉴 생성
+        cat_payload = {
+            "name": "상호작용 카테고리",
+            "description": "상호작용용 카테고리",
+            "country": "한국",
+            "cuisine_type": "한식",
+            "is_active": True,
+            "display_order": 1,
+            "icon_url": None,
+            "color_code": "#abcdef",
+        }
+        cat_resp = await client.post("/api/v1/categories/", json=cat_payload)
+        category_id = cat_resp.json()["data"]["id"]
+        menu_payload = {
+            "name": "상호작용 메뉴",
+            "description": "상호작용용 메뉴",
+            "ingredients": "두부, 고추장, 마늘",
+            "cooking_time": 15,
+            "difficulty": "medium",
+            "cuisine_type": "한식",
+            "spicy_level": 2,
+            "is_healthy": True,
+            "is_vegetarian": True,
+            "calories": 350,
+            "protein": 12.0,
+            "carbs": 45.0,
+            "fat": 8.0,
+            "image_url": None,
+            "display_order": 1,
+            "is_active": True,
+            "time_slot": "lunch",
+            "is_spicy": False,
+            "is_quick": False,
+            "has_rice": True,
+            "has_soup": False,
+            "has_meat": False,
+            "category_id": category_id,
+        }
+        menu_resp = await client.post("/api/v1/menus/", json=menu_payload)
+        assert menu_resp.status_code == 201
+        menu_id = menu_resp.json()["data"]["id"]
+        payload = {
+            "session_id": "test-session-123",
+            "menu_id": menu_id,
+            "interaction_type": "click",
+            "interaction_strength": 1.0,
+            "extra_data": {"test": "value"},
+        }
+        resp = await client.post("/api/v1/recommendations/interaction", json=payload)
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert "interaction_id" in data
+    app.dependency_overrides = {}
+
+
+@pytest.mark.asyncio
+async def test_collaborative_users():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        resp = await client.get(
+            "/api/v1/recommendations/collaborative-users?session_id=test-session-123&limit=2"
+        )
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert isinstance(data, list)
 
 
 # ---------------- 즐겨찾기(찜) ----------------
