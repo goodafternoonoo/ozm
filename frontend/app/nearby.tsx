@@ -9,6 +9,7 @@ import {
   RefreshControl,
   TextInput,
   Modal,
+  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LocationService } from '../services/locationService';
@@ -28,6 +29,8 @@ interface Restaurant {
   phone: string;
   placeUrl: string;
   roadAddress: string;
+  latitude: number;
+  longitude: number;
 }
 
 export default function NearbyScreen() {
@@ -44,13 +47,14 @@ export default function NearbyScreen() {
     getCurrentLocation,
     onRefresh,
     handleSearch,
+    loadMoreRestaurants,
+    loadingMore,
+    hasMoreData,
   } = useNearbyRestaurants();
   const [showFullAddress, setShowFullAddress] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [showMap, setShowMap] = useState(false);
-  const [distanceSort, setDistanceSort] = useState<'asc' | 'desc' | null>('asc');
   const [ratingSort, setRatingSort] = useState<'asc' | 'desc' | null>(null);
-  const [showDistanceModal, setShowDistanceModal] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
 
   useEffect(() => {
@@ -59,11 +63,9 @@ export default function NearbyScreen() {
 
   // 정렬된 레스토랑 목록
   const sortedRestaurants = [...restaurants].sort((a, b) => {
-    // 거리순 정렬이 우선
-    if (distanceSort) {
-      const distanceDiff = distanceSort === 'asc' ? a.distance - b.distance : b.distance - a.distance;
-      if (distanceDiff !== 0) return distanceDiff;
-    }
+    // 거리순 정렬 (항상 가까운 순)
+    const distanceDiff = a.distance - b.distance;
+    if (distanceDiff !== 0) return distanceDiff;
     
     // 거리가 같으면 별점순 정렬
     if (ratingSort) {
@@ -111,6 +113,157 @@ export default function NearbyScreen() {
     }
   };
 
+  // 무한 스크롤 처리
+  const handleLoadMore = () => {
+    if (hasMoreData && !loadingMore) {
+      loadMoreRestaurants('distance');
+    }
+  };
+
+  // 로딩 더 많은 데이터 표시 컴포넌트
+  const renderLoadMoreIndicator = () => {
+    if (!loadingMore) return null;
+    
+    return (
+      <View style={NearbyStyles.loadMoreContainer}>
+        <ActivityIndicator size="small" color="#007AFF" />
+        <Text style={NearbyStyles.loadMoreText}>더 많은 맛집을 불러오는 중...</Text>
+      </View>
+    );
+  };
+
+  // 빈 상태 표시 컴포넌트
+  const renderEmptyComponent = () => {
+    if (loading) return null;
+    
+    return (
+      <View style={NearbyStyles.emptyContainer}>
+        <Ionicons name="restaurant-outline" size={60} color="#C7C7CC" />
+        <Text style={NearbyStyles.emptyText}>
+          {searchKeyword ? '검색 결과가 없습니다' : '근처에 맛집이 없습니다'}
+        </Text>
+        <Text style={NearbyStyles.emptySubtext}>
+          {searchKeyword ? '다른 키워드로 검색해보세요' : '다른 지역에서 검색해보세요'}
+        </Text>
+      </View>
+    );
+  };
+
+  // 헤더 컴포넌트 (위치 정보)
+  const renderHeader = () => (
+    <View style={NearbyStyles.header}>
+      <View style={NearbyStyles.locationInfo}>
+        <Ionicons name="location" size={24} color="#007AFF" />
+        <View style={NearbyStyles.locationText}>
+          <Text style={NearbyStyles.locationTitle}>현재 위치</Text>
+          <TouchableOpacity onPress={() => setShowFullAddress(!showFullAddress)}>
+            <Text style={NearbyStyles.locationAddress}>
+              {location?.address 
+                ? (showFullAddress ? location.address : LocationService.formatAddressToDistrict(location.address))
+                : location 
+                  ? '주소 정보 없음' 
+                  : '위치 정보를 가져오는 중...'
+              }
+            </Text>
+            {location?.address && (
+              <Text style={NearbyStyles.locationHint}>
+                {showFullAddress ? '간단히 보기' : '상세 주소 보기'}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+      <TouchableOpacity style={NearbyStyles.refreshButton} onPress={getCurrentLocation}>
+        <Ionicons name="refresh" size={24} color="#007AFF" />
+      </TouchableOpacity>
+    </View>
+  );
+
+  // 검색 및 필터 섹션 컴포넌트
+  const renderSearchAndFilter = () => (
+    <View style={NearbyStyles.content}>
+      <View style={NearbyStyles.searchContainer}>
+        <TextInput
+          style={NearbyStyles.searchInput}
+          placeholder="맛집 이름이나 음식 종류를 검색하세요"
+          value={searchKeyword}
+          onChangeText={setSearchKeyword}
+          onSubmitEditing={() => handleSearch('distance')}
+        />
+        <TouchableOpacity style={NearbyStyles.searchButton} onPress={() => handleSearch('distance')}>
+          <Ionicons name="search" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={NearbyStyles.radiusContainer}>
+        <Text style={NearbyStyles.radiusLabel}>검색 반경: {searchRadius}m</Text>
+        <View style={NearbyStyles.radiusButtons}>
+          {[500, 1000, 2000, 3000].map((radius) => (
+            <TouchableOpacity
+              key={radius}
+              style={[
+                NearbyStyles.radiusButton,
+                searchRadius === radius && NearbyStyles.radiusButtonActive
+              ]}
+              onPress={() => {
+                setSearchRadius(radius);
+                if (location) {
+                  handleSearch('distance');
+                }
+              }}
+            >
+              <Text style={[
+                NearbyStyles.radiusButtonText,
+                searchRadius === radius && NearbyStyles.radiusButtonTextActive
+              ]}>
+                {radius}m
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      <View style={NearbyStyles.sortContainer}>
+        <Text style={NearbyStyles.sortLabel}>정렬:</Text>
+        <View style={NearbyStyles.sortButtons}>
+          <TouchableOpacity
+            style={NearbyStyles.sortButton}
+            onPress={() => setShowRatingModal(true)}
+          >
+            <Ionicons 
+              name="star" 
+              size={16} 
+              color="#007AFF" 
+            />
+            <Text style={NearbyStyles.sortButtonText}>
+              {ratingSort === 'asc' ? '별점 높은 순' : ratingSort === 'desc' ? '별점 낮은 순' : '별점순'}
+            </Text>
+            <Ionicons 
+              name="chevron-down" 
+              size={16} 
+              color="#007AFF" 
+              style={{ marginLeft: 4 }}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <Text style={NearbyStyles.sectionTitle}>
+        {searchKeyword ? `"${searchKeyword}" 검색 결과` : '근처 맛집'}
+      </Text>
+    </View>
+  );
+
+  // 레스토랑 아이템 렌더링
+  const renderRestaurantItem = ({ item }: { item: Restaurant }) => (
+    <RestaurantListItem
+      restaurant={item}
+      onPress={setSelectedRestaurant}
+      onCall={callRestaurant}
+      onMap={openMap}
+    />
+  );
+
   if (loading) {
     return (
       <View style={NearbyStyles.loadingContainer}>
@@ -136,151 +289,29 @@ export default function NearbyScreen() {
   }
 
   return (
-    <ScrollView 
-      style={NearbyStyles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <View style={NearbyStyles.header}>
-        <View style={NearbyStyles.locationInfo}>
-          <Ionicons name="location" size={24} color="#007AFF" />
-          <View style={NearbyStyles.locationText}>
-            <Text style={NearbyStyles.locationTitle}>현재 위치</Text>
-            <TouchableOpacity onPress={() => setShowFullAddress(!showFullAddress)}>
-              <Text style={NearbyStyles.locationAddress}>
-                {location?.address 
-                  ? (showFullAddress ? location.address : LocationService.formatAddressToDistrict(location.address))
-                  : location 
-                    ? '주소 정보 없음' 
-                    : '위치 정보를 가져오는 중...'
-                }
-              </Text>
-              {location?.address && (
-                <Text style={NearbyStyles.locationHint}>
-                  {showFullAddress ? '간단히 보기' : '상세 주소 보기'}
-                </Text>
-              )}
-            </TouchableOpacity>
+    <View style={NearbyStyles.container}>
+      {/* 전체 스크롤 가능한 FlatList */}
+      <FlatList
+        data={sortedRestaurants}
+        renderItem={renderRestaurantItem}
+        keyExtractor={(item) => item.id}
+        style={NearbyStyles.listContainer}
+        contentContainerStyle={NearbyStyles.listContentContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.1}
+        ListHeaderComponent={
+          <View>
+            {renderHeader()}
+            {renderSearchAndFilter()}
           </View>
-        </View>
-        <TouchableOpacity style={NearbyStyles.refreshButton} onPress={getCurrentLocation}>
-          <Ionicons name="refresh" size={24} color="#007AFF" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={NearbyStyles.content}>
-        <View style={NearbyStyles.searchContainer}>
-          <TextInput
-            style={NearbyStyles.searchInput}
-            placeholder="맛집 이름이나 음식 종류를 검색하세요"
-            value={searchKeyword}
-            onChangeText={setSearchKeyword}
-            onSubmitEditing={handleSearch}
-          />
-          <TouchableOpacity style={NearbyStyles.searchButton} onPress={handleSearch}>
-            <Ionicons name="search" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-        <View style={NearbyStyles.radiusContainer}>
-          <Text style={NearbyStyles.radiusLabel}>검색 반경: {searchRadius}m</Text>
-          <View style={NearbyStyles.radiusButtons}>
-            {[500, 1000, 2000, 3000].map((radius) => (
-              <TouchableOpacity
-                key={radius}
-                style={[
-                  NearbyStyles.radiusButton,
-                  searchRadius === radius && NearbyStyles.radiusButtonActive
-                ]}
-                onPress={() => {
-                  setSearchRadius(radius);
-                  if (location) {
-                    handleSearch();
-                  }
-                }}
-              >
-                <Text style={[
-                  NearbyStyles.radiusButtonText,
-                  searchRadius === radius && NearbyStyles.radiusButtonTextActive
-                ]}>
-                  {radius}m
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={NearbyStyles.sortContainer}>
-          <Text style={NearbyStyles.sortLabel}>정렬:</Text>
-          <View style={NearbyStyles.sortButtons}>
-            <TouchableOpacity
-              style={NearbyStyles.sortButton}
-              onPress={() => setShowDistanceModal(true)}
-            >
-              <Ionicons 
-                name="location" 
-                size={16} 
-                color="#007AFF" 
-              />
-              <Text style={NearbyStyles.sortButtonText}>
-                {distanceSort === 'asc' ? '가까운 순' : distanceSort === 'desc' ? '먼 순' : '거리순'}
-              </Text>
-              <Ionicons 
-                name="chevron-down" 
-                size={16} 
-                color="#007AFF" 
-                style={{ marginLeft: 4 }}
-              />
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={NearbyStyles.sortButton}
-              onPress={() => setShowRatingModal(true)}
-            >
-              <Ionicons 
-                name="star" 
-                size={16} 
-                color="#007AFF" 
-              />
-              <Text style={NearbyStyles.sortButtonText}>
-                {ratingSort === 'asc' ? '별점 높은 순' : ratingSort === 'desc' ? '별점 낮은 순' : '별점순'}
-              </Text>
-              <Ionicons 
-                name="chevron-down" 
-                size={16} 
-                color="#007AFF" 
-                style={{ marginLeft: 4 }}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <Text style={NearbyStyles.sectionTitle}>
-          {searchKeyword ? `"${searchKeyword}" 검색 결과` : '근처 맛집'}
-        </Text>
-        
-        {restaurants.length === 0 ? (
-          <View style={NearbyStyles.emptyContainer}>
-            <Ionicons name="restaurant-outline" size={60} color="#C7C7CC" />
-            <Text style={NearbyStyles.emptyText}>
-              {searchKeyword ? '검색 결과가 없습니다' : '근처에 맛집이 없습니다'}
-            </Text>
-            <Text style={NearbyStyles.emptySubtext}>
-              {searchKeyword ? '다른 키워드로 검색해보세요' : '다른 지역에서 검색해보세요'}
-            </Text>
-          </View>
-        ) : (
-          sortedRestaurants.map((restaurant) => (
-            <RestaurantListItem
-              key={restaurant.id}
-              restaurant={restaurant}
-              onPress={setSelectedRestaurant}
-              onCall={callRestaurant}
-              onMap={openMap}
-            />
-          ))
-        )}
-      </View>
+        }
+        ListEmptyComponent={renderEmptyComponent}
+        ListFooterComponent={renderLoadMoreIndicator}
+        showsVerticalScrollIndicator={false}
+      />
 
       {showMap && selectedRestaurant && (
         <RestaurantMap
@@ -288,77 +319,6 @@ export default function NearbyScreen() {
           onClose={closeMap}
         />
       )}
-
-      {/* 거리 정렬 모달 */}
-      <Modal
-        visible={showDistanceModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowDistanceModal(false)}
-      >
-        <TouchableOpacity 
-          style={NearbyStyles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowDistanceModal(false)}
-        >
-          <View style={NearbyStyles.modalContent}>
-            <View style={NearbyStyles.modalHeader}>
-              <Text style={NearbyStyles.modalTitle}>거리순 정렬</Text>
-              <TouchableOpacity onPress={() => setShowDistanceModal(false)}>
-                <Ionicons name="close" size={24} color="#8E8E93" />
-              </TouchableOpacity>
-            </View>
-            
-            <View style={NearbyStyles.sortOptions}>
-              <TouchableOpacity
-                style={[
-                  NearbyStyles.sortOption,
-                  distanceSort === 'asc' && NearbyStyles.sortOptionActive
-                ]}
-                onPress={() => {
-                  setDistanceSort('asc');
-                  setShowDistanceModal(false);
-                }}
-              >
-                <Ionicons 
-                  name="arrow-up" 
-                  size={20} 
-                  color={distanceSort === 'asc' ? "#fff" : "#007AFF"} 
-                />
-                <Text style={[
-                  NearbyStyles.sortOptionText,
-                  distanceSort === 'asc' && NearbyStyles.sortOptionTextActive
-                ]}>
-                  가까운 순
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  NearbyStyles.sortOption,
-                  distanceSort === 'desc' && NearbyStyles.sortOptionActive
-                ]}
-                onPress={() => {
-                  setDistanceSort('desc');
-                  setShowDistanceModal(false);
-                }}
-              >
-                <Ionicons 
-                  name="arrow-down" 
-                  size={20} 
-                  color={distanceSort === 'desc' ? "#fff" : "#007AFF"} 
-                />
-                <Text style={[
-                  NearbyStyles.sortOptionText,
-                  distanceSort === 'desc' && NearbyStyles.sortOptionTextActive
-                ]}>
-                  먼 순
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
 
       {/* 별점 정렬 모달 */}
       <Modal
@@ -389,6 +349,9 @@ export default function NearbyScreen() {
                 onPress={() => {
                   setRatingSort('asc');
                   setShowRatingModal(false);
+                  if (location) {
+                    handleSearch('distance');
+                  }
                 }}
               >
                 <Ionicons 
@@ -412,6 +375,9 @@ export default function NearbyScreen() {
                 onPress={() => {
                   setRatingSort('desc');
                   setShowRatingModal(false);
+                  if (location) {
+                    handleSearch('distance');
+                  }
                 }}
               >
                 <Ionicons 
@@ -430,6 +396,6 @@ export default function NearbyScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
-    </ScrollView>
+    </View>
   );
 } 

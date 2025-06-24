@@ -44,7 +44,8 @@ export class KakaoApiService {
     latitude: number,
     longitude: number,
     radius: number = 1000,
-    page: number = 1
+    page: number = 1,
+    sort: 'distance' | 'distance_desc' = 'distance'
   ): Promise<KakaoPlace[]> {
     try {
       // 방법 1: 직접 호출 (CORS 문제 가능성)
@@ -63,7 +64,7 @@ export class KakaoApiService {
             radius: radius,
             page: page,
             size: 15,
-            sort: 'distance' // 거리순 정렬
+            sort: sort // 거리순 정렬
           }
         }
       );
@@ -90,7 +91,7 @@ export class KakaoApiService {
               radius: radius,
               page: page,
               size: 15,
-              sort: 'distance'
+              sort: sort
             }
           }
         );
@@ -109,7 +110,8 @@ export class KakaoApiService {
     latitude: number,
     longitude: number,
     radius: number = 1000,
-    page: number = 1
+    page: number = 1,
+    sort: 'distance' | 'distance_desc' = 'distance'
   ): Promise<KakaoPlace[]> {
     try {
       const response = await axios.get<KakaoSearchResponse>(
@@ -128,7 +130,7 @@ export class KakaoApiService {
             radius: radius,
             page: page,
             size: 15,
-            sort: 'distance'
+            sort: sort
           }
         }
       );
@@ -156,7 +158,7 @@ export class KakaoApiService {
               radius: radius,
               page: page,
               size: 15,
-              sort: 'distance'
+              sort: sort
             }
           }
         );

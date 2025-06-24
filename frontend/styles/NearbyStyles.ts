@@ -394,4 +394,23 @@ export const NearbyStyles = StyleSheet.create({
   sortOptionTextActive: {
     color: '#fff',
   },
+  // 무한 스크롤을 위한 새로운 스타일들
+  listContainer: {
+    flex: 1,
+  },
+  listContentContainer: {
+    paddingBottom: 20,
+  },
+  loadMoreContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+  },
+  loadMoreText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#8E8E93',
+  },
 }); 

@@ -26,6 +26,11 @@ export function useNearbyRestaurants() {
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'loading'>('loading');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchRadius, setSearchRadius] = useState(1000);
+  
+  // 무한 스크롤을 위한 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMoreData, setHasMoreData] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const getCurrentLocation = async () => {
     console.log('🔄 getCurrentLocation 호출됨');
@@ -40,7 +45,10 @@ export function useNearbyRestaurants() {
         setLocation(currentLocation);
         setLocationPermission('granted');
         console.log('📍 맛집 검색 시작...');
-        await searchNearbyRestaurants(currentLocation.latitude, currentLocation.longitude);
+        // 초기 검색 시 페이지 리셋
+        setCurrentPage(1);
+        setHasMoreData(true);
+        await searchNearbyRestaurants(currentLocation.latitude, currentLocation.longitude, 1, true);
       } else {
         console.log('❌ 위치 정보 없음, 권한 거부됨');
         setLocationPermission('denied');
@@ -54,7 +62,13 @@ export function useNearbyRestaurants() {
     }
   };
 
-  const searchNearbyRestaurants = async (latitude: number, longitude: number) => {
+  const searchNearbyRestaurants = async (
+    latitude: number, 
+    longitude: number, 
+    page: number = 1, 
+    reset: boolean = false,
+    sortBy: 'distance' | 'distance_desc' = 'distance'
+  ) => {
     try {
       let kakaoPlaces;
       if (searchKeyword.trim()) {
@@ -62,15 +76,20 @@ export function useNearbyRestaurants() {
           searchKeyword,
           latitude,
           longitude,
-          searchRadius
+          searchRadius,
+          page,
+          sortBy
         );
       } else {
         kakaoPlaces = await KakaoApiService.searchRestaurants(
           latitude,
           longitude,
-          searchRadius
+          searchRadius,
+          page,
+          sortBy
         );
       }
+      
       const transformedRestaurants: Restaurant[] = kakaoPlaces.map(place => ({
         id: place.id,
         name: place.place_name,
@@ -85,28 +104,57 @@ export function useNearbyRestaurants() {
         latitude: parseFloat(place.y),
         longitude: parseFloat(place.x),
       }));
-      setRestaurants(transformedRestaurants);
+
+      if (reset) {
+        // 초기 검색 또는 새로고침 시 기존 데이터 교체
+        setRestaurants(transformedRestaurants);
+      } else {
+        // 추가 로드 시 기존 데이터에 추가
+        setRestaurants(prev => [...prev, ...transformedRestaurants]);
+      }
+
+      // 더 이상 데이터가 없으면 hasMoreData를 false로 설정
+      setHasMoreData(kakaoPlaces.length === 15); // 카카오 API는 한 번에 최대 15개 반환
+      
     } catch (error) {
       console.error('❌ searchNearbyRestaurants 에러:', error);
       Alert.alert('오류', '맛집 검색에 실패했습니다. 카카오 API 키를 확인해주세요.');
     }
   };
 
-  const onRefresh = async () => {
+  const loadMoreRestaurants = async (sortBy: 'distance' | 'distance_desc' = 'distance') => {
+    if (!location || loadingMore || !hasMoreData) return;
+    
+    setLoadingMore(true);
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    
+    try {
+      await searchNearbyRestaurants(location.latitude, location.longitude, nextPage, false, sortBy);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const onRefresh = async (sortBy: 'distance' | 'distance_desc' = 'distance') => {
     setRefreshing(true);
     if (location) {
-      await searchNearbyRestaurants(location.latitude, location.longitude);
+      setCurrentPage(1);
+      setHasMoreData(true);
+      await searchNearbyRestaurants(location.latitude, location.longitude, 1, true, sortBy);
     }
     setRefreshing(false);
   };
 
-  const handleSearch = async () => {
+  const handleSearch = async (sortBy: 'distance' | 'distance_desc' = 'distance') => {
     if (!location) {
       Alert.alert('오류', '위치 정보가 없습니다.');
       return;
     }
     setLoading(true);
-    await searchNearbyRestaurants(location.latitude, location.longitude);
+    setCurrentPage(1);
+    setHasMoreData(true);
+    await searchNearbyRestaurants(location.latitude, location.longitude, 1, true, sortBy);
     setLoading(false);
   };
 
@@ -124,5 +172,9 @@ export function useNearbyRestaurants() {
     searchNearbyRestaurants,
     onRefresh,
     handleSearch,
+    // 무한 스크롤 관련
+    loadMoreRestaurants,
+    loadingMore,
+    hasMoreData,
   };
 } 
