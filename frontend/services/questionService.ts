@@ -25,9 +25,9 @@ export interface QuestionsResponse {
 // 질문 서비스 클래스
 export class QuestionService {
     // 질문 목록 조회 (퀴즈용)
-    static async getQuestions(): Promise<QuestionsResponse> {
+    static async getQuestions(): Promise<QuizQuestion[]> {
         try {
-            return await api.get<QuestionsResponse>('/api/v1/questions/');
+            return await api.get<QuizQuestion[]>('/api/v1/questions/');
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
