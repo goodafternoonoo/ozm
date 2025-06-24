@@ -21,7 +21,9 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from app.schemas.menu import MenuRecommendation, MenuResponse
 from app.core.utils import menu_to_dict
+from app.core.config_weights import get_weight_set
 import uuid
+import json
 
 router = APIRouter()
 
@@ -67,16 +69,27 @@ async def get_simple_recommendations(
         )
         for r in recommendations
     ]
+
+    # A/B 테스트 정보 조회
+    preference = await PreferenceService.get_or_create_preference(
+        db, session_id, user_id
+    )
+    ab_group = getattr(preference, "ab_group", "A")
+    weight_set = get_weight_set(ab_group)
+
+    response_data = {
+        "recommendations": recommendations,
+        "session_id": session_id,
+        "total_count": len(recommendations),
+        "ab_test_info": {
+            "ab_group": ab_group,
+            "weight_set": weight_set,
+            "recommendation_type": "simple_personalized",
+        },
+    }
+
     return JSONResponse(
-        content=jsonable_encoder(
-            succeed_response(
-                RecommendationResponse(
-                    recommendations=recommendations,
-                    session_id=session_id,
-                    total_count=len(recommendations),
-                )
-            )
-        ),
+        content=jsonable_encoder(succeed_response(response_data)),
         status_code=201,
     )
 
@@ -119,24 +132,34 @@ async def get_quiz_recommendations(
         )
         for r in recommendations
     ]
+
+    # A/B 테스트 정보 조회
+    preference = await PreferenceService.get_or_create_preference(
+        db, session_id, user_id
+    )
+    ab_group = getattr(preference, "ab_group", "A")
+    weight_set = get_weight_set(ab_group)
+
+    response_data = {
+        "recommendations": recommendations,
+        "session_id": session_id,
+        "total_count": len(recommendations),
+        "ab_test_info": {
+            "ab_group": ab_group,
+            "weight_set": weight_set,
+            "recommendation_type": "quiz_hybrid",
+        },
+    }
+
     return JSONResponse(
-        content=jsonable_encoder(
-            succeed_response(
-                RecommendationResponse(
-                    recommendations=recommendations,
-                    session_id=session_id,
-                    total_count=len(recommendations),
-                )
-            )
-        ),
+        content=jsonable_encoder(succeed_response(response_data)),
         status_code=201,
     )
 
 
 @router.post("/collaborative", response_model=RecommendationResponse)
 async def get_collaborative_recommendations(
-    session_id: str,
-    limit: int = 5,
+    request: dict,
     db: AsyncSession = Depends(get_db),
     authorization: Optional[str] = Header(None),
 ):
@@ -145,6 +168,12 @@ async def get_collaborative_recommendations(
     - 유사한 취향의 사용자들이 좋아한 메뉴 추천
     - 코사인 유사도 기반 사용자 매칭
     """
+    session_id = request.get("session_id")
+    limit = request.get("limit", 5)
+
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id is required")
+
     user_id = None
 
     # 로그인 사용자인 경우 사용자 ID 추출
@@ -170,16 +199,27 @@ async def get_collaborative_recommendations(
         )
         for r in recommendations
     ]
+
+    # A/B 테스트 정보 조회
+    preference = await PreferenceService.get_or_create_preference(
+        db, session_id, user_id
+    )
+    ab_group = getattr(preference, "ab_group", "A")
+    weight_set = get_weight_set(ab_group)
+
+    response_data = {
+        "recommendations": recommendations,
+        "session_id": session_id,
+        "total_count": len(recommendations),
+        "ab_test_info": {
+            "ab_group": ab_group,
+            "weight_set": weight_set,
+            "recommendation_type": "collaborative",
+        },
+    }
+
     return JSONResponse(
-        content=jsonable_encoder(
-            succeed_response(
-                RecommendationResponse(
-                    recommendations=recommendations,
-                    session_id=session_id,
-                    total_count=len(recommendations),
-                )
-            )
-        ),
+        content=jsonable_encoder(succeed_response(response_data)),
         status_code=201,
     )
 
@@ -237,8 +277,14 @@ async def record_interaction(
     # 사용자 ID 업데이트
     interaction.user_id = user_id
 
+    interaction_dict = interaction.dict()
+    if isinstance(interaction_dict.get("extra_data"), dict):
+        interaction_dict["extra_data"] = json.dumps(
+            interaction_dict["extra_data"], ensure_ascii=False
+        )
+
     recorded_interaction = await PreferenceService.record_interaction(
-        db=db, interaction_data=interaction
+        db=db, interaction_data=interaction_dict
     )
 
     return JSONResponse(

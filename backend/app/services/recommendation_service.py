@@ -202,11 +202,14 @@ class RecommendationService:
             menu = result.scalar_one_or_none()
 
             if menu:
+                # 유사도 점수를 0-1 범위로 정규화
+                normalized_score = min(rec.similarity_score, 1.0)
+
                 recommendations.append(
                     MenuRecommendation(
                         menu=MenuResponse.model_validate(menu_to_dict(menu)),
-                        score=min(rec.similarity_score, 1.0),
-                        reason=rec.reason,
+                        score=normalized_score,
+                        reason=f"{rec.reason} (유사도: {rec.similarity_score:.2f}, 유사 사용자: {rec.similar_users_count}명)",
                     )
                 )
 

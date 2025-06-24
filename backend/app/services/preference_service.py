@@ -75,8 +75,12 @@ class PreferenceService:
         if not interaction.menu_id:
             return
 
-        # 메뉴 정보 조회
-        stmt = select(Menu).where(Menu.id == interaction.menu_id)
+        # 메뉴 정보 조회 (category까지 eager load)
+        stmt = (
+            select(Menu)
+            .options(selectinload(Menu.category))
+            .where(Menu.id == interaction.menu_id)
+        )
         result = await db.execute(stmt)
         menu = result.scalar_one_or_none()
 

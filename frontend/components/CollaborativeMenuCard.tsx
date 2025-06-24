@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MenuRecommendationStyles } from '../styles/MenuRecommendationStyles';
 
-export type Menu = {
+export type CollaborativeMenu = {
     id: number;
     name: string;
     description: string;
@@ -15,21 +15,15 @@ export type Menu = {
     fat?: number;
 };
 
-export type ABTestInfo = {
-    abGroup: string;
-    weightSet: Record<string, number>;
-    recommendationType: string;
-};
-
-interface MenuCardProps {
-    menu: Menu;
+interface CollaborativeMenuCardProps {
+    menu: CollaborativeMenu;
     reason?: string;
-    onAdd?: (menu: Menu) => void;
-    onRemove?: (menu: Menu) => void;
-    onMenuClick?: (menu: Menu) => void;
+    similarityScore: number;
+    similarUsersCount: number;
+    onMenuClick?: (menu: CollaborativeMenu) => void;
+    onAdd?: (menu: CollaborativeMenu) => void;
+    onRemove?: (menu: CollaborativeMenu) => void;
     isSaved?: boolean;
-    abTestInfo?: ABTestInfo | null;
-    showABTestInfo?: boolean;
     interactionEnabled?: boolean;
 }
 
@@ -48,49 +42,39 @@ const renderStars = (rating: number) => {
     return stars;
 };
 
-const renderABTestInfo = (abTestInfo: ABTestInfo) => {
-    const weightLabels: Record<string, string> = {
-        spicy: '매운맛',
-        healthy: '건강식',
-        vegetarian: '채식',
-        quick: '빠른조리',
-        rice: '밥류',
-        soup: '국물요리',
-        meat: '고기요리',
-    };
-
-    if (!abTestInfo.weightSet || typeof abTestInfo.weightSet !== 'object') {
-        return null;
-    }
-
+const renderCollaborativeInfo = (
+    similarityScore: number,
+    similarUsersCount: number
+) => {
     return (
-        <View style={MenuRecommendationStyles.abTestContainer}>
-            <View style={MenuRecommendationStyles.abTestHeader}>
-                <Ionicons name='flask-outline' size={14} color='#007AFF' />
-                <Text style={MenuRecommendationStyles.abTestTitle}>
-                    A/B 테스트 그룹 {abTestInfo.abGroup}
+        <View style={MenuRecommendationStyles.collaborativeContainer}>
+            <View style={MenuRecommendationStyles.collaborativeHeader}>
+                <Ionicons name='people-outline' size={14} color='#FFA000' />
+                <Text style={MenuRecommendationStyles.collaborativeTitle}>
+                    유사한 취향의 사용자들이 좋아한 메뉴
                 </Text>
             </View>
-            <View style={MenuRecommendationStyles.weightSetContainer}>
-                {Object.entries(abTestInfo.weightSet).map(([key, value]) => (
-                    <Text key={key} style={MenuRecommendationStyles.weightText}>
-                        {weightLabels[key] || key}: {value.toFixed(1)}
-                    </Text>
-                ))}
+            <View style={MenuRecommendationStyles.similarityInfo}>
+                <Text style={MenuRecommendationStyles.similarityText}>
+                    유사도: {(similarityScore * 100).toFixed(1)}%
+                </Text>
+                <Text style={MenuRecommendationStyles.similarityText}>
+                    유사 사용자: {similarUsersCount}명
+                </Text>
             </View>
         </View>
     );
 };
 
-export const MenuCard: React.FC<MenuCardProps> = ({
+export const CollaborativeMenuCard: React.FC<CollaborativeMenuCardProps> = ({
     menu,
     reason,
+    similarityScore,
+    similarUsersCount,
+    onMenuClick,
     onAdd,
     onRemove,
-    onMenuClick,
     isSaved,
-    abTestInfo,
-    showABTestInfo = false,
     interactionEnabled = true,
 }) => {
     const handleCardPress = () => {
@@ -117,6 +101,8 @@ export const MenuCard: React.FC<MenuCardProps> = ({
             onPress={handleCardPress}
             disabled={!interactionEnabled}
         >
+            {renderCollaborativeInfo(similarityScore, similarUsersCount)}
+
             {reason && (
                 <View style={MenuRecommendationStyles.reasonContainer}>
                     <Ionicons
@@ -129,8 +115,6 @@ export const MenuCard: React.FC<MenuCardProps> = ({
                     </Text>
                 </View>
             )}
-
-            {showABTestInfo && abTestInfo && renderABTestInfo(abTestInfo)}
 
             <View style={MenuRecommendationStyles.menuHeader}>
                 <Text style={MenuRecommendationStyles.menuName}>
