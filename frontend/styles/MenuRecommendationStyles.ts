@@ -390,4 +390,30 @@ export const MenuRecommendationStyles = StyleSheet.create({
         color: colors.text.primary,
         fontWeight: '600' as const,
     },
+    collaborativeContainer: {
+        backgroundColor: '#FFF8E1',
+        borderRadius: 12,
+        padding: 10,
+        marginBottom: 8,
+    },
+    collaborativeHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    collaborativeTitle: {
+        marginLeft: 4,
+        fontWeight: 'bold',
+        color: '#FFA000',
+        fontSize: 14,
+    },
+    similarityInfo: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    similarityText: {
+        color: '#FFA000',
+        fontSize: 13,
+        marginRight: 12,
+    },
 });

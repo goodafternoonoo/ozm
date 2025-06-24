@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { API_CONFIG } from '../config/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API 응답 타입 정의
 export interface ApiResponse<T = any> {
@@ -37,7 +38,7 @@ const apiClient: AxiosInstance = axios.create({
 
 // 요청 인터셉터
 apiClient.interceptors.request.use(
-    (config) => {
+    async (config) => {
         // 요청 로깅 (개발 환경에서만)
         if (__DEV__) {
             console.log('🌐 API Request:', {
@@ -47,14 +48,14 @@ apiClient.interceptors.request.use(
                 params: config.params,
             });
         }
-
         // JWT 토큰이 있다면 헤더에 추가
-        // TODO: AsyncStorage에서 토큰 가져오기
-        // const token = await AsyncStorage.getItem('jwt_token');
-        // if (token) {
-        //   config.headers.Authorization = `Bearer ${token}`;
-        // }
-
+        const token = await AsyncStorage.getItem('jwt_token');
+        if (token) {
+            config.headers = {
+                ...config.headers,
+                Authorization: `Bearer ${token}`,
+            };
+        }
         return config;
     },
     (error) => {

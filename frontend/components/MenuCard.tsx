@@ -195,6 +195,24 @@ export const MenuCard: React.FC<MenuCardProps> = ({
                     </Text>
                 </View>
 
+                {/* 즐겨찾기 하트 버튼 */}
+                {(onAdd || onRemove) && (
+                    <TouchableOpacity
+                        onPress={isSaved ? handleRemovePress : handleAddPress}
+                        style={{ marginLeft: 12, flexDirection: 'row', alignItems: 'center' }}
+                    >
+                        <Ionicons
+                            name={isSaved ? 'heart' : 'heart-outline'}
+                            size={26}
+                            color={isSaved ? '#FF3B30' : '#C7C7CC'}
+                        />
+                        <Text style={{ marginLeft: 4, color: isSaved ? '#FF3B30' : '#888', fontSize: 14 }}>
+                            {isSaved ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+
+                {/* 메뉴 추가/제거 버튼 (원래대로 복원) */}
                 {onAdd && !isSaved && (
                     <TouchableOpacity
                         style={MenuRecommendationStyles.addButton}
@@ -210,7 +228,6 @@ export const MenuCard: React.FC<MenuCardProps> = ({
                         </Text>
                     </TouchableOpacity>
                 )}
-
                 {onRemove && isSaved && (
                     <TouchableOpacity
                         style={MenuRecommendationStyles.removeButton}

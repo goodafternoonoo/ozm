@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { KAKAO_API_CONFIG } from '@/config/api';
 import Cookies from 'js-cookie';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KAKAO_REST_API_KEY = KAKAO_API_CONFIG.RESTAPI_KEY;
 const KAKAO_CLIENT_SECRET = KAKAO_API_CONFIG.CLIENT_SECRET;
@@ -25,6 +26,7 @@ const LoginScreen: React.FC = () => {
         nickname?: string;
         email?: string;
     } | null>(null);
+    const [jwtToken, setJwtToken] = useState<string | null>(null);
 
     useEffect(() => {
         // 메시지 리스너 등록 (콜백 창에서 보내는 메시지 처리)
@@ -74,8 +76,10 @@ const LoginScreen: React.FC = () => {
 
             // 응답 구조에 맞게 파싱
             const { access_token, user } = loginResponse.data?.data || {};
-            // TODO: AsyncStorage.setItem('jwt_token', access_token);
-
+            if (access_token) {
+                await AsyncStorage.setItem('jwt_token', access_token);
+                setJwtToken(access_token);
+            }
             // 사용자 정보 설정 (백엔드에서 받은 정보 또는 카카오에서 직접 조회)
             setUserInfo({
                 nickname: user?.nickname || '사용자',
@@ -103,7 +107,7 @@ const LoginScreen: React.FC = () => {
     const handleLogout = () => {
         setLoginSuccess(false);
         setUserInfo(null);
-        // TODO: AsyncStorage.removeItem('jwt_token');
+        AsyncStorage.removeItem('jwt_token');
         // 쿠키에서 삭제
         Cookies.remove('ozm_nickname');
         Cookies.remove('ozm_email');
@@ -118,6 +122,12 @@ const LoginScreen: React.FC = () => {
             setUserInfo({ nickname, email });
             setLoginSuccess(true);
         }
+        // 앱 시작 시 저장된 토큰 불러오기
+        const loadToken = async () => {
+            const token = await AsyncStorage.getItem('jwt_token');
+            setJwtToken(token);
+        };
+        loadToken();
     }, []);
 
     const handleKakaoLogin = async () => {
@@ -259,6 +269,14 @@ const LoginScreen: React.FC = () => {
                             </Text>
                         </TouchableOpacity>
                     </View>
+                )}
+            </View>
+
+            <View style={{ marginTop: 40, alignItems: 'center' }}>
+                {jwtToken && (
+                    <Text selectable style={{ fontSize: 12, color: 'gray', marginTop: 20 }}>
+                        JWT: {jwtToken}
+                    </Text>
                 )}
             </View>
         </KeyboardAvoidingView>

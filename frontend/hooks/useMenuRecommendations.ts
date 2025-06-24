@@ -10,6 +10,7 @@ import {
     ABTestInfo,
 } from '../services/recommendationService';
 import { AppError } from '../utils/apiClient';
+import { getFavorites, addFavorite, removeFavorite } from '../services/favoriteService';
 
 export type TimeSlot = 'breakfast' | 'lunch' | 'dinner';
 
@@ -41,6 +42,15 @@ export function useMenuRecommendations() {
         setSessionId(
             `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         );
+        // 즐겨찾기 목록 불러오기
+        (async () => {
+            try {
+                const favs = await getFavorites();
+                setSavedMenus(favs);
+            } catch (e) {
+                setSavedMenus([]);
+            }
+        })();
     }, []);
 
     const fetchCategories = async () => {
@@ -105,21 +115,26 @@ export function useMenuRecommendations() {
         if (savedMenus.some((menu) => menu.id === menuToAdd.id)) {
             Alert.alert('알림', '이미 추가된 메뉴입니다.');
         } else {
-            setSavedMenus([...savedMenus, menuToAdd]);
-            Alert.alert('성공', `${menuToAdd.name} 메뉴를 추가했습니다.`);
-
+            try {
+                await addFavorite(menuToAdd.id);
+                setSavedMenus([...savedMenus, menuToAdd]);
+                Alert.alert('성공', `${menuToAdd.name} 메뉴를 즐겨찾기에 추가했습니다.`);
+            } catch (e) {
+                Alert.alert('오류', '즐겨찾기 추가에 실패했습니다.');
+            }
             // 즐겨찾기 상호작용 기록
             await recordMenuFavorite(sessionId, menuToAdd.id.toString(), true);
         }
     };
 
     const removeMenuFromSaved = async (menuToRemove: Menu) => {
-        setSavedMenus(savedMenus.filter((menu) => menu.id !== menuToRemove.id));
-        Alert.alert(
-            '취소',
-            `${menuToRemove.name} 메뉴를 목록에서 제거했습니다.`
-        );
-
+        try {
+            await removeFavorite(menuToRemove.id);
+            setSavedMenus(savedMenus.filter((menu) => menu.id !== menuToRemove.id));
+            Alert.alert('취소', `${menuToRemove.name} 메뉴를 즐겨찾기에서 제거했습니다.`);
+        } catch (e) {
+            Alert.alert('오류', '즐겨찾기 해제에 실패했습니다.');
+        }
         // 즐겨찾기 취소 상호작용 기록
         await recordMenuFavorite(sessionId, menuToRemove.id.toString(), false);
     };
