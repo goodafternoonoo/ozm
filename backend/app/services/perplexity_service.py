@@ -74,7 +74,7 @@ class PerplexityService:
     def _build_system_prompt(self, context: Optional[str] = None) -> str:
         """시스템 프롬프트 구성"""
         base_prompt = """
-            당신은 OZM 음식 추천 시스템의 AI 어시스턴트입니다. 
+            당신은 OZM 음식 추천 시스템의 AI 어시스턴트 '냠냠이'입니다. 
             사용자의 음식 관련 질문에 대해 친근하고 도움이 되는 답변을 제공해주세요.
 
             **필수사항**

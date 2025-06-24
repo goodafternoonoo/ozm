@@ -1,5 +1,4 @@
-import axios from 'axios';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
     ActivityIndicator,
     Text,
@@ -7,7 +6,6 @@ import {
     View,
     TextInput,
     ScrollView,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     LayoutAnimation,
@@ -26,14 +24,14 @@ if (
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-type Message = {
-    id: number;
-    text: string;
-    isUser: boolean;
-    timestamp: string;
-    sources?: string[];
-    model?: string;
-};
+const SUGGESTION_QUESTIONS = [
+    '건강한 아침 메뉴 추천해줘',
+    '김치찌개 만드는 방법 알려줘',
+    '한국 전통 음식의 특징은?',
+    '매운 음식이 건강에 좋은가요?',
+    '서울에서 맛있는 비빔밥 맛집 추천해줘',
+    '다이어트 중인데 먹을 수 있는 음식 추천해줘',
+];
 
 export default function QuestionsScreen() {
     const {
@@ -60,6 +58,30 @@ export default function QuestionsScreen() {
         }
     }, [messages, loading]);
 
+    const handleSuggestionPress = (suggestion: string) => {
+        setUserQuestion(suggestion);
+    };
+
+    const handleSendMessage = async () => {
+        if (!userQuestion.trim()) return;
+
+        // useQuestions 훅의 sendMessage 함수 호출
+        await sendMessage();
+    };
+
+    const handleTextChange = (text: string) => {
+        // 마지막 문자가 개행이고, 이전에 개행이 없었다면 전송
+        if (text.endsWith('\n') && !userQuestion.includes('\n')) {
+            const messageWithoutNewline = text.slice(0, -1).trim();
+            if (messageWithoutNewline) {
+                setUserQuestion(messageWithoutNewline);
+                handleSendMessage();
+                return;
+            }
+        }
+        setUserQuestion(text);
+    };
+
     return (
         <KeyboardAvoidingView
             style={QuestionsStyles.container}
@@ -67,7 +89,15 @@ export default function QuestionsScreen() {
             keyboardVerticalOffset={headerHeight}
         >
             <View style={QuestionsStyles.header}>
-                <Text style={QuestionsStyles.title}>푸드봇</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons
+                        name='restaurant-outline'
+                        size={28}
+                        color='#007AFF'
+                        style={{ marginRight: 8 }}
+                    />
+                    <Text style={QuestionsStyles.title}>푸드봇</Text>
+                </View>
                 {messages.length > 0 && (
                     <TouchableOpacity
                         onPress={clearAllMessages}
@@ -75,7 +105,7 @@ export default function QuestionsScreen() {
                     >
                         <Ionicons
                             name='trash-outline'
-                            size={24}
+                            size={20}
                             color='#8E8E93'
                         />
                     </TouchableOpacity>
@@ -86,20 +116,54 @@ export default function QuestionsScreen() {
                 ref={scrollViewRef}
                 style={QuestionsStyles.messagesContainer}
                 contentContainerStyle={QuestionsStyles.messagesContentContainer}
+                showsVerticalScrollIndicator={false}
             >
                 {messages.length === 0 && !loading && (
                     <View style={QuestionsStyles.emptyContainer}>
-                        <Ionicons
-                            name='chatbubbles-outline'
-                            size={80}
-                            color='#C7C7CC'
-                        />
+                        <View style={QuestionsStyles.emptyIcon}>
+                            <Ionicons
+                                name='chatbubbles-outline'
+                                size={80}
+                                color='#C7C7CC'
+                            />
+                        </View>
                         <Text style={QuestionsStyles.emptyText}>
-                            궁금한 점을 물어보세요!
+                            음식에 대해 궁금한 점을 물어보세요!
                         </Text>
                         <Text style={QuestionsStyles.emptySubtext}>
-                            예: &quot;건강한 아침 메뉴 추천해줘&quot;
+                            조리법, 영양 정보, 맛집 추천 등 무엇이든 물어보세요
                         </Text>
+
+                        <View style={QuestionsStyles.suggestionContainer}>
+                            <Text style={QuestionsStyles.suggestionTitle}>
+                                이런 질문은 어떠세요?
+                            </Text>
+                            <View style={QuestionsStyles.suggestionChips}>
+                                {SUGGESTION_QUESTIONS.map(
+                                    (suggestion, index) => (
+                                        <TouchableOpacity
+                                            key={index}
+                                            style={
+                                                QuestionsStyles.suggestionChip
+                                            }
+                                            onPress={() =>
+                                                handleSuggestionPress(
+                                                    suggestion
+                                                )
+                                            }
+                                        >
+                                            <Text
+                                                style={
+                                                    QuestionsStyles.suggestionChipText
+                                                }
+                                            >
+                                                {suggestion}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )
+                                )}
+                            </View>
+                        </View>
                     </View>
                 )}
 
@@ -122,39 +186,54 @@ export default function QuestionsScreen() {
                             QuestionsStyles.loadingBubble,
                         ]}
                     >
-                        <ActivityIndicator size='small' color='#5A5A5A' />
-                        <Text
-                            style={[
-                                QuestionsStyles.botMessageText,
-                                { marginLeft: 8 },
-                            ]}
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                            }}
                         >
-                            답변을 생각 중...
-                        </Text>
+                            <ActivityIndicator size='small' color='#007AFF' />
+                            <Text
+                                style={[
+                                    QuestionsStyles.botMessageText,
+                                    { marginLeft: 12 },
+                                ]}
+                            >
+                                AI가 답변을 생각하고 있어요...
+                            </Text>
+                        </View>
                     </View>
                 )}
             </ScrollView>
 
             <View style={QuestionsStyles.inputContainer}>
                 <TextInput
-                    style={QuestionsStyles.input}
-                    placeholder='메시지를 입력하세요...'
+                    style={[
+                        QuestionsStyles.input,
+                        userQuestion.length > 0 && QuestionsStyles.inputActive,
+                    ]}
                     value={userQuestion}
-                    onChangeText={setUserQuestion}
-                    multiline
-                    onSubmitEditing={sendMessage}
-                    returnKeyType='send'
+                    onChangeText={handleTextChange}
+                    placeholder='음식에 대해 자유롭게 질문해보세요...'
+                    placeholderTextColor='#8E8E93'
+                    multiline={true}
+                    maxLength={500}
                 />
                 <TouchableOpacity
-                    onPress={sendMessage}
-                    style={QuestionsStyles.sendButton}
-                    disabled={!userQuestion.trim()}
+                    style={[
+                        QuestionsStyles.sendButton,
+                        (!userQuestion.trim() || loading) &&
+                            QuestionsStyles.sendButtonDisabled,
+                    ]}
+                    onPress={handleSendMessage}
+                    disabled={!userQuestion.trim() || loading}
+                    activeOpacity={0.7}
                 >
-                    <Ionicons
-                        name='arrow-up-circle'
-                        size={36}
-                        color={userQuestion.trim() ? '#007AFF' : '#C7C7CC'}
-                    />
+                    {loading ? (
+                        <ActivityIndicator size='small' color='#fff' />
+                    ) : (
+                        <Text style={QuestionsStyles.sendButtonText}>전송</Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>

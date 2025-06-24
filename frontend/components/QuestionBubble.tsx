@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { QuestionsStyles } from '../styles/QuestionsStyles';
 
 interface QuestionBubbleProps {
     text: string;
@@ -46,23 +45,41 @@ export const QuestionBubble: React.FC<QuestionBubbleProps> = ({
                         <Ionicons
                             name='sparkles-outline'
                             size={12}
-                            color='#666'
+                            color='#8E8E93'
                         />
-                        <Text style={styles.modelText}>{model}</Text>
+                        <Text style={styles.modelText}>
+                            {model.includes('llama')
+                                ? 'Llama AI'
+                                : model.includes('sonar')
+                                ? 'Sonar AI'
+                                : model}
+                        </Text>
                     </View>
                 )}
 
                 {/* 소스 정보 표시 */}
                 {!isUser && sources && sources.length > 0 && (
                     <View style={styles.sourcesContainer}>
-                        <Text style={styles.sourcesTitle}>참고 소스:</Text>
-                        {sources.slice(0, 3).map((source, index) => (
-                            <Text key={index} style={styles.sourceText}>
-                                •{' '}
-                                {source.title ||
-                                    source.url ||
-                                    '알 수 없는 소스'}
-                            </Text>
+                        <Text style={styles.sourcesTitle}>참고 소스</Text>
+                        {sources.slice(0, 2).map((source, index) => (
+                            <TouchableOpacity
+                                key={index}
+                                style={styles.sourceItem}
+                            >
+                                <Ionicons
+                                    name='link-outline'
+                                    size={12}
+                                    color='#007AFF'
+                                />
+                                <Text
+                                    style={styles.sourceText}
+                                    numberOfLines={1}
+                                >
+                                    {source.title ||
+                                        source.url ||
+                                        '알 수 없는 소스'}
+                                </Text>
+                            </TouchableOpacity>
                         ))}
                     </View>
                 )}
@@ -81,8 +98,8 @@ export const QuestionBubble: React.FC<QuestionBubbleProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginVertical: 4,
-        paddingHorizontal: 16,
+        marginVertical: 2,
+        paddingHorizontal: 4,
     },
     userContainer: {
         alignItems: 'flex-end',
@@ -91,65 +108,82 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
     },
     bubble: {
-        maxWidth: '80%',
-        padding: 12,
-        borderRadius: 18,
+        maxWidth: '75%',
+        padding: 16,
+        borderRadius: 20,
         marginBottom: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 1,
     },
     userBubble: {
         backgroundColor: '#007AFF',
-        borderBottomRightRadius: 4,
+        borderBottomRightRadius: 6,
     },
     botBubble: {
-        backgroundColor: '#F2F2F7',
-        borderBottomLeftRadius: 4,
+        backgroundColor: '#fff',
+        borderBottomLeftRadius: 6,
+        borderWidth: 1,
+        borderColor: '#E5E5EA',
     },
     text: {
         fontSize: 16,
-        lineHeight: 20,
+        lineHeight: 22,
+        fontWeight: '400',
     },
     userText: {
         color: '#FFFFFF',
     },
     botText: {
-        color: '#000000',
+        color: '#1C1C1E',
     },
     modelInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 8,
+        marginTop: 12,
         paddingTop: 8,
         borderTopWidth: 1,
-        borderTopColor: '#E5E5EA',
+        borderTopColor: '#F2F2F7',
     },
     modelText: {
         fontSize: 12,
-        color: '#666',
+        color: '#8E8E93',
         marginLeft: 4,
+        fontWeight: '500',
     },
     sourcesContainer: {
-        marginTop: 8,
+        marginTop: 12,
         paddingTop: 8,
         borderTopWidth: 1,
-        borderTopColor: '#E5E5EA',
+        borderTopColor: '#F2F2F7',
     },
     sourcesTitle: {
         fontSize: 12,
-        color: '#666',
+        color: '#8E8E93',
         fontWeight: '600',
+        marginBottom: 6,
+    },
+    sourceItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginBottom: 4,
     },
     sourceText: {
         fontSize: 11,
-        color: '#666',
-        marginBottom: 2,
+        color: '#007AFF',
+        marginLeft: 4,
+        flex: 1,
+        fontWeight: '500',
     },
     timestamp: {
-        fontSize: 12,
-        marginTop: 2,
+        fontSize: 11,
+        marginTop: 4,
+        fontWeight: '500',
     },
     userTimestamp: {
-        color: '#8E8E93',
+        color: 'rgba(255, 255, 255, 0.7)',
         textAlign: 'right',
     },
     botTimestamp: {

@@ -1,111 +1,220 @@
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 export const QuestionsStyles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#fff' 
-  },
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingBottom: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
-  },
-  title: { 
-    fontSize: 24, 
-    fontWeight: 'bold' 
-  },
-  clearButton: { 
-    padding: 5 
-  },
-  messagesContainer: { 
-    flex: 1, 
-    paddingHorizontal: 10 
-  },
-  messagesContentContainer: { 
-    paddingVertical: 10, 
-    flexGrow: 1 
-  },
-  messageBubble: {
-    maxWidth: '80%',
-    padding: 12,
-    borderRadius: 20,
-    marginBottom: 10,
-    minWidth: '20%',
-  },
-  userMessage: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#007AFF',
-  },
-  botMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F2F2F7',
-  },
-  userMessageText: { 
-    fontSize: 16, 
-    color: '#fff' 
-  },
-  botMessageText: { 
-    fontSize: 16, 
-    color: '#000' 
-  },
-  userMessageTimestamp: {
-    fontSize: 10,
-    color: '#E5E5EA',
-    marginTop: 4,
-    alignSelf: 'flex-end',
-  },
-  botMessageTimestamp: {
-    fontSize: 10,
-    color: '#999',
-    marginTop: 4,
-    alignSelf: 'flex-end',
-  },
-  loadingBubble: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F2F2F7',
-    backgroundColor: '#fff',
-  },
-  input: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: Platform.OS === 'ios' ? 10 : 5,
-    fontSize: 16,
-    maxHeight: 100,
-  },
-  sendButton: { 
-    marginLeft: 10 
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 400,
-  },
-  emptyText: { 
-    fontSize: 20, 
-    fontWeight: '600', 
-    color: '#8E8E93', 
-    marginTop: 20 
-  },
-  emptySubtext: { 
-    fontSize: 14, 
-    color: '#C7C7CC', 
-    marginTop: 8 
-  },
-}); 
+    container: {
+        flex: 1,
+        backgroundColor: '#FAFAFA',
+    },
+    header: {
+        paddingTop: Platform.OS === 'ios' ? 50 : 20,
+        paddingBottom: 15,
+        paddingHorizontal: 20,
+        backgroundColor: '#fff',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E5EA',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: '700',
+        color: '#1C1C1E',
+        letterSpacing: -0.5,
+    },
+    clearButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#F2F2F7',
+    },
+    messagesContainer: {
+        flex: 1,
+        paddingHorizontal: 16,
+        backgroundColor: '#FAFAFA',
+    },
+    messagesContentContainer: {
+        paddingVertical: 16,
+        flexGrow: 1,
+        paddingBottom: 20,
+    },
+    messageBubble: {
+        maxWidth: width * 0.75,
+        padding: 16,
+        borderRadius: 20,
+        marginBottom: 12,
+        minWidth: 60,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 1,
+    },
+    userMessage: {
+        alignSelf: 'flex-end',
+        backgroundColor: '#007AFF',
+        borderBottomRightRadius: 6,
+    },
+    botMessage: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#fff',
+        borderBottomLeftRadius: 6,
+        borderWidth: 1,
+        borderColor: '#E5E5EA',
+    },
+    userMessageText: {
+        fontSize: 16,
+        color: '#fff',
+        lineHeight: 22,
+        fontWeight: '400',
+    },
+    botMessageText: {
+        fontSize: 16,
+        color: '#1C1C1E',
+        lineHeight: 22,
+        fontWeight: '400',
+    },
+    userMessageTimestamp: {
+        fontSize: 11,
+        color: 'rgba(255, 255, 255, 0.7)',
+        marginTop: 6,
+        alignSelf: 'flex-end',
+        fontWeight: '500',
+    },
+    botMessageTimestamp: {
+        fontSize: 11,
+        color: '#8E8E93',
+        marginTop: 6,
+        alignSelf: 'flex-start',
+        fontWeight: '500',
+    },
+    loadingBubble: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#E5E5EA',
+        borderBottomLeftRadius: 6,
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#E5E5EA',
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 3,
+        minHeight: 60,
+    },
+    input: {
+        flex: 1,
+        backgroundColor: '#F2F2F7',
+        borderRadius: 24,
+        paddingHorizontal: 18,
+        paddingVertical: Platform.OS === 'ios' ? 12 : 10,
+        fontSize: 16,
+        maxHeight: 120,
+        minHeight: 44,
+        borderWidth: 1,
+        borderColor: '#E5E5EA',
+        color: '#1C1C1E',
+        marginRight: 12,
+    },
+    inputActive: {
+        borderColor: '#007AFF',
+        backgroundColor: '#fff',
+    },
+    sendButton: {
+        padding: 12,
+        borderRadius: 24,
+        backgroundColor: '#007AFF',
+        shadowColor: '#007AFF',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
+        minWidth: 48,
+        minHeight: 48,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    sendButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    sendButtonDisabled: {
+        backgroundColor: '#E5E5EA',
+        shadowOpacity: 0,
+        elevation: 0,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: 400,
+        paddingHorizontal: 40,
+    },
+    emptyIcon: {
+        marginBottom: 24,
+        opacity: 0.6,
+    },
+    emptyText: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: '#1C1C1E',
+        marginBottom: 12,
+        textAlign: 'center',
+        letterSpacing: -0.5,
+    },
+    emptySubtext: {
+        fontSize: 16,
+        color: '#8E8E93',
+        textAlign: 'center',
+        lineHeight: 22,
+        fontWeight: '400',
+    },
+    suggestionContainer: {
+        marginTop: 32,
+        width: '100%',
+    },
+    suggestionTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1C1C1E',
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    suggestionChips: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    suggestionChip: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#E5E5EA',
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        marginHorizontal: 4,
+        marginVertical: 4,
+    },
+    suggestionChipText: {
+        fontSize: 14,
+        color: '#007AFF',
+        fontWeight: '500',
+    },
+});
