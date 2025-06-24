@@ -143,7 +143,10 @@ export default function MenuRecommendationScreen() {
                         mode === 'chujon' &&
                             MenuRecommendationStyles.modeButtonActive,
                     ]}
-                    onPress={() => setMode('chujon')}
+                    onPress={() => {
+                        setMode('chujon');
+                        chujon.loadQuestions();
+                    }}
                 >
                     <Text
                         style={[
@@ -383,6 +386,9 @@ export default function MenuRecommendationScreen() {
                             questions={chujon.questions}
                             onSubmit={() => {
                                 chujon.getChujonRecommendations();
+                            }}
+                            onAnswerChange={(questionId, answer) => {
+                                chujon.setAnswer(questionId, answer);
                             }}
                         />
                     )}
