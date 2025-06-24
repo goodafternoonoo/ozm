@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.services.auth_service import AuthService
-from app.schemas.user import UserResponse, Token, LoginResponse
+from app.schemas.user import UserResponse, Token, LoginResponse, APIResponse
 from app.models.user import User
 from pydantic import BaseModel
 from typing import Optional
@@ -58,7 +58,7 @@ async def kakao_login(req: KakaoLoginRequest, db: AsyncSession = Depends(get_db)
     )
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me")
 async def get_current_user_info(
     authorization: Optional[str] = Header(None), db: AsyncSession = Depends(get_db)
 ):
@@ -82,10 +82,12 @@ async def get_current_user_info(
 
     try:
         user = await AuthService.get_current_user(db, token)
-        return succeed_response(
-            UserResponse.model_validate(
-                orm_to_dict(user, UserResponse.model_fields.keys())
-            )
+        user_data = UserResponse.model_validate(orm_to_dict(user, UserResponse.model_fields.keys()))
+        return JSONResponse(
+            content=jsonable_encoder(
+                succeed_response(user_data)
+            ),
+            status_code=200,
         )
     except Exception as e:
         return JSONResponse(

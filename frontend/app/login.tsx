@@ -47,24 +47,46 @@ const LoginScreen: React.FC = () => {
 
     const handleKakaoTokenExchange = async (code: string) => {
         try {
-            // code로 access_token 교환 (Client Secret 포함)
-            const tokenResponse = await axios.post(
-                'https://kauth.kakao.com/oauth/token',
-                {
-                    grant_type: 'authorization_code',
-                    client_id: KAKAO_REST_API_KEY,
-                    client_secret: KAKAO_CLIENT_SECRET,
-                    redirect_uri: REDIRECT_URI,
-                    code: code,
-                },
-                {
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                }
-            );
+            // 실제 운영/정상 로직 (항상 새로 토큰 발급)
+            // const tokenResponse = await axios.post(
+            //     'https://kauth.kakao.com/oauth/token',
+            //     {
+            //         grant_type: 'authorization_code',
+            //         client_id: KAKAO_REST_API_KEY,
+            //         client_secret: KAKAO_CLIENT_SECRET,
+            //         redirect_uri: REDIRECT_URI,
+            //         code: code,
+            //     },
+            //     {
+            //         headers: {
+            //             'Content-Type': 'application/x-www-form-urlencoded',
+            //         },
+            //     }
+            // );
+            // const accessToken = tokenResponse.data.access_token;
 
-            const accessToken = tokenResponse.data.access_token;
+            // TODO: 임시 캐싱 - 차후에는 항상 새로 요청하도록 원복할 것
+            let accessToken = await AsyncStorage.getItem('kakao_access_token');
+            if (!accessToken) {
+                // TODO: 아래 부분만 남기고 위 캐싱 로직은 삭제 예정
+                const tokenResponse = await axios.post(
+                    'https://kauth.kakao.com/oauth/token',
+                    {
+                        grant_type: 'authorization_code',
+                        client_id: KAKAO_REST_API_KEY,
+                        client_secret: KAKAO_CLIENT_SECRET,
+                        redirect_uri: REDIRECT_URI,
+                        code: code,
+                    },
+                    {
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                    }
+                );
+                accessToken = tokenResponse.data.access_token;
+                await AsyncStorage.setItem('kakao_access_token', accessToken);
+            }
 
             // 백엔드로 access_token 전송하여 로그인
             const loginResponse = await axios.post(
@@ -129,6 +151,33 @@ const LoginScreen: React.FC = () => {
         };
         loadToken();
     }, []);
+
+    // 로그인 성공 시 토큰 검증 (fetch 사용)
+    useEffect(() => {
+        if (!loginSuccess || !jwtToken) return;
+        const verifyToken = async () => {
+            try {
+                const res = await fetch('http://localhost:8000/api/v1/auth/me', {
+                    headers: {
+                        Authorization: `Bearer ${jwtToken}`,
+                    },
+                });
+                if (!res.ok) {
+                    throw new Error('토큰 만료 또는 인증 실패');
+                }
+                // 정상 응답이면 아무것도 안 함
+            } catch (err) {
+                setLoginSuccess(false);
+                setUserInfo(null);
+                setJwtToken(null);
+                await AsyncStorage.removeItem('jwt_token');
+                Cookies.remove('ozm_nickname');
+                Cookies.remove('ozm_email');
+                Alert.alert('로그인 만료', '토큰이 만료되었거나 유효하지 않습니다. 다시 로그인 해주세요.');
+            }
+        };
+        setTimeout(verifyToken, 100);
+    }, [loginSuccess, jwtToken]);
 
     const handleKakaoLogin = async () => {
         setLoading(true);

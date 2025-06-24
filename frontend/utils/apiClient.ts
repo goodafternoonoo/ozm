@@ -51,10 +51,10 @@ apiClient.interceptors.request.use(
         // JWT 토큰이 있다면 헤더에 추가
         const token = await AsyncStorage.getItem('jwt_token');
         if (token) {
-            config.headers = {
-                ...config.headers,
-                Authorization: `Bearer ${token}`,
-            };
+            if (config.headers && typeof config.headers === 'object') {
+                (config.headers as any)['Authorization'] = `Bearer ${token}`;
+            }
+            // config.headers가 객체가 아니면(예: AxiosHeaders 인스턴스가 아닌 경우) 별도 할당하지 않음
         }
         return config;
     },
