@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Text,
@@ -44,6 +44,7 @@ export default function QuestionsScreen() {
     } = useQuestions();
     const scrollViewRef = useRef<ScrollView>(null);
     const headerHeight = useHeaderHeight();
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -100,7 +101,7 @@ export default function QuestionsScreen() {
                 </View>
                 {messages.length > 0 && (
                     <TouchableOpacity
-                        onPress={clearAllMessages}
+                        onPress={() => setShowDeleteConfirm(true)}
                         style={QuestionsStyles.clearButton}
                     >
                         <Ionicons
@@ -111,6 +112,38 @@ export default function QuestionsScreen() {
                     </TouchableOpacity>
                 )}
             </View>
+
+            {/* 삭제 확인 모달 */}
+            {showDeleteConfirm && (
+                <View style={QuestionsStyles.confirmOverlay}>
+                    <View style={QuestionsStyles.confirmModal}>
+                        <Text style={QuestionsStyles.confirmTitle}>
+                            대화 기록을 모두 삭제할까요?
+                        </Text>
+                        <View style={QuestionsStyles.confirmActions}>
+                            <TouchableOpacity
+                                style={QuestionsStyles.confirmCancel}
+                                onPress={() => setShowDeleteConfirm(false)}
+                            >
+                                <Text style={QuestionsStyles.confirmCancelText}>
+                                    취소
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={QuestionsStyles.confirmDelete}
+                                onPress={() => {
+                                    clearAllMessages(true);
+                                    setShowDeleteConfirm(false);
+                                }}
+                            >
+                                <Text style={QuestionsStyles.confirmDeleteText}>
+                                    삭제
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            )}
 
             <ScrollView
                 ref={scrollViewRef}

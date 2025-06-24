@@ -71,15 +71,31 @@ export function useQuestions() {
         }
     };
 
-    const clearAllMessages = () => {
-        Alert.alert('대화 기록 삭제', '모든 대화 기록을 삭제하시겠습니까?', [
-            { text: '취소', style: 'cancel' },
-            {
-                text: '삭제',
-                style: 'destructive',
-                onPress: () => setMessages([]),
-            },
-        ]);
+    const clearAllMessages = (force?: boolean) => {
+        if (force) {
+            setMessages([]);
+            return;
+        }
+        if (typeof window !== 'undefined') {
+            // 웹 환경: confirm 사용
+            if (window.confirm('모든 대화 기록을 삭제하시겠습니까?')) {
+                setMessages([]);
+            }
+        } else {
+            // 모바일: Alert 사용
+            Alert.alert(
+                '대화 기록 삭제',
+                '모든 대화 기록을 삭제하시겠습니까?',
+                [
+                    { text: '취소', style: 'cancel' },
+                    {
+                        text: '삭제',
+                        style: 'destructive',
+                        onPress: () => setMessages([]),
+                    },
+                ]
+            );
+        }
     };
 
     return {
