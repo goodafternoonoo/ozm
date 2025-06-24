@@ -2,7 +2,7 @@ import { api, AppError } from '../utils/apiClient';
 
 // 타입 정의
 export interface Menu {
-    id: number;
+    id: string;
     name: string;
     description: string;
     category: string;
