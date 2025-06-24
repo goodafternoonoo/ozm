@@ -42,6 +42,9 @@ class User(Base):
     recommendations = relationship(
         "Recommendation", back_populates="user", cascade="all, delete-orphan"
     )
+    recommendation_logs = relationship(
+        "RecommendationLog", back_populates="user", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<User(username='{self.username}', email='{self.email}')>"

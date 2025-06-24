@@ -87,28 +87,3 @@ class UserInteraction(Base):
 
     def __repr__(self):
         return f"<UserInteraction(type='{self.interaction_type}', session_id='{self.session_id}')>"
-
-
-class RecommendationLog(Base):
-    """
-    추천 로그 테이블
-    - 추천 시점의 ab_group, 가중치 세트, 추천 메뉴, 사용자 행동 등 저장
-    """
-
-    __tablename__ = "recommendation_logs"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    session_id = Column(String(255), nullable=False, index=True)
-    ab_group = Column(String(10), nullable=True, index=True, comment="A/B 테스트 그룹")
-    weight_set = Column(String(1000), nullable=True, comment="추천 가중치 세트(JSON)")
-    recommended_menus = Column(
-        String(2000), nullable=True, comment="추천 메뉴 리스트(JSON)"
-    )
-    action_type = Column(
-        String(50), nullable=True, comment="사용자 행동 타입(click, favorite 등)"
-    )
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    def __repr__(self):
-        return f"<RecommendationLog(session_id='{self.session_id}', ab_group='{self.ab_group}', action_type='{self.action_type}')>"

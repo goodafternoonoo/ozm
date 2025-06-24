@@ -3,13 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
 from app.models.menu import Menu, TimeSlot
-from app.models.recommendation import Recommendation
+from app.models.recommendation import Recommendation, RecommendationLog
 from app.models.user_answer import UserAnswer
-from app.models.user_preference import (
-    UserPreference,
-    UserInteraction,
-    RecommendationLog,
-)
+from app.models.user_preference import UserPreference, UserInteraction
 from app.schemas.menu import MenuRecommendation, MenuResponse
 from app.services.preference_service import PreferenceService
 import uuid
@@ -396,11 +392,13 @@ class RecommendationService:
 
     @staticmethod
     async def _get_recent_recommended_menus(db: AsyncSession, session_id: str) -> set:
-        """최근 추천된 메뉴 ID 조회"""
+        """최근 추천된 메뉴 ID들 조회"""
+        from app.models.recommendation import RecommendationLog
+
         log_stmt = (
-            select(Recommendation)
-            .where(Recommendation.session_id == session_id)
-            .order_by(desc(Recommendation.created_at))
+            select(RecommendationLog)
+            .where(RecommendationLog.session_id == session_id)
+            .order_by(RecommendationLog.created_at.desc())
             .limit(3)
         )
         log_result = await db.execute(log_stmt)
@@ -409,8 +407,14 @@ class RecommendationService:
         recent_menu_ids = set()
         for log in logs:
             if log.recommended_menus:
-                for m in log.recommended_menus:
-                    recent_menu_ids.add(m["menu_id"])
+                try:
+                    import json
+
+                    recommended_menus = json.loads(log.recommended_menus)
+                    for m in recommended_menus:
+                        recent_menu_ids.add(m["menu_id"])
+                except (json.JSONDecodeError, KeyError):
+                    continue
 
         return recent_menu_ids
 
