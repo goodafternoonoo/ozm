@@ -96,7 +96,7 @@ export default function QuestionsScreen() {
                         color='#007AFF'
                         style={{ marginRight: 8 }}
                     />
-                    <Text style={QuestionsStyles.title}>푸드봇</Text>
+                    <Text style={QuestionsStyles.title}>냠냠이</Text>
                 </View>
                 {messages.length > 0 && (
                     <TouchableOpacity
@@ -199,7 +199,7 @@ export default function QuestionsScreen() {
                                     { marginLeft: 12 },
                                 ]}
                             >
-                                AI가 답변을 생각하고 있어요...
+                                냠냠이가 답변을 생각하고 있어요...
                             </Text>
                         </View>
                     </View>
