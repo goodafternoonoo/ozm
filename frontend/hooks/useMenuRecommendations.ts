@@ -53,6 +53,7 @@ export function useMenuRecommendations() {
                 const favs = await getFavorites();
                 setSavedMenus(favs);
             } catch (e) {
+                console.error('즐겨찾기 목록 불러오기 에러:', e);
                 setSavedMenus([]);
             }
         })();
@@ -92,7 +93,7 @@ export function useMenuRecommendations() {
             for (const rec of response.recommendations) {
                 await recordRecommendationSelect(
                     sessionId,
-                    rec.menu.id.toString(),
+                    rec.menu.id,
                     'simple_personalized'
                 );
             }
@@ -128,10 +129,11 @@ export function useMenuRecommendations() {
                     `${menuToAdd.name} 메뉴를 즐겨찾기에 추가했습니다.`
                 );
             } catch (e) {
+                console.error('즐겨찾기 추가 에러:', e);
                 Alert.alert('오류', '즐겨찾기 추가에 실패했습니다.');
             }
             // 즐겨찾기 상호작용 기록
-            await recordMenuFavorite(sessionId, menuToAdd.id.toString(), true);
+            await recordMenuFavorite(sessionId, menuToAdd.id, true);
         }
     };
 
@@ -146,14 +148,15 @@ export function useMenuRecommendations() {
                 `${menuToRemove.name} 메뉴를 즐겨찾기에서 제거했습니다.`
             );
         } catch (e) {
+            console.error('즐겨찾기 해제 에러:', e);
             Alert.alert('오류', '즐겨찾기 해제에 실패했습니다.');
         }
         // 즐겨찾기 취소 상호작용 기록
-        await recordMenuFavorite(sessionId, menuToRemove.id.toString(), false);
+        await recordMenuFavorite(sessionId, menuToRemove.id, false);
     };
 
     const handleMenuClick = async (menu: Menu) => {
-        await recordMenuClick(sessionId, menu.id.toString(), {
+        await recordMenuClick(sessionId, menu.id, {
             time_slot: selectedTimeSlot,
             category_id: categoryId,
             source: 'menu_recommendations',
