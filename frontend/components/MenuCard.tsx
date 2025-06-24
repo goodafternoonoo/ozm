@@ -31,7 +31,7 @@ const renderStars = (rating: number) => {
     return stars;
 };
 
-const renderABTestInfo = (abTestInfo: ABTestInfo) => {
+export const renderABTestInfo = (abTestInfo: ABTestInfo) => {
     const weightLabels: Record<string, string> = {
         spicy: '매운맛',
         healthy: '건강식',
@@ -199,14 +199,24 @@ export const MenuCard: React.FC<MenuCardProps> = ({
                 {(onAdd || onRemove) && (
                     <TouchableOpacity
                         onPress={isSaved ? handleRemovePress : handleAddPress}
-                        style={{ marginLeft: 12, flexDirection: 'row', alignItems: 'center' }}
+                        style={{
+                            marginLeft: 12,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                        }}
                     >
                         <Ionicons
                             name={isSaved ? 'heart' : 'heart-outline'}
                             size={26}
                             color={isSaved ? '#FF3B30' : '#C7C7CC'}
                         />
-                        <Text style={{ marginLeft: 4, color: isSaved ? '#FF3B30' : '#888', fontSize: 14 }}>
+                        <Text
+                            style={{
+                                marginLeft: 4,
+                                color: isSaved ? '#FF3B30' : '#888',
+                                fontSize: 14,
+                            }}
+                        >
                             {isSaved ? '즐겨찾기 해제' : '즐겨찾기 추가'}
                         </Text>
                     </TouchableOpacity>

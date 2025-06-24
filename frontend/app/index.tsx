@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MenuRecommendationStyles } from '../styles/MenuRecommendationStyles';
-import { MenuCard } from '../components/MenuCard';
+import { MenuCard, renderABTestInfo } from '../components/MenuCard';
 import {
     CollaborativeMenuCard,
     CollaborativeMenu,
@@ -218,6 +218,12 @@ export default function MenuRecommendationScreen() {
                         ))}
                     </View>
 
+                    {showABTestInfo && abTestInfo && (
+                        <View style={{ marginBottom: 8 }}>
+                            {renderABTestInfo(abTestInfo)}
+                        </View>
+                    )}
+
                     <Text
                         style={[
                             MenuRecommendationStyles.sectionTitle,
@@ -381,6 +387,11 @@ export default function MenuRecommendationScreen() {
                             {chujon.error}
                         </Text>
                     )}
+                    {showABTestInfo && chujon.abTestInfo && (
+                        <View style={{ marginBottom: 8 }}>
+                            {renderABTestInfo(chujon.abTestInfo)}
+                        </View>
+                    )}
                     {chujon.questions.length > 0 && (
                         <ChujonRecommendation
                             questions={chujon.questions}
@@ -418,8 +429,6 @@ export default function MenuRecommendationScreen() {
                                     isSaved={savedMenus.some(
                                         (m) => m.id === menu.id
                                     )}
-                                    abTestInfo={chujon.abTestInfo}
-                                    showABTestInfo={showABTestInfo}
                                 />
                             ))}
                         </View>
@@ -554,8 +563,6 @@ export default function MenuRecommendationScreen() {
                             onAdd={addMenuToSaved}
                             onMenuClick={handleMenuClick}
                             isSaved={savedMenus.some((m) => m.id === menu.id)}
-                            abTestInfo={abTestInfo}
-                            showABTestInfo={showABTestInfo}
                         />
                     ))}
                 </View>

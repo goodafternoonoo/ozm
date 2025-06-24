@@ -10,7 +10,12 @@ import {
     ABTestInfo,
 } from '../services/recommendationService';
 import { AppError } from '../utils/apiClient';
-import { getFavorites, addFavorite, removeFavorite } from '../services/favoriteService';
+import {
+    getFavorites,
+    addFavorite,
+    removeFavorite,
+} from '../services/favoriteService';
+import { abTestInfoToCamel } from '../utils/case';
 
 export type TimeSlot = 'breakfast' | 'lunch' | 'dinner';
 
@@ -80,7 +85,7 @@ export function useMenuRecommendations() {
 
             // A/B 테스트 정보 추출
             if (response.ab_test_info) {
-                setAbTestInfo(response.ab_test_info);
+                setAbTestInfo(abTestInfoToCamel(response.ab_test_info));
             }
 
             // 추천 선택 상호작용 기록
@@ -118,7 +123,10 @@ export function useMenuRecommendations() {
             try {
                 await addFavorite(menuToAdd.id);
                 setSavedMenus([...savedMenus, menuToAdd]);
-                Alert.alert('성공', `${menuToAdd.name} 메뉴를 즐겨찾기에 추가했습니다.`);
+                Alert.alert(
+                    '성공',
+                    `${menuToAdd.name} 메뉴를 즐겨찾기에 추가했습니다.`
+                );
             } catch (e) {
                 Alert.alert('오류', '즐겨찾기 추가에 실패했습니다.');
             }
@@ -130,8 +138,13 @@ export function useMenuRecommendations() {
     const removeMenuFromSaved = async (menuToRemove: Menu) => {
         try {
             await removeFavorite(menuToRemove.id);
-            setSavedMenus(savedMenus.filter((menu) => menu.id !== menuToRemove.id));
-            Alert.alert('취소', `${menuToRemove.name} 메뉴를 즐겨찾기에서 제거했습니다.`);
+            setSavedMenus(
+                savedMenus.filter((menu) => menu.id !== menuToRemove.id)
+            );
+            Alert.alert(
+                '취소',
+                `${menuToRemove.name} 메뉴를 즐겨찾기에서 제거했습니다.`
+            );
         } catch (e) {
             Alert.alert('오류', '즐겨찾기 해제에 실패했습니다.');
         }

@@ -416,4 +416,33 @@ export const MenuRecommendationStyles = StyleSheet.create({
         fontSize: 13,
         marginRight: 12,
     },
+    abTestContainer: {
+        marginTop: 8,
+        marginBottom: 8,
+        padding: 8,
+        backgroundColor: '#F3F8FF',
+        borderRadius: 8,
+    },
+    abTestHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    abTestTitle: {
+        marginLeft: 4,
+        fontSize: 13,
+        color: '#007AFF',
+        fontWeight: 'bold',
+    },
+    weightSetContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginTop: 4,
+    },
+    weightText: {
+        fontSize: 12,
+        color: '#555',
+        marginRight: 8,
+        marginBottom: 2,
+    },
 });
