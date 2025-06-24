@@ -29,7 +29,7 @@ export class AppError extends Error {
 // API 클라이언트 생성
 const apiClient: AxiosInstance = axios.create({
     baseURL: API_CONFIG.BACKEND_URL,
-    timeout: 10000,
+    timeout: 20000,
     headers: {
         'Content-Type': 'application/json',
     },

@@ -8,6 +8,8 @@ export type Message = {
     text: string;
     isUser: boolean;
     timestamp: string;
+    sources?: any[];
+    model?: string;
 };
 
 export function useQuestions() {
@@ -33,7 +35,8 @@ export function useQuestions() {
         setUserQuestion('');
         setLoading(true);
         try {
-            const response = await QuestionService.askQuestion({
+            // AI 답변 요청 (Perplexity 기반)
+            const response = await QuestionService.getAIAnswer({
                 question: currentQuestion,
             });
             const newBotMessage: Message = {
@@ -44,6 +47,8 @@ export function useQuestions() {
                     hour: '2-digit',
                     minute: '2-digit',
                 }),
+                sources: response.sources,
+                model: response.model,
             };
             setMessages((prev) => [...prev, newBotMessage]);
         } catch (err) {
