@@ -91,12 +91,12 @@ export default function RootLayout() {
                 }}
             />
             <Tabs.Screen
-                name='login'
+                name='profile'
                 options={{
-                    title: '로그인',
+                    title: '프로필',
                     tabBarIcon: ({ color, size, focused }) => (
                         <Ionicons
-                            name={focused ? 'log-in' : 'log-in-outline'}
+                            name={focused ? 'person' : 'person-outline'}
                             size={isWeb ? 20 : size}
                             color={color}
                         />

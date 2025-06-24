@@ -19,7 +19,7 @@ const KAKAO_REST_API_KEY = KAKAO_API_CONFIG.RESTAPI_KEY;
 const KAKAO_CLIENT_SECRET = KAKAO_API_CONFIG.CLIENT_SECRET;
 const REDIRECT_URI = 'http://localhost:8081/oauth/callback'; // localhost용
 
-const LoginScreen: React.FC = () => {
+export const LoginScreen: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [loginSuccess, setLoginSuccess] = useState(false);
     const [userInfo, setUserInfo] = useState<{
@@ -157,11 +157,14 @@ const LoginScreen: React.FC = () => {
         if (!loginSuccess || !jwtToken) return;
         const verifyToken = async () => {
             try {
-                const res = await fetch('http://localhost:8000/api/v1/auth/me', {
-                    headers: {
-                        Authorization: `Bearer ${jwtToken}`,
-                    },
-                });
+                const res = await fetch(
+                    'http://localhost:8000/api/v1/auth/me',
+                    {
+                        headers: {
+                            Authorization: `Bearer ${jwtToken}`,
+                        },
+                    }
+                );
                 if (!res.ok) {
                     throw new Error('토큰 만료 또는 인증 실패');
                 }
@@ -173,7 +176,10 @@ const LoginScreen: React.FC = () => {
                 await AsyncStorage.removeItem('jwt_token');
                 Cookies.remove('ozm_nickname');
                 Cookies.remove('ozm_email');
-                Alert.alert('로그인 만료', '토큰이 만료되었거나 유효하지 않습니다. 다시 로그인 해주세요.');
+                Alert.alert(
+                    '로그인 만료',
+                    '토큰이 만료되었거나 유효하지 않습니다. 다시 로그인 해주세요.'
+                );
             }
         };
         setTimeout(verifyToken, 100);
@@ -323,7 +329,10 @@ const LoginScreen: React.FC = () => {
 
             <View style={{ marginTop: 40, alignItems: 'center' }}>
                 {jwtToken && (
-                    <Text selectable style={{ fontSize: 12, color: 'gray', marginTop: 20 }}>
+                    <Text
+                        selectable
+                        style={{ fontSize: 12, color: 'gray', marginTop: 20 }}
+                    >
                         JWT: {jwtToken}
                     </Text>
                 )}
@@ -331,5 +340,3 @@ const LoginScreen: React.FC = () => {
         </KeyboardAvoidingView>
     );
 };
-
-export default LoginScreen;
