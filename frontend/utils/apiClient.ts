@@ -53,8 +53,9 @@ apiClient.interceptors.request.use(
         if (token) {
             if (config.headers && typeof config.headers === 'object') {
                 (config.headers as any)['Authorization'] = `Bearer ${token}`;
+            } else {
+                config.headers = { Authorization: `Bearer ${token}` } as any;
             }
-            // config.headers가 객체가 아니면(예: AxiosHeaders 인스턴스가 아닌 경우) 별도 할당하지 않음
         }
         return config;
     },

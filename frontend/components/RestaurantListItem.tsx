@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NearbyStyles } from '../styles/NearbyStyles';
+import { colors } from '../styles/GlobalStyles';
 
 export interface Restaurant {
     id: string;
@@ -91,11 +92,7 @@ export const RestaurantListItem: React.FC<RestaurantListItemProps> = ({
                 }
                 style={NearbyStyles.mapButton}
             >
-                <Ionicons
-                    name='map-outline'
-                    size={22}
-                    color={require('../styles/GlobalStyles').colors.primary}
-                />
+                <Ionicons name='map-outline' size={22} color={colors.primary} />
             </TouchableOpacity>
         </View>
     </TouchableOpacity>
