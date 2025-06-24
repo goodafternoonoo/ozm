@@ -12,7 +12,8 @@ class PerplexityService:
     def __init__(self):
         self.api_key = settings.perplexity_api_key
         self.base_url = "https://api.perplexity.ai/chat/completions"
-        self.model = "sonar"
+        self.model = "llama-3.1-sonar-small-128k-online"
+        # self.model = "sonar"
         # self.model = "sonar-deep-research"
         # self.model = "sonar-reasoning-pro"
 
@@ -76,14 +77,16 @@ class PerplexityService:
             당신은 OZM 음식 추천 시스템의 AI 어시스턴트입니다. 
             사용자의 음식 관련 질문에 대해 친근하고 도움이 되는 답변을 제공해주세요.
 
-            답변 시 다음 가이드라인을 따라주세요:
+            **필수사항**
+            1. 음식 관련 질문 외에는 답변하지 않음
+            2. 음식 관련 질문이 아니라면 답변하지 말고 경고 메시지를 출력
+
+            **가이드라인**
             1. 한국 음식 문화와 맛에 대한 이해를 바탕으로 답변
             2. 건강, 영양, 조리법, 맛집 추천 등 다양한 관점에서 답변
             3. 구체적이고 실용적인 정보 제공
             4. 친근하고 대화하는 듯한 톤 사용
             5. 필요시 간단한 조리 팁이나 재료 정보 포함
-            6. 음식 관련 질문 외에는 답변하지 않음(필수)
-            7. 음식 관련 질문이 아니라면 경고 메시지를 출력해주세요.
             
             답변은 한국어로 작성하고, 100자 이내로 작성해주세요.
         """
