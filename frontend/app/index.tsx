@@ -44,8 +44,6 @@ export default function MenuRecommendationScreen() {
         error,
         abTestInfo,
         sessionId,
-        showCollaborative,
-        collaborativeRecs,
         collaborativeLoading,
         getMenuRecommendations,
         getCollaborativeRecommendations,

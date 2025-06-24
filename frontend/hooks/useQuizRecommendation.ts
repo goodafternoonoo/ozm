@@ -36,7 +36,7 @@ export function useQuizRecommendation() {
         try {
             const response = await QuestionService.getQuestions();
             setQuestions(
-                response.questions.map((q: any) => ({
+                response.map((q: any) => ({
                     ...q,
                     options: Array.isArray(q.options)
                         ? q.options
