@@ -14,6 +14,7 @@ class SimpleRecommendationRequest(BaseModel):
     """간단 추천 요청 스키마"""
 
     time_slot: TimeSlot
+    category_id: Optional[str] = None
     session_id: Optional[str] = None
 
 

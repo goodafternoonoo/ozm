@@ -58,6 +58,7 @@ async def get_simple_recommendations(
         db=db,
         time_slot=ModelTimeSlot(request.time_slot),
         session_id=session_id,
+        category_id=request.category_id,
         user_id=user_id,
         limit=5,
     )
