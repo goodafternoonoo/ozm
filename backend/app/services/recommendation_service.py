@@ -24,6 +24,7 @@ class RecommendationService:
         db: AsyncSession,
         time_slot: TimeSlot,
         session_id: str,
+        category_id: Optional[str] = None,
         user_id: Optional[uuid.UUID] = None,
         limit: int = 5,
     ) -> List[MenuRecommendation]:
@@ -50,6 +51,11 @@ class RecommendationService:
             .options(selectinload(Menu.category))
             .where(Menu.time_slot == slot)
         )
+
+        # 카테고리 필터링 추가
+        if category_id:
+            stmt = stmt.where(Menu.category_id == category_id)
+
         result = await db.execute(stmt)
         menus = result.scalars().all()
 
@@ -86,7 +92,11 @@ class RecommendationService:
 
         # 추천 로그 저장
         await RecommendationService._save_recommendation_log(
-            db, session_id, {"time_slot": slot}, recommendations, "personalized_simple"
+            db,
+            session_id,
+            {"time_slot": slot, "category_id": category_id},
+            recommendations,
+            "personalized_simple",
         )
 
         return recommendations
