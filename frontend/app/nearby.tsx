@@ -11,7 +11,7 @@ import {
   Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LocationService } from '../utils/locationService';
+import { LocationService } from '../services/locationService';
 import { NearbyStyles } from '../styles/NearbyStyles';
 import RestaurantMap from '../components/RestaurantMap';
 import { RestaurantListItem } from '../components/RestaurantListItem';

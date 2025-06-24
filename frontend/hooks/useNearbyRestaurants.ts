@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
-import { LocationService, LocationData } from '../utils/locationService';
-import { KakaoApiService } from '../utils/kakaoApiService';
+import { LocationService, LocationData } from '../services/locationService';
+import { KakaoApiService } from '../services/kakaoApiService';
 
 export interface Restaurant {
   id: string;
