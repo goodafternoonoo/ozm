@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     )
     kakao_redirect_uri: Optional[str] = Field(None, description="카카오 리다이렉트 URI")
 
+    # Perplexity AI 설정
+    perplexity_api_key: Optional[str] = Field(None, description="Perplexity API 키")
+    perplexity_enabled: bool = Field(True, description="Perplexity AI 기능 활성화")
+
     # CORS 설정
     cors_origins: list = Field(
         ["http://localhost:3000", "http://localhost:8080"],
