@@ -464,6 +464,8 @@ def test_favorite_add_and_get(test_user):
             resp.json()["data"]["id"]
             # 즐겨찾기 조회
             resp = await client.get("/api/v1/menus/favorites/")
+            if resp.status_code != 200:
+                print("favorites GET 400 body:", resp.text)
             assert resp.status_code == 200
             data = resp.json()["data"]
             assert any(

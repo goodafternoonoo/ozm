@@ -1,40 +1,41 @@
 from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.category import Category
-from app.models.menu import Menu
 from app.schemas.category import CategoryCreate, CategoryUpdate
-from app.services.base_service import BaseService
+from app.repositories.category_repository import CategoryRepository
 
 
-class CategoryService(BaseService[Category]):
-    """카테고리 관련 비즈니스 로직 서비스"""
+class CategoryService:
+    """
+    카테고리 관련 비즈니스 로직 서비스 (Repository 패턴 적용)
+    """
 
     def __init__(self, db: AsyncSession):
-        super().__init__(db, Category)
+        self.category_repository = CategoryRepository(db)
+
+    async def get_by_id(self, category_id: UUID) -> Optional[Category]:
+        return await self.category_repository.get_by_id(category_id)
 
     async def create_category(self, category_data: CategoryCreate) -> Category:
         """
         카테고리 생성 (name+country+cuisine_type 중복 방지)
         """
         # 중복 체크
-        result = await self.db.execute(
-            select(Category).where(
-                (Category.name == category_data.name)
-                & (Category.country == category_data.country)
-                & (Category.cuisine_type == category_data.cuisine_type)
-            )
+        exists = await self.category_repository.get_categories(
+            country=category_data.country,
+            cuisine_type=category_data.cuisine_type,
+            is_active=True,
         )
-        exists = result.scalar_one_or_none()
-        if exists:
-            raise ValueError("이미 동일한 카테고리가 존재합니다.")
+        for cat in exists:
+            if cat.name == category_data.name:
+                raise ValueError("이미 동일한 카테고리가 존재합니다.")
         category = Category(**category_data.model_dump())
-        self.db.add(category)
-        await self.db.commit()
-        await self.db.refresh(category)
+        self.category_repository.db.add(category)
+        await self.category_repository.db.commit()
+        await self.category_repository.db.refresh(category)
         return category
 
     async def get_categories(
@@ -46,101 +47,53 @@ class CategoryService(BaseService[Category]):
         is_active: Optional[bool] = None,
     ) -> List[Category]:
         """카테고리 목록 조회 (필터링/페이징 지원)"""
-        query = select(Category)
-        filters = []
-        if country:
-            filters.append(Category.country == country)
-        if cuisine_type:
-            filters.append(Category.cuisine_type == cuisine_type)
-        if is_active is not None:
-            filters.append(Category.is_active == is_active)
-        if filters:
-            query = query.where(and_(*filters))
-        query = query.order_by(Category.display_order, Category.name)
-        query = query.offset(skip).limit(limit)
-        result = await self.db.execute(query)
-        return result.scalars().all()
+        return await self.category_repository.get_categories(
+            skip, limit, country, cuisine_type, is_active
+        )
 
     async def get_categories_with_menu_count(
         self, skip: int = 0, limit: int = 100
     ) -> List[dict]:
         """메뉴 개수와 함께 카테고리 목록 조회"""
-        # 각 카테고리별 메뉴 개수 집계
-        menu_count_subquery = (
-            select(Menu.category_id, func.count(Menu.id).label("menu_count"))
-            .group_by(Menu.category_id)
-            .subquery()
+        return await self.category_repository.get_categories_with_menu_count(
+            skip, limit
         )
-        query = (
-            select(
-                Category,
-                func.coalesce(menu_count_subquery.c.menu_count, 0).label("menu_count"),
-            )
-            .outerjoin(
-                menu_count_subquery, Category.id == menu_count_subquery.c.category_id
-            )
-            .where(Category.is_active)
-            .order_by(Category.display_order, Category.name)
-            .offset(skip)
-            .limit(limit)
-        )
-        result = await self.db.execute(query)
-        return [
-            {**category.__dict__, "menu_count": menu_count}
-            for category, menu_count in result.all()
-        ]
 
     async def update_category(
         self, category_id: UUID, category_data: CategoryUpdate
     ) -> Optional[Category]:
         """카테고리 수정"""
-        category = await self.get_by_id(category_id)
+        category = await self.category_repository.get_by_id(category_id)
         if not category:
             return None
         update_data = category_data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(category, field, value)
-        await self.db.commit()
-        await self.db.refresh(category)
+        await self.category_repository.db.commit()
+        await self.category_repository.db.refresh(category)
         return category
 
     async def delete_category(self, category_id: UUID) -> bool:
         """카테고리 삭제 (실제 삭제 대신 비활성화)"""
-        category = await self.get_by_id(category_id)
+        category = await self.category_repository.get_by_id(category_id)
         if not category:
             return False
         category.is_active = False
-        await self.db.commit()
+        await self.category_repository.db.commit()
         return True
 
     async def get_categories_by_country(self, country: str) -> List[Category]:
         """국가별 카테고리 조회"""
-        result = await self.db.execute(
-            select(Category)
-            .where(and_(Category.country == country, Category.is_active))
-            .order_by(Category.display_order, Category.name)
-        )
-        return result.scalars().all()
+        return await self.category_repository.get_categories_by_country(country)
 
     async def get_categories_by_cuisine_type(self, cuisine_type: str) -> List[Category]:
         """요리 타입별 카테고리 조회"""
-        result = await self.db.execute(
-            select(Category)
-            .where(and_(Category.cuisine_type == cuisine_type, Category.is_active))
-            .order_by(Category.display_order, Category.name)
+        return await self.category_repository.get_categories_by_cuisine_type(
+            cuisine_type
         )
-        return result.scalars().all()
 
     async def get_total_count(
         self, country: Optional[str] = None, cuisine_type: Optional[str] = None
     ) -> int:
         """카테고리 총 개수 조회"""
-        query = select(func.count(Category.id))
-        filters = [Category.is_active]
-        if country:
-            filters.append(Category.country == country)
-        if cuisine_type:
-            filters.append(Category.cuisine_type == cuisine_type)
-        query = query.where(and_(*filters))
-        result = await self.db.execute(query)
-        return result.scalar()
+        return await self.category_repository.get_total_count(country, cuisine_type)

@@ -70,7 +70,7 @@ def category_to_dict(category: Category) -> Dict[str, Any]:
 def menu_to_dict(menu: Menu) -> Dict[str, Any]:
     """메뉴 객체를 딕셔너리로 변환 (id, category_id는 uuid 그대로)"""
     if not menu:
-        return {}
+        return None
 
     menu_data = {
         "id": menu.id,
@@ -119,6 +119,8 @@ def favorite_to_dict(favorite: Favorite) -> Dict[str, Any]:
 
     if favorite.menu:
         data["menu"] = MenuResponse.model_validate(menu_to_dict(favorite.menu))
+    else:
+        data["menu"] = None
 
     return data
 

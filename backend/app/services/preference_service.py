@@ -15,10 +15,17 @@ from app.schemas.user_preference import (
     CollaborativeRecommendation,
     PreferenceAnalysis,
 )
+from app.repositories.user_preference_repository import UserPreferenceRepository
 
 
 class PreferenceService:
-    """사용자 선호도 학습 및 협업 필터링 서비스"""
+    """
+    사용자 선호도 학습 및 협업 필터링 서비스 (Repository 패턴 적용)
+    """
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+        self.user_preference_repository = UserPreferenceRepository(db)
 
     @staticmethod
     @cached(ttl=1800, key_prefix="user_pref")  # 30분 캐싱
@@ -26,18 +33,8 @@ class PreferenceService:
         db: AsyncSession, session_id: str, user_id: Optional[uuid.UUID] = None
     ) -> UserPreference:
         """사용자 선호도 조회 또는 생성 - 캐싱 적용"""
-        stmt = (
-            select(UserPreference)
-            .where(
-                (UserPreference.session_id == session_id)
-                | (UserPreference.user_id == user_id)
-            )
-            .limit(1)
-        )
-
-        result = await db.execute(stmt)
-        preference = result.scalar_one_or_none()
-
+        repo = UserPreferenceRepository(db)
+        preference = await repo.get_by_session_or_user(session_id, user_id)
         if not preference:
             ab_group = random.choice(["A", "B", "C"])
             # A/B 테스트 그룹 무작위 할당

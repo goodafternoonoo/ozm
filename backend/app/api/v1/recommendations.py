@@ -1,6 +1,7 @@
 import json
 import uuid
 from typing import List, Optional
+import traceback
 
 from fastapi import APIRouter, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -58,7 +59,7 @@ async def get_simple_recommendations(
             except Exception:
                 pass  # 토큰이 유효하지 않아도 세션 기반으로 진행
 
-        recommendations = await RecommendationService.get_simple_recommendations(
+        recommendations_raw = await RecommendationService.get_simple_recommendations(
             db=db,
             time_slot=ModelTimeSlot(request.time_slot),
             session_id=session_id,
@@ -66,14 +67,19 @@ async def get_simple_recommendations(
             user_id=user_id,
             limit=5,
         )
-        recommendations = [
-            MenuRecommendation(
-                menu=MenuResponse.model_validate(menu_to_dict(r.menu)),
-                score=r.score,
-                reason=r.reason,
-            )
-            for r in recommendations
-        ]
+        recommendations = []
+        for r in recommendations_raw:
+            try:
+                if r.menu is not None:
+                    recommendations.append(
+                        MenuRecommendation(
+                            menu=MenuResponse.model_validate(menu_to_dict(r.menu)),
+                            score=r.score,
+                            reason=r.reason,
+                        )
+                    )
+            except Exception:
+                continue
 
         # A/B 테스트 정보 조회
         preference = await PreferenceService.get_or_create_preference(
@@ -93,8 +99,11 @@ async def get_simple_recommendations(
             },
         }
 
+        # 항상 201 반환 (빈 추천이어도)
         return api_created(response_data)
     except Exception:
+        print("[추천 simple API 예외 발생]")
+        print(traceback.format_exc())
         return api_error("추천 생성 실패", error_code=ErrorCode.GENERAL_ERROR)
 
 

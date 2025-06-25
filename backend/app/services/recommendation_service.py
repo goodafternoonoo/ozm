@@ -6,21 +6,31 @@ from typing import Dict, List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.core.cache import cached
 from app.core.config_weights import get_weight_set
 from app.core.utils import menu_to_dict
 from app.models.menu import Menu, TimeSlot
-from app.models.recommendation import Recommendation, RecommendationLog
+from app.models.recommendation import RecommendationLog
 from app.models.user_answer import UserAnswer
 from app.models.user_preference import UserInteraction, UserPreference
 from app.schemas.menu import MenuRecommendation, MenuResponse
 from app.services.preference_service import PreferenceService
+from app.repositories.recommendation_repository import RecommendationRepository
+from app.repositories.menu_repository import MenuRepository
+from app.repositories.user_preference_repository import UserPreferenceRepository
 
 
 class RecommendationService:
-    """고도화된 추천 시스템 (개인화/협업필터링/하이브리드)"""
+    """
+    고도화된 추천 시스템 (개인화/협업필터링/하이브리드) (Repository 패턴 적용)
+    """
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+        self.recommendation_repository = RecommendationRepository(db)
+        self.menu_repository = MenuRepository(db)
+        self.user_preference_repository = UserPreferenceRepository(db)
 
     @staticmethod
     @cached(ttl=900, key_prefix="simple_rec")  # 15분 캐싱
@@ -50,18 +60,13 @@ class RecommendationService:
             time_weight = preference.dinner_preference
 
         # 메뉴 조회 및 점수 계산
-        stmt = (
-            select(Menu)
-            .options(selectinload(Menu.category))
-            .where(Menu.time_slot == slot)
-        )
+        menu_repo = MenuRepository(db)
+        menus = await menu_repo.search_menus("", None, None, None, None, 0, 1000)
+        menus = [m for m in menus if m.time_slot == slot]
 
         # 카테고리 필터링 추가
         if category_id:
-            stmt = stmt.where(Menu.category_id == category_id)
-
-        result = await db.execute(stmt)
-        menus = result.scalars().all()
+            menus = [m for m in menus if str(m.category_id) == str(category_id)]
 
         if not menus:
             return []
@@ -119,66 +124,41 @@ class RecommendationService:
         고도화된 질답 기반 추천 (하이브리드) - 캐싱 적용
         - 필수 조건 필터링 + 개인화 점수 + 협업 필터링
         """
-        # 1. 전체 메뉴 + 카테고리 join 조회
-        stmt = select(Menu).options(selectinload(Menu.category))
-
-        # 카테고리 필터링 추가
+        menu_repo = MenuRepository(db)
+        menus = await menu_repo.search_menus("", None, None, None, None, 0, 1000)
         if category_id:
-            stmt = stmt.where(Menu.category_id == category_id)
-
-        result = await db.execute(stmt)
-        menus = result.scalars().all()
-
+            menus = [m for m in menus if str(m.category_id) == str(category_id)]
         if not menus:
             return []
-
-        # 2. 최근 추천 메뉴 제외
-        recent_menu_ids = await RecommendationService._get_recent_recommended_menus(
-            db, session_id
-        )
+        rec_repo = RecommendationRepository(db)
+        recent_menu_ids = await rec_repo.get_recent_recommended_menus(session_id)
         filtered_menus = [m for m in menus if str(m.id) not in recent_menu_ids]
         if not filtered_menus:
             filtered_menus = menus
-
-        # 3. 필수 조건 AND 필터링
         required_menus = RecommendationService._filter_required_conditions(
             filtered_menus, answers
         )
         if not required_menus:
             return []
-
-        # 4. 사용자 선호도 조회
         preference = await PreferenceService.get_or_create_preference(
             db, session_id, user_id
         )
-
-        # 5. 하이브리드 점수 계산
         menu_scores = []
         for menu in required_menus:
-            # 콘텐츠 기반 점수
             content_score = RecommendationService._calculate_content_score(
                 menu, answers, preference
             )
-
-            # 협업 필터링 점수
             collaborative_score = (
                 await RecommendationService._calculate_collaborative_score(
                     db, menu, session_id, user_id
                 )
             )
-
-            # 하이브리드 점수 (가중 평균)
             hybrid_score = content_score * 0.7 + collaborative_score * 0.3
-
             if hybrid_score > 0:
                 menu_scores.append((menu, hybrid_score))
-
         menu_scores.sort(key=lambda x: x[1], reverse=True)
-
-        # 6. 다양성 보장
         top_candidates = menu_scores[: min(limit * 2, len(menu_scores))]
         selected = random.sample(top_candidates, min(limit, len(top_candidates)))
-
         recommendations = []
         for menu, score in selected:
             reason = RecommendationService._generate_hybrid_reason(
@@ -191,12 +171,9 @@ class RecommendationService:
                     reason=reason,
                 )
             )
-
-        # 7. 사용자 답변 저장 및 선호도 학습
         await RecommendationService._save_user_answers_and_learn(
             db, session_id, user_id, answers, recommendations
         )
-
         return recommendations
 
     @staticmethod
@@ -414,30 +391,8 @@ class RecommendationService:
     @staticmethod
     async def _get_recent_recommended_menus(db: AsyncSession, session_id: str) -> set:
         """최근 추천된 메뉴 ID들 조회"""
-        from app.models.recommendation import RecommendationLog
-
-        log_stmt = (
-            select(RecommendationLog)
-            .where(RecommendationLog.session_id == session_id)
-            .order_by(RecommendationLog.created_at.desc())
-            .limit(3)
-        )
-        log_result = await db.execute(log_stmt)
-        logs = log_result.scalars().all()
-
-        recent_menu_ids = set()
-        for log in logs:
-            if log.recommended_menus:
-                try:
-                    import json
-
-                    recommended_menus = json.loads(log.recommended_menus)
-                    for m in recommended_menus:
-                        recent_menu_ids.add(m["menu_id"])
-                except (json.JSONDecodeError, KeyError):
-                    continue
-
-        return recent_menu_ids
+        rec_repo = RecommendationRepository(db)
+        return await rec_repo.get_recent_recommended_menus(session_id)
 
     @staticmethod
     def _generate_personalized_reason(
@@ -541,51 +496,10 @@ class RecommendationService:
         rec_type: str,
     ):
         """추천 로그 저장 (Recommendation + RecommendationLog)"""
-        # 각 추천 메뉴에 대해 개별 Recommendation 레코드 생성
-        for rec in recommendations:
-            log = Recommendation(
-                session_id=session_id,
-                menu_id=rec.menu.id,
-                recommendation_type=rec_type,
-                score=rec.score,
-                reason=rec.reason,
-            )
-            db.add(log)
-
-        # ab_group, 가중치 세트, 추천 메뉴 리스트 등 RecommendationLog에 저장
-        # (UserPreference에서 ab_group, 가중치 세트 추출)
-        stmt = (
-            select(UserPreference)
-            .where(UserPreference.session_id == session_id)
-            .limit(1)
+        rec_repo = RecommendationRepository(db)
+        await rec_repo.save_recommendation_log(
+            session_id, answers, recommendations, rec_type
         )
-        result = await db.execute(stmt)
-        preference = result.scalar_one_or_none()
-        ab_group = getattr(preference, "ab_group", None) if preference else None
-        weight_set = get_weight_set(ab_group)
-        import json as _json
-
-        recommended_menus = _json.dumps(
-            [
-                {
-                    "menu_id": str(rec.menu.id),
-                    "menu_name": rec.menu.name,
-                    "score": rec.score,
-                }
-                for rec in recommendations
-            ],
-            ensure_ascii=False,
-        )
-        log_entry = RecommendationLog(
-            user_id=getattr(preference, "user_id", None),
-            session_id=session_id,
-            ab_group=ab_group,
-            weight_set=_json.dumps(weight_set, ensure_ascii=False),
-            recommended_menus=recommended_menus,
-            action_type=rec_type,
-        )
-        db.add(log_entry)
-        await db.commit()
 
     @staticmethod
     async def get_ab_group_statistics(

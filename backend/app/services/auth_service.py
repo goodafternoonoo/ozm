@@ -5,11 +5,11 @@ import requests
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import AsyncSessionLocal
 from app.models.user import User
+from app.repositories.user_repository import UserRepository
 
 KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me"
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "testsecret")
@@ -30,7 +30,7 @@ async def get_db():
 
 class AuthService:
     """
-    카카오 access_token 검증, 사용자 정보 조회, User 저장/조회, JWT 발급 서비스
+    카카오 access_token 검증, 사용자 정보 조회, User 저장/조회, JWT 발급 서비스 (Repository 패턴 적용)
     """
 
     @staticmethod
@@ -52,12 +52,11 @@ class AuthService:
         """
         카카오 사용자 정보로 User 조회/생성
         """
+        user_repo = UserRepository(db)
         kakao_id = str(kakao_userinfo["id"])
         nickname = kakao_userinfo.get("properties", {}).get("nickname")
         email = kakao_userinfo.get("kakao_account", {}).get("email")
-        stmt = select(User).where(User.kakao_id == kakao_id)
-        result = await db.execute(stmt)
-        user = result.scalar_one_or_none()
+        user = await user_repo.get_user_by_kakao_id(kakao_id)
         if user:
             return user
         # 신규 생성 - username 필드 설정 (NOT NULL 제약 만족)
@@ -75,9 +74,8 @@ class AuthService:
         """
         사용자 ID로 사용자 정보 조회
         """
-        stmt = select(User).where(User.id == user_id)
-        result = await db.execute(stmt)
-        user = result.scalar_one_or_none()
+        user_repo = UserRepository(db)
+        user = await user_repo.get_by_id(user_id)
         if not user:
             raise Exception("사용자를 찾을 수 없습니다")
         return user
@@ -87,9 +85,8 @@ class AuthService:
         """
         카카오 ID로 사용자 정보 조회
         """
-        stmt = select(User).where(User.kakao_id == kakao_id)
-        result = await db.execute(stmt)
-        user = result.scalar_one_or_none()
+        user_repo = UserRepository(db)
+        user = await user_repo.get_user_by_kakao_id(kakao_id)
         if not user:
             raise Exception("사용자를 찾을 수 없습니다")
         return user

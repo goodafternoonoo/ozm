@@ -23,7 +23,7 @@ class SimpleRecommendationRequest(BaseModel):
 class RecommendationResponse(BaseModel):
     """추천 결과 응답 스키마"""
 
-    recommendations: List[MenuRecommendation]
+    recommendations: List[MenuRecommendation] = []
     session_id: str
     total_count: int
 
