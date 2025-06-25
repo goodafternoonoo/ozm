@@ -3,6 +3,7 @@ import React, {
     useContext,
     useState,
     useEffect,
+    useCallback,
     ReactNode,
 } from 'react';
 import { Alert } from 'react-native';
@@ -72,13 +73,23 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
     const { recordMenuClick, recordMenuFavorite, recordRecommendationSelect } = useUserInteraction();
     const { getCollaborativeRecommendations: fetchCollaborativeRecommendations } = useCollaborativeRecommendations();
 
+    const fetchCategories = useCallback(async () => {
+        try {
+            const response = await CategoryService.getCategories(1, 50);
+            setCategories(response.categories);
+        } catch (err) {
+            console.error('카테고리 조회 에러:', err);
+            setCategories([]);
+        }
+    }, []);
+
     useEffect(() => {
         fetchCategories();
         // 세션 ID 생성
         setSessionId(
             `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         );
-    }, []);
+    }, [fetchCategories]);
 
     // 로그인 상태가 변경될 때마다 즐겨찾기 목록을 다시 불러옴
     useEffect(() => {
@@ -102,19 +113,9 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
         if (recommendations.length > 0) {
             setRenderKey((prev) => prev + 1);
         }
-    }, [isLoggedIn]);
+    }, [isLoggedIn, recommendations]);
 
-    const fetchCategories = async () => {
-        try {
-            const response = await CategoryService.getCategories(1, 50);
-            setCategories(response.categories);
-        } catch (err) {
-            console.error('카테고리 조회 에러:', err);
-            setCategories([]);
-        }
-    };
-
-    const getMenuRecommendations = async () => {
+    const getMenuRecommendations = useCallback(async () => {
         setLoading(true);
         setError(null);
         setAbTestInfo(null);
@@ -154,17 +155,17 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedTimeSlot, categoryId, sessionId, recordRecommendationSelect]);
 
-    const getCollaborativeRecommendations = async () => {
+    const getCollaborativeRecommendations = useCallback(async () => {
         try {
             await fetchCollaborativeRecommendations(sessionId, 5);
         } catch (err) {
             console.error('협업 필터링 추천 에러:', err);
         }
-    };
+    }, [sessionId, fetchCollaborativeRecommendations]);
 
-    const removeMenuFromSaved = async (menuToRemove: Menu) => {
+    const removeMenuFromSaved = useCallback(async (menuToRemove: Menu) => {
         if (!isLoggedIn) {
             Alert.alert('로그인 필요', '즐겨찾기 기능을 사용하려면 로그인이 필요합니다.');
             return;
@@ -184,9 +185,9 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
             Alert.alert('오류', '즐겨찾기 삭제에 실패했습니다.');
         }
         await recordMenuFavorite(sessionId, menuToRemove.id, false);
-    };
+    }, [isLoggedIn, sessionId, recordMenuFavorite]);
 
-    const addMenuToSaved = async (menuToAdd: Menu) => {
+    const addMenuToSaved = useCallback(async (menuToAdd: Menu) => {
         if (!isLoggedIn) {
             Alert.alert('로그인 필요', '즐겨찾기 기능을 사용하려면 로그인이 필요합니다.');
             return;
@@ -204,15 +205,15 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
             Alert.alert('오류', '즐겨찾기 추가에 실패했습니다.');
         }
         await recordMenuFavorite(sessionId, menuToAdd.id, true);
-    };
+    }, [isLoggedIn, sessionId, recordMenuFavorite]);
 
-    const handleMenuClick = async (menu: Menu) => {
+    const handleMenuClick = useCallback(async (menu: Menu) => {
         await recordMenuClick(sessionId, menu.id, {
             time_slot: selectedTimeSlot,
             category_id: categoryId,
             source: 'menu_recommendations',
         });
-    };
+    }, [sessionId, selectedTimeSlot, categoryId, recordMenuClick]);
 
     const value = {
         selectedTimeSlot,

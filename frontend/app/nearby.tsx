@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
-    ScrollView,
     TouchableOpacity,
     ActivityIndicator,
     Alert,
@@ -46,7 +45,7 @@ export default function NearbyScreen() {
 
     useEffect(() => {
         getCurrentLocation();
-    }, []);
+    }, [getCurrentLocation]);
 
     // 정렬된 레스토랑 목록
     const sortedRestaurants = [...restaurants].sort((a, b) => {
@@ -64,20 +63,20 @@ export default function NearbyScreen() {
         return 0;
     });
 
-    const renderStars = (rating: number) => {
-        const stars = [];
-        for (let i = 1; i <= 5; i++) {
-            stars.push(
-                <Ionicons
-                    key={i}
-                    name={i <= rating ? 'star' : 'star-outline'}
-                    size={16}
-                    color={i <= rating ? '#FFD700' : colors.text.tertiary}
-                />
-            );
-        }
-        return <View style={{ flexDirection: 'row' }}>{stars}</View>;
-    };
+    // const renderStars = (rating: number) => {
+    //     const stars = [];
+    //     for (let i = 1; i <= 5; i++) {
+    //         stars.push(
+    //             <Ionicons
+    //                 key={i}
+    //                 name={i <= rating ? 'star' : 'star-outline'}
+    //                 size={16}
+    //                 color={i <= rating ? '#FFD700' : colors.text.tertiary}
+    //             />
+    //         );
+    //     }
+    //     return <View style={{ flexDirection: 'row' }}>{stars}</View>;
+    // };
 
     const openMap = (restaurant: Restaurant) => {
         setSelectedRestaurant(restaurant);
