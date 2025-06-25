@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 from app.models.user_preference import UserPreference, UserInteraction
 from app.models.menu import Menu
 from app.models.favorite import Favorite
+from app.core.cache import cached, user_preference_cache, cache_key
 from app.schemas.user_preference import (
     UserPreferenceCreate,
     UserPreferenceUpdate,
@@ -23,10 +24,11 @@ class PreferenceService:
     """사용자 선호도 학습 및 협업 필터링 서비스"""
 
     @staticmethod
+    @cached(ttl=1800, key_prefix="user_pref")  # 30분 캐싱
     async def get_or_create_preference(
         db: AsyncSession, session_id: str, user_id: Optional[uuid.UUID] = None
     ) -> UserPreference:
-        """사용자 선호도 조회 또는 생성"""
+        """사용자 선호도 조회 또는 생성 - 캐싱 적용"""
         stmt = (
             select(UserPreference)
             .where(

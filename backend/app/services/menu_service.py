@@ -6,6 +6,7 @@ from app.models.menu import Menu
 from app.models.category import Category
 from app.models.favorite import Favorite
 from app.services.base_service import BaseService
+from app.core.cache import cached, menu_cache, cache_key
 import uuid
 from sqlalchemy.exc import IntegrityError
 
@@ -16,20 +17,22 @@ class MenuService(BaseService[Menu]):
     def __init__(self):
         super().__init__(Menu)
 
+    @cached(ttl=3600, key_prefix="menu_by_id")  # 1시간 캐싱
     async def get_by_id_with_category(
         self, db: AsyncSession, menu_id: uuid.UUID
     ) -> Optional[Menu]:
-        """카테고리와 함께 메뉴 조회"""
+        """카테고리와 함께 메뉴 조회 - 캐싱 적용"""
         stmt = (
             select(Menu).options(selectinload(Menu.category)).where(Menu.id == menu_id)
         )
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
+    @cached(ttl=1800, key_prefix="menu_all")  # 30분 캐싱
     async def get_all_with_category(
         self, db: AsyncSession, skip: int = 0, limit: int = 50
     ) -> List[Menu]:
-        """카테고리와 함께 모든 메뉴 조회"""
+        """카테고리와 함께 모든 메뉴 조회 - 캐싱 적용"""
         stmt = (
             select(Menu)
             .options(selectinload(Menu.category))
@@ -41,10 +44,11 @@ class MenuService(BaseService[Menu]):
         result = await db.execute(stmt)
         return result.scalars().all()
 
+    @cached(ttl=1800, key_prefix="menu_by_category")  # 30분 캐싱
     async def get_menus_by_category(
         self, db: AsyncSession, category_id: uuid.UUID, skip: int = 0, limit: int = 50
     ) -> List[Menu]:
-        """카테고리별 메뉴 조회"""
+        """카테고리별 메뉴 조회 - 캐싱 적용"""
         stmt = (
             select(Menu)
             .options(selectinload(Menu.category))
@@ -110,8 +114,9 @@ class MenuService(BaseService[Menu]):
         result = await db.execute(stmt)
         return result.scalars().all()
 
+    @cached(ttl=900, key_prefix="menu_popular")  # 15분 캐싱
     async def get_popular_menus(self, db: AsyncSession, limit: int = 10) -> List[Menu]:
-        """인기 메뉴 조회 (즐겨찾기 수 기준)"""
+        """인기 메뉴 조회 (즐겨찾기 수 기준) - 캐싱 적용"""
         stmt = (
             select(Menu, func.count(Favorite.id).label("favorite_count"))
             .options(selectinload(Menu.category))
