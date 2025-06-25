@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -33,28 +33,10 @@ export const LoginScreen: React.FC = () => {
 
     const {
         login: authLogin,
-        checkLoginStatus,
         logout: authLogout,
     } = useAuth();
 
-    useEffect(() => {
-        // 메시지 리스너 등록 (콜백 창에서 보내는 메시지 처리)
-        const handleMessage = async (event: MessageEvent) => {
-            if (event.data.type === 'KAKAO_LOGIN_SUCCESS' && event.data.code) {
-                await handleKakaoTokenExchange(event.data.code);
-            } else if (event.data.type === 'KAKAO_LOGIN_ERROR') {
-                setLoading(false);
-                Alert.alert('인증 실패', '카카오 인증 중 오류가 발생했습니다.');
-            }
-        };
-
-        if (typeof window !== 'undefined') {
-            window.addEventListener('message', handleMessage);
-            return () => window.removeEventListener('message', handleMessage);
-        }
-    }, []);
-
-    const handleKakaoTokenExchange = async (code: string) => {
+    const handleKakaoTokenExchange = useCallback(async (code: string) => {
         try {
             // 캐싱 로직: 캐시된 토큰이 있으면 사용, 없으면 새로 발급
             let accessToken = await AsyncStorage.getItem('kakao_access_token');
@@ -148,7 +130,24 @@ export const LoginScreen: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [authLogin]);
+
+    useEffect(() => {
+        // 메시지 리스너 등록 (콜백 창에서 보내는 메시지 처리)
+        const handleMessage = async (event: MessageEvent) => {
+            if (event.data.type === 'KAKAO_LOGIN_SUCCESS' && event.data.code) {
+                await handleKakaoTokenExchange(event.data.code);
+            } else if (event.data.type === 'KAKAO_LOGIN_ERROR') {
+                setLoading(false);
+                Alert.alert('인증 실패', '카카오 인증 중 오류가 발생했습니다.');
+            }
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('message', handleMessage);
+            return () => window.removeEventListener('message', handleMessage);
+        }
+    }, [handleKakaoTokenExchange]);
 
     const handleLogout = () => {
         console.log('handleLogout 함수 호출됨');
@@ -196,6 +195,7 @@ export const LoginScreen: React.FC = () => {
                 }
                 // 정상 응답이면 아무것도 안 함
             } catch (err) {
+                console.log('토큰 만료 또는 인증 실패', err);
                 setLoginSuccess(false);
                 setUserInfo(null);
                 setJwtToken(null);

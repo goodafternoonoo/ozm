@@ -2,6 +2,7 @@ import React, {
     createContext,
     useContext,
     useState,
+    useCallback,
     ReactNode,
 } from 'react';
 import { LocationService, LocationData } from '../services/locationService';
@@ -68,37 +69,7 @@ export const NearbyProvider: React.FC<NearbyProviderProps> = ({ children }) => {
     const [hasMoreData, setHasMoreData] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
 
-    const getCurrentLocation = async () => {
-        console.log('🔄 getCurrentLocation 호출됨');
-        setLoading(true);
-        try {
-            console.log('📍 LocationService.getCurrentLocation() 호출...');
-            const currentLocation = await LocationService.getCurrentLocation();
-            console.log('📍 LocationService 결과:', currentLocation);
-            
-            if (currentLocation) {
-                console.log('✅ 위치 정보 설정:', currentLocation);
-                setLocation(currentLocation);
-                setLocationPermission('granted');
-                console.log('📍 맛집 검색 시작...');
-                // 초기 검색 시 페이지 리셋
-                setCurrentPage(1);
-                setHasMoreData(true);
-                await searchNearbyRestaurants(currentLocation.latitude, currentLocation.longitude, 1, true);
-            } else {
-                console.log('❌ 위치 정보 없음, 권한 거부됨');
-                setLocationPermission('denied');
-            }
-        } catch (error) {
-            console.error('❌ getCurrentLocation 에러:', error);
-            setLocationPermission('denied');
-        } finally {
-            setLoading(false);
-            console.log('🔄 getCurrentLocation 완료');
-        }
-    };
-
-    const searchNearbyRestaurants = async (
+    const searchNearbyRestaurants = useCallback(async (
         latitude: number, 
         longitude: number, 
         page: number = 1, 
@@ -155,9 +126,39 @@ export const NearbyProvider: React.FC<NearbyProviderProps> = ({ children }) => {
         } catch (error) {
             console.error('❌ searchNearbyRestaurants 에러:', error);
         }
-    };
+    }, [searchKeyword, searchRadius]);
 
-    const loadMoreRestaurants = async () => {
+    const getCurrentLocation = useCallback(async () => {
+        console.log('🔄 getCurrentLocation 호출됨');
+        setLoading(true);
+        try {
+            console.log('📍 LocationService.getCurrentLocation() 호출...');
+            const currentLocation = await LocationService.getCurrentLocation();
+            console.log('📍 LocationService 결과:', currentLocation);
+            
+            if (currentLocation) {
+                console.log('✅ 위치 정보 설정:', currentLocation);
+                setLocation(currentLocation);
+                setLocationPermission('granted');
+                console.log('📍 맛집 검색 시작...');
+                // 초기 검색 시 페이지 리셋
+                setCurrentPage(1);
+                setHasMoreData(true);
+                await searchNearbyRestaurants(currentLocation.latitude, currentLocation.longitude, 1, true);
+            } else {
+                console.log('❌ 위치 정보 없음, 권한 거부됨');
+                setLocationPermission('denied');
+            }
+        } catch (error) {
+            console.error('❌ getCurrentLocation 에러:', error);
+            setLocationPermission('denied');
+        } finally {
+            setLoading(false);
+            console.log('🔄 getCurrentLocation 완료');
+        }
+    }, [searchNearbyRestaurants]);
+
+    const loadMoreRestaurants = useCallback(async () => {
         if (!location || loadingMore || !hasMoreData) return;
 
         setLoadingMore(true);
@@ -170,9 +171,9 @@ export const NearbyProvider: React.FC<NearbyProviderProps> = ({ children }) => {
         } finally {
             setLoadingMore(false);
         }
-    };
+    }, [location, loadingMore, hasMoreData, currentPage, searchNearbyRestaurants]);
 
-    const refreshRestaurants = async () => {
+    const refreshRestaurants = useCallback(async () => {
         if (!location) return;
 
         setRefreshing(true);
@@ -185,16 +186,16 @@ export const NearbyProvider: React.FC<NearbyProviderProps> = ({ children }) => {
         } finally {
             setRefreshing(false);
         }
-    };
+    }, [location, searchNearbyRestaurants]);
 
-    const searchByKeyword = async (keyword: string) => {
+    const searchByKeyword = useCallback(async (keyword: string) => {
         if (!location) return;
 
         setSearchKeyword(keyword);
         setCurrentPage(1);
         setHasMoreData(true);
         await searchNearbyRestaurants(location.latitude, location.longitude, 1, true);
-    };
+    }, [location, searchNearbyRestaurants]);
 
     const value = {
         location,
