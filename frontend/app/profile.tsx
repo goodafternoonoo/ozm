@@ -1,41 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Cookies from 'js-cookie';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LoginScreen } from './login';
 import { LoginScreenStyles } from '../styles/LoginScreenStyles';
+import { LogoutModal } from '../components/LogoutModal';
+import { useAuth } from '../hooks/useAuth';
 
 const ProfileScreen: React.FC = () => {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [userInfo, setUserInfo] = useState<{
-        nickname?: string;
-        email?: string;
-    } | null>(null);
+    const { isLoggedIn, userInfo, logout } = useAuth();
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-    useEffect(() => {
-        const checkLogin = async () => {
-            const token = await AsyncStorage.getItem('jwt_token');
-            const nickname = Cookies.get('ozm_nickname');
-            const email = Cookies.get('ozm_email');
-            if (token && nickname && email) {
-                setIsLoggedIn(true);
-                setUserInfo({ nickname, email });
-            } else {
-                setIsLoggedIn(false);
-                setUserInfo(null);
-            }
-        };
-        checkLogin();
-    }, []);
-
-    const handleLogout = async () => {
-        await AsyncStorage.removeItem('jwt_token');
-        Cookies.remove('ozm_nickname');
-        Cookies.remove('ozm_email');
-        setIsLoggedIn(false);
-        setUserInfo(null);
-        Alert.alert('로그아웃', '로그아웃되었습니다.');
+    const handleLogoutSuccess = () => {
+        logout(); // useAuth의 logout 함수 호출
     };
 
     if (!isLoggedIn) {
@@ -68,13 +44,19 @@ const ProfileScreen: React.FC = () => {
                 </View>
                 <TouchableOpacity
                     style={LoginScreenStyles.logoutButton}
-                    onPress={handleLogout}
+                    onPress={() => setShowLogoutModal(true)}
                 >
                     <Text style={LoginScreenStyles.logoutButtonText}>
                         로그아웃
                     </Text>
                 </TouchableOpacity>
             </View>
+
+            <LogoutModal
+                visible={showLogoutModal}
+                onClose={() => setShowLogoutModal(false)}
+                onLogoutSuccess={handleLogoutSuccess}
+            />
         </View>
     );
 };

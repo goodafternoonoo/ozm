@@ -33,6 +33,7 @@ export function useMenuRecommendations() {
     const [abTestInfo, setAbTestInfo] = useState<ABTestInfo | null>(null);
     const [sessionId, setSessionId] = useState<string>('');
     const [showCollaborative, setShowCollaborative] = useState(false);
+    const [renderKey, setRenderKey] = useState<number>(0); // 강제 리렌더링을 위한 key
 
     const { isLoggedIn } = useAuth();
 
@@ -68,6 +69,14 @@ export function useMenuRecommendations() {
         } else {
             // 로그아웃 상태에서는 즐겨찾기 목록 초기화
             setSavedMenus([]);
+        }
+    }, [isLoggedIn]);
+
+    // 로그인 상태가 변경될 때 기존 추천 목록이 있으면 다시 불러와서 UI 업데이트
+    useEffect(() => {
+        if (recommendations.length > 0) {
+            // 강제 리렌더링을 위해 key 업데이트
+            setRenderKey((prev) => prev + 1);
         }
     }, [isLoggedIn]);
 
@@ -206,5 +215,6 @@ export function useMenuRecommendations() {
         removeMenuFromSaved,
         addMenuToSaved,
         handleMenuClick,
+        renderKey,
     };
 }

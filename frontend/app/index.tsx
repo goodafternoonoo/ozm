@@ -47,6 +47,7 @@ export default function MenuRecommendationScreen() {
         removeMenuFromSaved,
         addMenuToSaved,
         handleMenuClick,
+        renderKey,
     } = useMenuRecommendations();
 
     const chujon = useChujonRecommendation();
@@ -402,7 +403,7 @@ export default function MenuRecommendationScreen() {
                             </Text>
                             {chujon.recommendations.map(({ menu, reason }) => (
                                 <MenuCard
-                                    key={menu.id}
+                                    key={`${renderKey}-${menu.id}`}
                                     menu={menu}
                                     reason={reason}
                                     onRemove={
@@ -413,6 +414,9 @@ export default function MenuRecommendationScreen() {
                                     onAdd={
                                         isLoggedIn ? addMenuToSaved : undefined
                                     }
+                                    isSaved={savedMenus.some(
+                                        (m) => m.id === menu.id
+                                    )}
                                 />
                             ))}
                         </View>
@@ -482,7 +486,7 @@ export default function MenuRecommendationScreen() {
                                     similarUsersCount,
                                 }) => (
                                     <CollaborativeMenuCard
-                                        key={menu.id}
+                                        key={`${renderKey}-${menu.id}`}
                                         menu={{
                                             ...menu,
                                             id: Number(menu.id),
@@ -527,6 +531,9 @@ export default function MenuRecommendationScreen() {
                                                       })
                                                 : undefined
                                         }
+                                        isSaved={savedMenus.some(
+                                            (m) => m.id === String(menu.id)
+                                        )}
                                     />
                                 )
                             )}
@@ -559,7 +566,7 @@ export default function MenuRecommendationScreen() {
                     </Text>
                     {savedMenus.map((menu) => (
                         <MenuCard
-                            key={menu.id}
+                            key={`${renderKey}-${menu.id}`}
                             menu={menu}
                             isSaved
                             onRemove={
@@ -578,7 +585,7 @@ export default function MenuRecommendationScreen() {
                     </Text>
                     {recommendations.map(({ menu, reason }) => (
                         <MenuCard
-                            key={menu.id}
+                            key={`${renderKey}-${menu.id}`}
                             menu={menu}
                             reason={reason}
                             onRemove={
