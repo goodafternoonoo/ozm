@@ -17,6 +17,7 @@ import {
     TimeSlot,
     useMenuRecommendations,
 } from '../hooks/useMenuRecommendations';
+import { useAuth } from '../hooks/useAuth';
 import { colors } from '../styles/GlobalStyles';
 import { MenuRecommendationStyles } from '../styles/MenuRecommendationStyles';
 
@@ -26,6 +27,8 @@ export default function MenuRecommendationScreen() {
     );
     const [categoryModalVisible, setCategoryModalVisible] = useState(false);
     const [showABTestInfo, setShowABTestInfo] = useState(false);
+
+    const { isLoggedIn } = useAuth();
 
     const {
         selectedTimeSlot,
@@ -402,22 +405,18 @@ export default function MenuRecommendationScreen() {
                                     key={menu.id}
                                     menu={menu}
                                     reason={reason}
-                                    onRemove={removeMenuFromSaved}
+                                    onRemove={
+                                        isLoggedIn
+                                            ? removeMenuFromSaved
+                                            : undefined
+                                    }
+                                    onAdd={
+                                        isLoggedIn ? addMenuToSaved : undefined
+                                    }
                                     onMenuClick={handleMenuClick}
                                     isSaved={savedMenus.some(
                                         (m) => m.id === menu.id
                                     )}
-                                    onAdd={(collaborativeMenu) =>
-                                        addMenuToSaved({
-                                            ...collaborativeMenu,
-                                            id: String(collaborativeMenu.id),
-                                            category: collaborativeMenu.category
-                                                ? ({
-                                                      name: collaborativeMenu.category,
-                                                  } as any)
-                                                : undefined,
-                                        })
-                                    }
                                 />
                             ))}
                         </View>
@@ -498,19 +497,39 @@ export default function MenuRecommendationScreen() {
                                         reason={reason}
                                         similarityScore={similarityScore}
                                         similarUsersCount={similarUsersCount}
-                                        onRemove={(collaborativeMenu) =>
-                                            removeMenuFromSaved({
-                                                ...collaborativeMenu,
-                                                id: String(
-                                                    collaborativeMenu.id
-                                                ),
-                                                category:
-                                                    collaborativeMenu.category
-                                                        ? ({
-                                                              name: collaborativeMenu.category,
-                                                          } as any)
-                                                        : undefined,
-                                            })
+                                        onRemove={
+                                            isLoggedIn
+                                                ? (collaborativeMenu) =>
+                                                      removeMenuFromSaved({
+                                                          ...collaborativeMenu,
+                                                          id: String(
+                                                              collaborativeMenu.id
+                                                          ),
+                                                          category:
+                                                              collaborativeMenu.category
+                                                                  ? ({
+                                                                        name: collaborativeMenu.category,
+                                                                    } as any)
+                                                                  : undefined,
+                                                      })
+                                                : undefined
+                                        }
+                                        onAdd={
+                                            isLoggedIn
+                                                ? (collaborativeMenu) =>
+                                                      addMenuToSaved({
+                                                          ...collaborativeMenu,
+                                                          id: String(
+                                                              collaborativeMenu.id
+                                                          ),
+                                                          category:
+                                                              collaborativeMenu.category
+                                                                  ? ({
+                                                                        name: collaborativeMenu.category,
+                                                                    } as any)
+                                                                  : undefined,
+                                                      })
+                                                : undefined
                                         }
                                         onMenuClick={(collaborativeMenu) =>
                                             handleMenuClick({
@@ -529,20 +548,6 @@ export default function MenuRecommendationScreen() {
                                         isSaved={savedMenus.some(
                                             (m) => m.id === String(menu.id)
                                         )}
-                                        onAdd={(collaborativeMenu) =>
-                                            addMenuToSaved({
-                                                ...collaborativeMenu,
-                                                id: String(
-                                                    collaborativeMenu.id
-                                                ),
-                                                category:
-                                                    collaborativeMenu.category
-                                                        ? ({
-                                                              name: collaborativeMenu.category,
-                                                          } as any)
-                                                        : undefined,
-                                            })
-                                        }
                                     />
                                 )
                             )}
@@ -578,9 +583,11 @@ export default function MenuRecommendationScreen() {
                             key={menu.id}
                             menu={menu}
                             isSaved
-                            onRemove={removeMenuFromSaved}
+                            onRemove={
+                                isLoggedIn ? removeMenuFromSaved : undefined
+                            }
+                            onAdd={isLoggedIn ? addMenuToSaved : undefined}
                             onMenuClick={handleMenuClick}
-                            onAdd={addMenuToSaved}
                         />
                     ))}
                 </View>
@@ -596,10 +603,12 @@ export default function MenuRecommendationScreen() {
                             key={menu.id}
                             menu={menu}
                             reason={reason}
-                            onRemove={removeMenuFromSaved}
+                            onRemove={
+                                isLoggedIn ? removeMenuFromSaved : undefined
+                            }
+                            onAdd={isLoggedIn ? addMenuToSaved : undefined}
                             onMenuClick={handleMenuClick}
                             isSaved={savedMenus.some((m) => m.id === menu.id)}
-                            onAdd={addMenuToSaved}
                         />
                     ))}
                 </View>

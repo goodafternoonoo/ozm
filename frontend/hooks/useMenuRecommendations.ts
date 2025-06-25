@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { useUserInteraction } from './useUserInteraction';
 import { useCollaborativeRecommendations } from './useCollaborativeRecommendations';
+import { useAuth } from './useAuth';
 import { CategoryService, Category } from '../services/categoryService';
 import {
     RecommendationService,
@@ -33,6 +34,8 @@ export function useMenuRecommendations() {
     const [sessionId, setSessionId] = useState<string>('');
     const [showCollaborative, setShowCollaborative] = useState(false);
 
+    const { isLoggedIn } = useAuth();
+
     const { recordMenuClick, recordMenuFavorite, recordRecommendationSelect } =
         useUserInteraction();
     const {
@@ -47,17 +50,26 @@ export function useMenuRecommendations() {
         setSessionId(
             `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         );
-        // 즐겨찾기 목록 불러오기
-        (async () => {
-            try {
-                const favs = await getFavorites();
-                setSavedMenus(favs);
-            } catch (e) {
-                console.error('즐겨찾기 목록 불러오기 에러:', e);
-                setSavedMenus([]);
-            }
-        })();
     }, []);
+
+    // 로그인 상태가 변경될 때마다 즐겨찾기 목록을 다시 불러옴
+    useEffect(() => {
+        if (isLoggedIn) {
+            // 로그인된 상태에서만 즐겨찾기 목록 불러오기
+            (async () => {
+                try {
+                    const favs = await getFavorites();
+                    setSavedMenus(favs);
+                } catch (e) {
+                    console.error('즐겨찾기 목록 불러오기 에러:', e);
+                    setSavedMenus([]);
+                }
+            })();
+        } else {
+            // 로그아웃 상태에서는 즐겨찾기 목록 초기화
+            setSavedMenus([]);
+        }
+    }, [isLoggedIn]);
 
     const fetchCategories = async () => {
         try {
@@ -118,6 +130,14 @@ export function useMenuRecommendations() {
     };
 
     const removeMenuFromSaved = async (menuToRemove: Menu) => {
+        if (!isLoggedIn) {
+            Alert.alert(
+                '로그인 필요',
+                '즐겨찾기 기능을 사용하려면 로그인이 필요합니다.'
+            );
+            return;
+        }
+
         try {
             await removeFavorite(menuToRemove.id);
             setSavedMenus(
@@ -136,6 +156,14 @@ export function useMenuRecommendations() {
     };
 
     const addMenuToSaved = async (menuToAdd: Menu) => {
+        if (!isLoggedIn) {
+            Alert.alert(
+                '로그인 필요',
+                '즐겨찾기 기능을 사용하려면 로그인이 필요합니다.'
+            );
+            return;
+        }
+
         try {
             await addFavorite(menuToAdd.id);
             setSavedMenus([...savedMenus, menuToAdd]);
