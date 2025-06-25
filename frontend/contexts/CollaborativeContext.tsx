@@ -8,6 +8,7 @@ import React, {
 import { RecommendationService, Menu } from '../services/recommendationService';
 import { AppError } from '../utils/apiClient';
 import { logRecommendation, logError, LogCategory } from '../utils/logger';
+import { RECOMMENDATION } from '../constants';
 
 export type CollaborativeMenu = Menu;
 
@@ -46,7 +47,7 @@ export const CollaborativeProvider: React.FC<CollaborativeProviderProps> = ({ ch
 
     const getCollaborativeRecommendations = useCallback(async (
         sessionId: string,
-        limit: number = 5
+        limit: number = RECOMMENDATION.LIMITS.DEFAULT
     ) => {
         setLoading(true);
         setError(null);
@@ -99,7 +100,7 @@ export const CollaborativeProvider: React.FC<CollaborativeProviderProps> = ({ ch
 
     const getCollaborativeRecommendationsRaw = useCallback(async (
         sessionId: string,
-        limit: number = 5
+        limit: number = RECOMMENDATION.LIMITS.DEFAULT
     ) => {
         setLoading(true);
         setError(null);

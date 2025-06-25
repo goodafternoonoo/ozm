@@ -25,6 +25,7 @@ import {
 } from '../services/favoriteService';
 import { abTestInfoToCamel } from '../utils/case';
 import { logRecommendation, logError, LogCategory } from '../utils/logger';
+import { TIME_SLOTS, RECOMMENDATION, APP_CONSTANTS } from '../constants';
 
 export type TimeSlot = 'breakfast' | 'lunch' | 'dinner';
 
@@ -58,7 +59,7 @@ interface MenuRecommendationProviderProps {
 }
 
 export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProps> = ({ children }) => {
-    const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot>('lunch');
+    const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot>(TIME_SLOTS.LUNCH);
     const [categoryId, setCategoryId] = useState<string | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
     const [recommendations, setRecommendations] = useState<MenuRecommendation[]>([]);
@@ -76,7 +77,7 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
 
     const fetchCategories = useCallback(async () => {
         try {
-            const response = await CategoryService.getCategories(1, 50);
+            const response = await CategoryService.getCategories(1, APP_CONSTANTS.PAGINATION.MAX_PAGE_SIZE);
             setCategories(response.categories);
         } catch (err) {
             logError(LogCategory.RECOMMENDATION, '카테고리 조회 에러', err as Error);
@@ -88,7 +89,7 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
         fetchCategories();
         // 세션 ID 생성
         setSessionId(
-            `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+            `${APP_CONSTANTS.SESSION.PREFIX}${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         );
     }, [fetchCategories]);
 
@@ -183,7 +184,7 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
 
     const getCollaborativeRecommendations = useCallback(async () => {
         try {
-            await fetchCollaborativeRecommendations(sessionId, 5);
+            await fetchCollaborativeRecommendations(sessionId, RECOMMENDATION.LIMITS.DEFAULT);
         } catch (err) {
             logError(LogCategory.RECOMMENDATION, '협업 필터링 추천 에러', err as Error);
         }

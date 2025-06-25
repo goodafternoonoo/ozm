@@ -8,6 +8,7 @@ import React, {
 import { LocationService, LocationData } from '../services/locationService';
 import { KakaoApiService } from '../services/kakaoApiService';
 import { logLocation, logError, LogCategory } from '../utils/logger';
+import { LOCATION, SEARCH } from '../constants';
 
 export interface Restaurant {
     id: string;
@@ -33,7 +34,7 @@ interface NearbyContextType {
     searchKeyword: string;
     setSearchKeyword: (keyword: string) => void;
     searchRadius: number;
-    setSearchRadius: (radius: number) => void;
+    setSearchRadius: React.Dispatch<React.SetStateAction<number>>;
     currentPage: number;
     hasMoreData: boolean;
     loadingMore: boolean;
@@ -60,15 +61,14 @@ export const NearbyProvider: React.FC<NearbyProviderProps> = ({ children }) => {
     const [location, setLocation] = useState<LocationData | null>(null);
     const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'loading'>('loading');
     const [searchKeyword, setSearchKeyword] = useState('');
-    const [searchRadius, setSearchRadius] = useState(1000);
-    
-    // 무한 스크롤을 위한 상태
+    const [searchRadius, setSearchRadius] = useState(LOCATION.RADIUS.DEFAULT);
     const [currentPage, setCurrentPage] = useState(1);
     const [hasMoreData, setHasMoreData] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
 
     const searchNearbyRestaurants = useCallback(async (
         latitude: number, 

@@ -11,6 +11,7 @@ import {
 } from '../services/recommendationService';
 import { AppError } from '../utils/apiClient';
 import { logUserInteraction, logError, LogCategory } from '../utils/logger';
+import { INTERACTION } from '../constants';
 
 export type InteractionType =
     | 'click'
@@ -99,7 +100,7 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
             await RecommendationService.recordInteraction({
                 session_id: sessionId,
                 menu_id: menuId,
-                interaction_type: 'click',
+                interaction_type: INTERACTION.TYPES.CLICK,
                 extra_data: extraData,
             });
         } catch (error) {
@@ -117,8 +118,8 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
             await RecommendationService.recordInteraction({
                 session_id: sessionId,
                 menu_id: menuId,
-                interaction_type: 'favorite',
-                interaction_strength: isFavorite ? 1 : -1,
+                interaction_type: INTERACTION.TYPES.FAVORITE,
+                interaction_strength: isFavorite ? INTERACTION.STRENGTH.STRONG : INTERACTION.STRENGTH.NEGATIVE,
                 extra_data: { is_favorite: isFavorite },
             });
         } catch (error) {
@@ -136,7 +137,7 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
             await RecommendationService.recordInteraction({
                 session_id: sessionId,
                 menu_id: menuId,
-                interaction_type: 'recommend_select',
+                interaction_type: INTERACTION.TYPES.RECOMMEND_SELECT,
                 extra_data: { recommendation_type: recommendationType },
             });
         } catch (error) {
@@ -153,7 +154,7 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
             logUserInteraction('검색 기록', { sessionId, searchQuery, resultsCount });
             await RecommendationService.recordInteraction({
                 session_id: sessionId,
-                interaction_type: 'search',
+                interaction_type: INTERACTION.TYPES.SEARCH,
                 extra_data: {
                     search_query: searchQuery,
                     results_count: resultsCount,
@@ -174,7 +175,7 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
             await RecommendationService.recordInteraction({
                 session_id: sessionId,
                 menu_id: menuId,
-                interaction_type: 'view_detail',
+                interaction_type: INTERACTION.TYPES.VIEW_DETAIL,
                 extra_data: { source: source },
             });
         } catch (error) {
@@ -192,7 +193,7 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
             await RecommendationService.recordInteraction({
                 session_id: sessionId,
                 menu_id: menuId,
-                interaction_type: 'share',
+                interaction_type: INTERACTION.TYPES.SHARE,
                 extra_data: { share_method: shareMethod },
             });
         } catch (error) {

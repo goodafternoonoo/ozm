@@ -10,6 +10,7 @@ import { RecommendationService, Menu } from '../services/recommendationService';
 import { useUserInteraction } from './UserInteractionContext';
 import { abTestInfoToCamel } from '../utils/case';
 import { logUserInteraction, logRecommendation, logError, LogCategory } from '../utils/logger';
+import { TIME_SLOTS, RECOMMENDATION } from '../constants';
 
 export interface ChujonRecommendation {
     menu: Menu;
@@ -112,7 +113,7 @@ export const ChujonProvider: React.FC<ChujonProviderProps> = ({ children }) => {
             // 실제 API 호출
             const response = await RecommendationService.getChujonRecommendations({
                 answers,
-                timeSlot: 'lunch',
+                timeSlot: TIME_SLOTS.LUNCH,
             });
 
             setRecommendations(response.recommendations);
