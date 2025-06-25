@@ -1,17 +1,16 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.response import api_success, api_error
 from app.core.utils import menu_to_dict
 from app.db.database import AsyncSessionLocal
 from app.models.category import Category
 from app.models.menu import Menu
-from app.schemas.common import succeed_response
+from app.schemas.error_codes import ErrorCode
 from app.schemas.menu import MenuResponse
 
 router = APIRouter()
@@ -47,86 +46,83 @@ async def search_menus(
     db: AsyncSession = Depends(get_db),
 ):
     """메뉴 검색 및 필터링"""
-
-    # 기본 쿼리 생성
-    query = (
-        select(Menu)
-        .options(selectinload(Menu.category))
-        .join(Category, Menu.category_id == Category.id)
-    )
-    conditions = []
-
-    # 검색어 필터
-    if q:
-        search_condition = or_(
-            Menu.name.contains(q),
-            Menu.description.contains(q),
-            Category.name.contains(q),
+    try:
+        # 기본 쿼리 생성
+        query = (
+            select(Menu)
+            .options(selectinload(Menu.category))
+            .join(Category, Menu.category_id == Category.id)
         )
-        conditions.append(search_condition)
+        conditions = []
 
-    # 시간대 필터
-    if time_slot:
-        conditions.append(Menu.time_slot == time_slot)
-
-    # 속성 필터들
-    if is_spicy is not None:
-        conditions.append(Menu.is_spicy == is_spicy)
-    if is_healthy is not None:
-        conditions.append(Menu.is_healthy == is_healthy)
-    if is_vegetarian is not None:
-        conditions.append(Menu.is_vegetarian == is_vegetarian)
-    if is_quick is not None:
-        conditions.append(Menu.is_quick == is_quick)
-    if has_rice is not None:
-        conditions.append(Menu.has_rice == has_rice)
-    if has_soup is not None:
-        conditions.append(Menu.has_soup == has_soup)
-    if has_meat is not None:
-        conditions.append(Menu.has_meat == has_meat)
-
-    # 난이도 필터
-    if difficulty:
-        conditions.append(Menu.difficulty == difficulty)
-
-    # 칼로리 범위 필터
-    if min_calories is not None:
-        conditions.append(Menu.calories >= min_calories)
-    if max_calories is not None:
-        conditions.append(Menu.calories <= max_calories)
-
-    # 평점 필터
-    if min_rating is not None:
-        conditions.append(Menu.rating >= min_rating)
-
-    # 카테고리 필터
-    if category_id:
-        conditions.append(Menu.category_id == category_id)
-    if country:
-        conditions.append(Category.country == country)
-    if cuisine_type:
-        conditions.append(Category.cuisine_type == cuisine_type)
-
-    # 조건 적용
-    if conditions:
-        query = query.where(and_(*conditions))
-
-    # 정렬 및 페이징
-    query = query.order_by(Menu.rating.desc(), Menu.name.asc())
-    query = query.offset(offset).limit(limit)
-
-    # 실행
-    result = await db.execute(query)
-    menus = result.scalars().all()
-
-    return JSONResponse(
-        content=jsonable_encoder(
-            succeed_response(
-                [MenuResponse.model_validate(menu_to_dict(menu)) for menu in menus]
+        # 검색어 필터
+        if q:
+            search_condition = or_(
+                Menu.name.contains(q),
+                Menu.description.contains(q),
+                Category.name.contains(q),
             )
-        ),
-        status_code=200,
-    )
+            conditions.append(search_condition)
+
+        # 시간대 필터
+        if time_slot:
+            conditions.append(Menu.time_slot == time_slot)
+
+        # 속성 필터들
+        if is_spicy is not None:
+            conditions.append(Menu.is_spicy == is_spicy)
+        if is_healthy is not None:
+            conditions.append(Menu.is_healthy == is_healthy)
+        if is_vegetarian is not None:
+            conditions.append(Menu.is_vegetarian == is_vegetarian)
+        if is_quick is not None:
+            conditions.append(Menu.is_quick == is_quick)
+        if has_rice is not None:
+            conditions.append(Menu.has_rice == has_rice)
+        if has_soup is not None:
+            conditions.append(Menu.has_soup == has_soup)
+        if has_meat is not None:
+            conditions.append(Menu.has_meat == has_meat)
+
+        # 난이도 필터
+        if difficulty:
+            conditions.append(Menu.difficulty == difficulty)
+
+        # 칼로리 범위 필터
+        if min_calories is not None:
+            conditions.append(Menu.calories >= min_calories)
+        if max_calories is not None:
+            conditions.append(Menu.calories <= max_calories)
+
+        # 평점 필터
+        if min_rating is not None:
+            conditions.append(Menu.rating >= min_rating)
+
+        # 카테고리 필터
+        if category_id:
+            conditions.append(Menu.category_id == category_id)
+        if country:
+            conditions.append(Category.country == country)
+        if cuisine_type:
+            conditions.append(Category.cuisine_type == cuisine_type)
+
+        # 조건 적용
+        if conditions:
+            query = query.where(and_(*conditions))
+
+        # 정렬 및 페이징
+        query = query.order_by(Menu.rating.desc(), Menu.name.asc())
+        query = query.offset(offset).limit(limit)
+
+        # 실행
+        result = await db.execute(query)
+        menus = result.scalars().all()
+
+        return api_success(
+            [MenuResponse.model_validate(menu_to_dict(menu)) for menu in menus]
+        )
+    except Exception:
+        return api_error("메뉴 검색 실패", error_code=ErrorCode.GENERAL_ERROR)
 
 
 @router.get("/categories", response_model=List[dict])
@@ -137,85 +133,81 @@ async def search_categories(
     db: AsyncSession = Depends(get_db),
 ):
     """카테고리 검색"""
+    try:
+        query = select(Category)
+        conditions = []
 
-    query = select(Category)
-    conditions = []
+        if country:
+            conditions.append(Category.country == country)
+        if cuisine_type:
+            conditions.append(Category.cuisine_type == cuisine_type)
+        if is_active is not None:
+            conditions.append(Category.is_active == is_active)
 
-    if country:
-        conditions.append(Category.country == country)
-    if cuisine_type:
-        conditions.append(Category.cuisine_type == cuisine_type)
-    if is_active is not None:
-        conditions.append(Category.is_active == is_active)
+        if conditions:
+            query = query.where(and_(*conditions))
 
-    if conditions:
-        query = query.where(and_(*conditions))
+        query = query.order_by(Category.display_order.asc(), Category.name.asc())
 
-    query = query.order_by(Category.display_order.asc(), Category.name.asc())
+        result = await db.execute(query)
+        categories = result.scalars().all()
 
-    result = await db.execute(query)
-    categories = result.scalars().all()
-
-    return JSONResponse(
-        content=jsonable_encoder(
-            succeed_response(
-                [
-                    {
-                        "id": cat.id,
-                        "name": cat.name,
-                        "description": cat.description,
-                        "country": cat.country,
-                        "cuisine_type": cat.cuisine_type,
-                        "color_code": cat.color_code,
-                        "icon_url": cat.icon_url,
-                    }
-                    for cat in categories
-                ]
-            )
-        ),
-        status_code=200,
-    )
+        return api_success(
+            [
+                {
+                    "id": cat.id,
+                    "name": cat.name,
+                    "description": cat.description,
+                    "country": cat.country,
+                    "cuisine_type": cat.cuisine_type,
+                    "color_code": cat.color_code,
+                    "icon_url": cat.icon_url,
+                }
+                for cat in categories
+            ]
+        )
+    except Exception:
+        return api_error("카테고리 검색 실패", error_code=ErrorCode.GENERAL_ERROR)
 
 
 @router.get("/stats", response_model=dict)
 async def get_search_stats(db: AsyncSession = Depends(get_db)):
     """검색 통계 정보"""
+    try:
+        # 전체 메뉴 수
+        menu_count_result = await db.execute(select(Menu))
+        total_menus = len(menu_count_result.scalars().all())
 
-    # 전체 메뉴 수
-    menu_count_result = await db.execute(select(Menu))
-    total_menus = len(menu_count_result.scalars().all())
+        # 시간대별 메뉴 수
+        time_slot_stats = {}
+        for time_slot in ["breakfast", "lunch", "dinner"]:
+            result = await db.execute(select(Menu).where(Menu.time_slot == time_slot))
+            time_slot_stats[time_slot] = len(result.scalars().all())
 
-    # 시간대별 메뉴 수
-    time_slot_stats = {}
-    for time_slot in ["breakfast", "lunch", "dinner"]:
-        result = await db.execute(select(Menu).where(Menu.time_slot == time_slot))
-        time_slot_stats[time_slot] = len(result.scalars().all())
-
-    # 국가별 메뉴 수
-    country_stats_result = await db.execute(
-        select(Category.country, Menu.id).join(Menu, Category.id == Menu.category_id)
-    )
-    country_stats = {}
-    for country, menu_id in country_stats_result.all():
-        if country not in country_stats:
-            country_stats[country] = 0
-        country_stats[country] += 1
-
-    # 평균 평점
-    rating_result = await db.execute(select(Menu.rating))
-    ratings = [r for r in rating_result.scalars().all() if r is not None]
-    avg_rating = sum(ratings) / len(ratings) if ratings else 0
-
-    return JSONResponse(
-        content=jsonable_encoder(
-            succeed_response(
-                {
-                    "total_menus": total_menus,
-                    "time_slot_distribution": time_slot_stats,
-                    "country_distribution": country_stats,
-                    "average_rating": round(avg_rating, 2),
-                }
+        # 국가별 메뉴 수
+        country_stats_result = await db.execute(
+            select(Category.country, Menu.id).join(
+                Menu, Category.id == Menu.category_id
             )
-        ),
-        status_code=200,
-    )
+        )
+        country_stats = {}
+        for country, menu_id in country_stats_result.all():
+            if country not in country_stats:
+                country_stats[country] = 0
+            country_stats[country] += 1
+
+        # 평균 평점
+        rating_result = await db.execute(select(Menu.rating))
+        ratings = [r for r in rating_result.scalars().all() if r is not None]
+        avg_rating = sum(ratings) / len(ratings) if ratings else 0
+
+        return api_success(
+            {
+                "total_menus": total_menus,
+                "time_slot_distribution": time_slot_stats,
+                "country_distribution": country_stats,
+                "average_rating": round(avg_rating, 2),
+            }
+        )
+    except Exception:
+        return api_error("검색 통계 조회 실패", error_code=ErrorCode.GENERAL_ERROR)
