@@ -46,7 +46,6 @@ export default function MenuRecommendationScreen() {
         getCollaborativeRecommendations,
         removeMenuFromSaved,
         addMenuToSaved,
-        handleMenuClick,
         renderKey,
     } = useMenuRecommendations();
 
