@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MenuRecommendationStyles } from '../styles/MenuRecommendationStyles';
 import { Menu, ABTestInfo } from '../services/recommendationService';
+import { spacing, colors } from '../styles/GlobalStyles';
 
 interface MenuCardProps {
     menu: Menu;
@@ -127,55 +128,132 @@ export const MenuCard: React.FC<MenuCardProps> = ({
             {(menu.calories || menu.protein || menu.carbs || menu.fat) && (
                 <View
                     style={{
-                        marginTop: 8,
-                        marginBottom: 4,
+                        marginTop: spacing.sm,
+                        marginBottom: spacing.md,
                         flexDirection: 'row',
                         flexWrap: 'wrap',
+                        backgroundColor: colors.surfaceSecondary,
+                        padding: spacing.sm,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: colors.border.light + '30',
                     }}
                 >
                     {menu.calories !== undefined && (
-                        <Text
+                        <View
                             style={{
-                                marginRight: 12,
-                                color: '#888',
-                                fontSize: 13,
+                                marginRight: spacing.md,
+                                marginBottom: spacing.xs,
                             }}
                         >
-                            칼로리: {menu.calories}kcal
-                        </Text>
+                            <Text
+                                style={{
+                                    color: colors.text.tertiary,
+                                    fontSize: 11,
+                                    fontWeight: '600',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: 0.5,
+                                }}
+                            >
+                                칼로리
+                            </Text>
+                            <Text
+                                style={{
+                                    color: colors.text.primary,
+                                    fontSize: 14,
+                                    fontWeight: '700',
+                                }}
+                            >
+                                {menu.calories}kcal
+                            </Text>
+                        </View>
                     )}
                     {menu.protein !== undefined && (
-                        <Text
+                        <View
                             style={{
-                                marginRight: 12,
-                                color: '#888',
-                                fontSize: 13,
+                                marginRight: spacing.md,
+                                marginBottom: spacing.xs,
                             }}
                         >
-                            단백질: {menu.protein}g
-                        </Text>
+                            <Text
+                                style={{
+                                    color: colors.text.tertiary,
+                                    fontSize: 11,
+                                    fontWeight: '600',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: 0.5,
+                                }}
+                            >
+                                단백질
+                            </Text>
+                            <Text
+                                style={{
+                                    color: colors.text.primary,
+                                    fontSize: 14,
+                                    fontWeight: '700',
+                                }}
+                            >
+                                {menu.protein}g
+                            </Text>
+                        </View>
                     )}
                     {menu.carbs !== undefined && (
-                        <Text
+                        <View
                             style={{
-                                marginRight: 12,
-                                color: '#888',
-                                fontSize: 13,
+                                marginRight: spacing.md,
+                                marginBottom: spacing.xs,
                             }}
                         >
-                            탄수화물: {menu.carbs}g
-                        </Text>
+                            <Text
+                                style={{
+                                    color: colors.text.tertiary,
+                                    fontSize: 11,
+                                    fontWeight: '600',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: 0.5,
+                                }}
+                            >
+                                탄수화물
+                            </Text>
+                            <Text
+                                style={{
+                                    color: colors.text.primary,
+                                    fontSize: 14,
+                                    fontWeight: '700',
+                                }}
+                            >
+                                {menu.carbs}g
+                            </Text>
+                        </View>
                     )}
                     {menu.fat !== undefined && (
-                        <Text
+                        <View
                             style={{
-                                marginRight: 12,
-                                color: '#888',
-                                fontSize: 13,
+                                marginRight: spacing.md,
+                                marginBottom: spacing.xs,
                             }}
                         >
-                            지방: {menu.fat}g
-                        </Text>
+                            <Text
+                                style={{
+                                    color: colors.text.tertiary,
+                                    fontSize: 11,
+                                    fontWeight: '600',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: 0.5,
+                                }}
+                            >
+                                지방
+                            </Text>
+                            <Text
+                                style={{
+                                    color: colors.text.primary,
+                                    fontSize: 14,
+                                    fontWeight: '700',
+                                }}
+                            >
+                                {menu.fat}g
+                            </Text>
+                        </View>
                     )}
                 </View>
             )}
@@ -197,7 +275,7 @@ export const MenuCard: React.FC<MenuCardProps> = ({
                     style={{
                         flexDirection: 'row',
                         alignItems: 'center',
-                        gap: 8,
+                        gap: spacing.sm,
                     }}
                 >
                     {/* 즐겨찾기 하트 버튼 */}
@@ -206,24 +284,72 @@ export const MenuCard: React.FC<MenuCardProps> = ({
                             style={{
                                 flexDirection: 'row',
                                 alignItems: 'center',
+                                backgroundColor: isSaved
+                                    ? colors.status.error + '15'
+                                    : colors.surfaceSecondary,
+                                paddingHorizontal: spacing.md,
+                                paddingVertical: spacing.sm,
+                                borderRadius: 20,
+                                borderWidth: 1,
+                                borderColor: isSaved
+                                    ? colors.status.error + '30'
+                                    : colors.border.light,
                             }}
                             onPress={handleRemovePress}
                         >
                             <Ionicons
                                 name={isSaved ? 'heart' : 'heart-outline'}
-                                size={26}
-                                color={isSaved ? '#FF3B30' : '#C7C7CC'}
+                                size={20}
+                                color={
+                                    isSaved
+                                        ? colors.status.error
+                                        : colors.text.secondary
+                                }
                             />
                             <Text
                                 style={{
-                                    marginLeft: 4,
-                                    color: isSaved ? '#FF3B30' : '#888',
-                                    fontSize: 14,
+                                    marginLeft: spacing.xs,
+                                    color: isSaved
+                                        ? colors.status.error
+                                        : colors.text.secondary,
+                                    fontSize: 13,
+                                    fontWeight: '600',
                                 }}
                             >
                                 {isSaved ? '즐겨찾기 해제' : '즐겨찾기 추가'}
                             </Text>
                         </TouchableOpacity>
+                    )}
+
+                    {isSaved && !onRemove && (
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                backgroundColor: colors.status.success + '15',
+                                paddingHorizontal: spacing.md,
+                                paddingVertical: spacing.sm,
+                                borderRadius: 20,
+                                borderWidth: 1,
+                                borderColor: colors.status.success + '30',
+                            }}
+                        >
+                            <Ionicons
+                                name='checkmark-circle'
+                                size={20}
+                                color={colors.status.success}
+                            />
+                            <Text
+                                style={{
+                                    marginLeft: spacing.xs,
+                                    color: colors.status.success,
+                                    fontSize: 13,
+                                    fontWeight: '600',
+                                }}
+                            >
+                                즐겨찾기됨
+                            </Text>
+                        </View>
                     )}
                 </View>
             </View>
