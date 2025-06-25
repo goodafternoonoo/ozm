@@ -4,6 +4,7 @@ import React, {
     useState,
     useEffect,
     useCallback,
+    useMemo,
     ReactNode,
 } from 'react';
 import { Alert } from 'react-native';
@@ -75,6 +76,14 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
     const { recordMenuClick, recordMenuFavorite, recordRecommendationSelect } = useUserInteraction();
     const { getCollaborativeRecommendations: fetchCollaborativeRecommendations } = useCollaborativeRecommendations();
 
+    // 세션 ID를 useMemo로 최적화
+    const currentSessionId = useMemo(() => {
+        if (!sessionId) {
+            return `${APP_CONSTANTS.SESSION.PREFIX}${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        }
+        return sessionId;
+    }, [sessionId]);
+
     const fetchCategories = useCallback(async () => {
         try {
             const response = await CategoryService.getCategories(1, APP_CONSTANTS.PAGINATION.MAX_PAGE_SIZE);
@@ -87,11 +96,8 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
 
     useEffect(() => {
         fetchCategories();
-        // 세션 ID 생성
-        setSessionId(
-            `${APP_CONSTANTS.SESSION.PREFIX}${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        );
-    }, [fetchCategories]);
+        setSessionId(currentSessionId);
+    }, [fetchCategories, currentSessionId]);
 
     // 로그인 상태가 변경될 때마다 즐겨찾기 목록을 다시 불러옴
     useEffect(() => {
@@ -127,7 +133,7 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
             const response = await RecommendationService.getSimpleRecommendations({
                 time_slot: selectedTimeSlot,
                 category_id: categoryId || undefined,
-                session_id: sessionId,
+                session_id: currentSessionId,
             });
             logRecommendation('메뉴 추천 응답 수신', { count: response.recommendations.length });
             
@@ -138,14 +144,15 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
                 setAbTestInfo(abTestInfoToCamel(response.ab_test_info));
             }
 
-            // 추천 선택 상호작용 기록
-            for (const rec of response.recommendations) {
-                await recordRecommendationSelect(
-                    sessionId,
+            // 추천 선택 상호작용 기록 - 배치 처리로 최적화
+            const interactionPromises = response.recommendations.map(rec =>
+                recordRecommendationSelect(
+                    currentSessionId,
                     rec.menu.id,
                     'simple_personalized'
-                );
-            }
+                )
+            );
+            await Promise.all(interactionPromises);
 
             return response.recommendations;
         } catch (err) {
@@ -159,15 +166,15 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
         } finally {
             setLoading(false);
         }
-    }, [selectedTimeSlot, categoryId, sessionId, recordRecommendationSelect]);
+    }, [selectedTimeSlot, categoryId, currentSessionId, recordRecommendationSelect]);
 
     const getCollaborativeRecommendations = useCallback(async () => {
         try {
-            await fetchCollaborativeRecommendations(sessionId, RECOMMENDATION.LIMITS.DEFAULT);
+            await fetchCollaborativeRecommendations(currentSessionId, RECOMMENDATION.LIMITS.DEFAULT);
         } catch (err) {
             logError(LogCategory.RECOMMENDATION, '협업 필터링 추천 에러', err as Error);
         }
-    }, [sessionId, fetchCollaborativeRecommendations]);
+    }, [currentSessionId, fetchCollaborativeRecommendations]);
 
     const removeMenuFromSaved = useCallback(async (menuToRemove: Menu) => {
         if (!isLoggedIn) {
@@ -188,8 +195,8 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
             logError(LogCategory.RECOMMENDATION, '즐겨찾기 삭제 에러', e as Error);
             Alert.alert('오류', '즐겨찾기 삭제에 실패했습니다.');
         }
-        await recordMenuFavorite(sessionId, menuToRemove.id, false);
-    }, [isLoggedIn, sessionId, recordMenuFavorite]);
+        await recordMenuFavorite(currentSessionId, menuToRemove.id, false);
+    }, [isLoggedIn, currentSessionId, recordMenuFavorite]);
 
     const addMenuToSaved = useCallback(async (menuToAdd: Menu) => {
         if (!isLoggedIn) {
@@ -205,21 +212,22 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
                 `${menuToAdd.name} 메뉴를 즐겨찾기에 추가했습니다.`
             );
         } catch (e) {
-            console.error('즐겨찾기 추가 에러:', e);
+            logError(LogCategory.RECOMMENDATION, '즐겨찾기 추가 에러', e as Error);
             Alert.alert('오류', '즐겨찾기 추가에 실패했습니다.');
         }
-        await recordMenuFavorite(sessionId, menuToAdd.id, true);
-    }, [isLoggedIn, sessionId, recordMenuFavorite]);
+        await recordMenuFavorite(currentSessionId, menuToAdd.id, true);
+    }, [isLoggedIn, currentSessionId, recordMenuFavorite]);
 
     const handleMenuClick = useCallback(async (menu: Menu) => {
-        await recordMenuClick(sessionId, menu.id, {
+        await recordMenuClick(currentSessionId, menu.id, {
             time_slot: selectedTimeSlot,
             category_id: categoryId,
             source: 'menu_recommendations',
         });
-    }, [sessionId, selectedTimeSlot, categoryId, recordMenuClick]);
+    }, [currentSessionId, selectedTimeSlot, categoryId, recordMenuClick]);
 
-    const value = {
+    // Context value를 useMemo로 최적화하여 불필요한 리렌더링 방지
+    const value = useMemo(() => ({
         selectedTimeSlot,
         setSelectedTimeSlot,
         categoryId,
@@ -230,7 +238,7 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
         loading,
         error,
         abTestInfo,
-        sessionId,
+        sessionId: currentSessionId,
         showCollaborative,
         setShowCollaborative,
         renderKey,
@@ -240,7 +248,25 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
         addMenuToSaved,
         handleMenuClick,
         fetchCategories,
-    };
+    }), [
+        selectedTimeSlot,
+        categoryId,
+        categories,
+        recommendations,
+        savedMenus,
+        loading,
+        error,
+        abTestInfo,
+        currentSessionId,
+        showCollaborative,
+        renderKey,
+        getMenuRecommendations,
+        getCollaborativeRecommendations,
+        removeMenuFromSaved,
+        addMenuToSaved,
+        handleMenuClick,
+        fetchCategories,
+    ]);
 
     return (
         <MenuRecommendationContext.Provider value={value}>

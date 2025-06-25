@@ -66,7 +66,7 @@ export const renderABTestInfo = (abTestInfo: ABTestInfo) => {
     );
 };
 
-export const MenuCard: React.FC<MenuCardProps> = ({
+export const MenuCard: React.FC<MenuCardProps> = React.memo(({
     menu,
     reason,
     onRemove,
@@ -271,160 +271,43 @@ export const MenuCard: React.FC<MenuCardProps> = ({
                 </View>
             )}
 
-            <View style={MenuRecommendationStyles.cardFooter}>
-                <View style={MenuRecommendationStyles.categoryContainer}>
-                    <Ionicons
-                        name='restaurant-outline'
-                        size={14}
-                        color='#007AFF'
-                        style={{ marginRight: 4 }}
-                    />
-                    <Text style={MenuRecommendationStyles.categoryText}>
-                        {menu.category?.cuisine_type || '카테고리 없음'}
-                    </Text>
-                </View>
-
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: spacing.sm,
-                    }}
-                >
-                    {/* 즐겨찾기 하트 버튼 또는 로그인 안내 */}
-                    {onRemove || onAdd ? (
-                        // 로그인된 상태: 즐겨찾기 버튼 표시
-                        isSaved ? (
-                            onRemove && (
-                                <TouchableOpacity
-                                    style={{
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        backgroundColor:
-                                            colors.status.error + '15',
-                                        paddingHorizontal: spacing.md,
-                                        paddingVertical: spacing.sm,
-                                        borderRadius: 20,
-                                        borderWidth: 1,
-                                        borderColor: colors.status.error + '30',
-                                    }}
-                                    onPress={handleRemovePress}
-                                >
-                                    <Ionicons
-                                        name={'heart'}
-                                        size={20}
-                                        color={colors.status.error}
-                                    />
-                                    <Text
-                                        style={{
-                                            marginLeft: spacing.xs,
-                                            color: colors.status.error,
-                                            fontSize: 13,
-                                            fontWeight: '600',
-                                        }}
-                                    >
-                                        즐겨찾기 해제
-                                    </Text>
-                                </TouchableOpacity>
-                            )
-                        ) : (
-                            onAdd && (
-                                <TouchableOpacity
-                                    style={{
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        backgroundColor:
-                                            colors.surfaceSecondary,
-                                        paddingHorizontal: spacing.md,
-                                        paddingVertical: spacing.sm,
-                                        borderRadius: 20,
-                                        borderWidth: 1,
-                                        borderColor: colors.border.light,
-                                    }}
-                                    onPress={handleAddPress}
-                                >
-                                    <Ionicons
-                                        name={'heart-outline'}
-                                        size={20}
-                                        color={colors.text.secondary}
-                                    />
-                                    <Text
-                                        style={{
-                                            marginLeft: spacing.xs,
-                                            color: colors.text.secondary,
-                                            fontSize: 13,
-                                            fontWeight: '600',
-                                        }}
-                                    >
-                                        즐겨찾기 추가
-                                    </Text>
-                                </TouchableOpacity>
-                            )
-                        )
-                    ) : (
-                        // 로그인하지 않은 상태: 로그인 안내 메시지
-                        <View
+            {/* 즐겨찾기 버튼 */}
+            {isSaved !== undefined && (
+                <View style={MenuRecommendationStyles.cardFooter}>
+                    <TouchableOpacity
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: isSaved ? '#FF3B3015' : colors.surfaceSecondary,
+                            paddingHorizontal: spacing.md,
+                            paddingVertical: spacing.sm,
+                            borderRadius: 20,
+                            borderWidth: 1,
+                            borderColor: isSaved ? '#FF3B3030' : colors.border.light,
+                        }}
+                        onPress={isSaved ? handleRemovePress : handleAddPress}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons
+                            name={isSaved ? 'heart' : 'heart-outline'}
+                            size={20}
+                            color={isSaved ? '#FF3B30' : '#007AFF'}
+                        />
+                        <Text
                             style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                backgroundColor: colors.primary + '10',
-                                paddingHorizontal: spacing.md,
-                                paddingVertical: spacing.sm,
-                                borderRadius: 20,
-                                borderWidth: 1,
-                                borderColor: colors.primary + '20',
+                                marginLeft: spacing.xs,
+                                color: isSaved ? '#FF3B30' : colors.text.secondary,
+                                fontSize: 13,
+                                fontWeight: '600',
                             }}
                         >
-                            <Ionicons
-                                name='log-in-outline'
-                                size={16}
-                                color={colors.primary}
-                            />
-                            <Text
-                                style={{
-                                    marginLeft: spacing.xs,
-                                    color: colors.primary,
-                                    fontSize: 12,
-                                    fontWeight: '600',
-                                }}
-                            >
-                                로그인 후 즐겨찾기 가능
-                            </Text>
-                        </View>
-                    )}
-
-                    {isSaved && !onRemove && (
-                        <View
-                            style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                backgroundColor: colors.status.success + '15',
-                                paddingHorizontal: spacing.md,
-                                paddingVertical: spacing.sm,
-                                borderRadius: 20,
-                                borderWidth: 1,
-                                borderColor: colors.status.success + '30',
-                            }}
-                        >
-                            <Ionicons
-                                name='checkmark-circle'
-                                size={20}
-                                color={colors.status.success}
-                            />
-                            <Text
-                                style={{
-                                    marginLeft: spacing.xs,
-                                    color: colors.status.success,
-                                    fontSize: 13,
-                                    fontWeight: '600',
-                                }}
-                            >
-                                즐겨찾기됨
-                            </Text>
-                        </View>
-                    )}
+                            {isSaved ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                        </Text>
+                    </TouchableOpacity>
                 </View>
-            </View>
+            )}
         </CardContainer>
     );
-};
+});
+
+MenuCard.displayName = 'MenuCard';

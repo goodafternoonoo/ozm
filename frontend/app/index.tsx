@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
     ActivityIndicator,
     Modal,
@@ -10,14 +10,13 @@ import {
 } from 'react-native';
 import ChujonRecommendation from '../components/ChujonRecommendation';
 import { CollaborativeMenuCard } from '../components/CollaborativeMenuCard';
-import { MenuCard, renderABTestInfo } from '../components/MenuCard';
+import { MenuCard } from '../components/MenuCard';
 import { useChujonRecommendation } from '../hooks/useChujonRecommendation';
 import { useCollaborativeRecommendations } from '../hooks/useCollaborativeRecommendations';
 import {
     TimeSlot,
     useMenuRecommendations,
 } from '../hooks/useMenuRecommendations';
-import { useAuth } from '../hooks/useAuth';
 import { colors } from '../styles/GlobalStyles';
 import { MenuRecommendationStyles } from '../styles/MenuRecommendationStyles';
 
@@ -27,8 +26,6 @@ export default function MenuRecommendationScreen() {
     );
     const [categoryModalVisible, setCategoryModalVisible] = useState(false);
     const [showABTestInfo, setShowABTestInfo] = useState(false);
-
-    const { isLoggedIn } = useAuth();
 
     const {
         selectedTimeSlot,
@@ -46,13 +43,13 @@ export default function MenuRecommendationScreen() {
         getCollaborativeRecommendations,
         removeMenuFromSaved,
         addMenuToSaved,
-        renderKey,
     } = useMenuRecommendations();
 
     const chujon = useChujonRecommendation();
     const collaborative = useCollaborativeRecommendations();
 
-    const timeSlotOptions = [
+    // 시간대 옵션을 useMemo로 최적화
+    const timeSlotOptions = useMemo(() => [
         {
             value: 'breakfast' as TimeSlot,
             label: '아침',
@@ -66,15 +63,49 @@ export default function MenuRecommendationScreen() {
         { 
             value: 'dinner' as TimeSlot, 
             label: '저녁', 
-            icon: 'moon-outline' },
-    ];
+            icon: 'moon-outline' 
+        },
+    ], []);
 
-    const handleCollaborativeMode = () => {
+    // 모드 변경 핸들러들을 useCallback으로 최적화
+    const handleSimpleMode = useCallback(() => {
+        setMode('simple');
+    }, []);
+
+    const handleChujonMode = useCallback(() => {
+        setMode('chujon');
+        chujon.loadQuestions();
+    }, [chujon]);
+
+    const handleCollaborativeMode = useCallback(() => {
         setMode('collaborative');
         if (sessionId) {
             getCollaborativeRecommendations();
         }
-    };
+    }, [sessionId, getCollaborativeRecommendations]);
+
+    const handleTimeSlotChange = useCallback((timeSlot: TimeSlot) => {
+        setSelectedTimeSlot(timeSlot);
+    }, [setSelectedTimeSlot]);
+
+    const handleCategoryModalToggle = useCallback(() => {
+        setCategoryModalVisible(!categoryModalVisible);
+    }, [categoryModalVisible]);
+
+    const handleABTestInfoToggle = useCallback(() => {
+        setShowABTestInfo(!showABTestInfo);
+    }, [showABTestInfo]);
+
+    // A/B 테스트 정보 표시 여부를 useMemo로 최적화
+    const shouldShowABTestButton = useMemo(() => {
+        return !!(abTestInfo || chujon.abTestInfo);
+    }, [abTestInfo, chujon.abTestInfo]);
+
+    // 카테고리 선택 핸들러를 useCallback으로 최적화
+    const handleCategorySelect = useCallback((categoryId: string | null) => {
+        setCategoryId(categoryId);
+        setCategoryModalVisible(false);
+    }, [setCategoryId]);
 
     return (
         <ScrollView style={MenuRecommendationStyles.container}>
@@ -85,10 +116,10 @@ export default function MenuRecommendationScreen() {
                 </Text>
 
                 {/* A/B 테스트 정보 토글 버튼 */}
-                {(abTestInfo || chujon.abTestInfo) && (
+                {shouldShowABTestButton && (
                     <TouchableOpacity
                         style={MenuRecommendationStyles.abTestButton}
-                        onPress={() => setShowABTestInfo(!showABTestInfo)}
+                        onPress={handleABTestInfoToggle}
                     >
                         <Ionicons
                             name='flask-outline'
@@ -109,7 +140,7 @@ export default function MenuRecommendationScreen() {
                         mode === 'simple' &&
                             MenuRecommendationStyles.modeButtonActive,
                     ]}
-                    onPress={() => setMode('simple')}
+                    onPress={handleSimpleMode}
                 >
                     <Text
                         style={[
@@ -127,10 +158,7 @@ export default function MenuRecommendationScreen() {
                         mode === 'chujon' &&
                             MenuRecommendationStyles.modeButtonActive,
                     ]}
-                    onPress={() => {
-                        setMode('chujon');
-                        chujon.loadQuestions();
-                    }}
+                    onPress={handleChujonMode}
                 >
                     <Text
                         style={[
@@ -176,9 +204,7 @@ export default function MenuRecommendationScreen() {
                                     selectedTimeSlot === option.value &&
                                         MenuRecommendationStyles.timeSlotButtonActive,
                                 ]}
-                                onPress={() =>
-                                    setSelectedTimeSlot(option.value)
-                                }
+                                onPress={() => handleTimeSlotChange(option.value)}
                             >
                                 <Ionicons
                                     name={option.icon as any}
@@ -202,353 +228,202 @@ export default function MenuRecommendationScreen() {
                         ))}
                     </View>
 
-                    {showABTestInfo && abTestInfo && (
-                        <View style={{ marginBottom: 8 }}>
-                            {renderABTestInfo(abTestInfo)}
-                        </View>
-                    )}
-
-                    <Text
-                        style={[
-                            MenuRecommendationStyles.sectionTitle,
-                            { marginTop: 20 },
-                        ]}
-                    >
-                        카테고리 선택
+                    <Text style={MenuRecommendationStyles.sectionTitle}>
+                        카테고리 선택 (선택사항)
                     </Text>
-                    <View>
-                        <TouchableOpacity
-                            style={MenuRecommendationStyles.categoryModalButton}
-                            onPress={() => setCategoryModalVisible(true)}
+                    <TouchableOpacity
+                        style={MenuRecommendationStyles.categoryModalButton}
+                        onPress={handleCategoryModalToggle}
+                    >
+                        <Text
+                            style={[
+                                MenuRecommendationStyles.categoryModalItemText,
+                                categoryId &&
+                                    MenuRecommendationStyles.categoryModalItemTextActive,
+                            ]}
                         >
-                            <Text
-                                style={[
-                                    MenuRecommendationStyles.categoryModalItemText,
-                                    categoryId &&
-                                        MenuRecommendationStyles.categoryModalItemTextActive,
-                                ]}
-                            >
-                                {categoryId
-                                    ? categories.find(
-                                          (cat) => cat.id === categoryId
-                                      )?.name
-                                    : '카테고리 선택'}
-                            </Text>
-                        </TouchableOpacity>
+                            {categoryId
+                                ? categories.find((cat) => cat.id === categoryId)?.name ||
+                                  '카테고리 선택'
+                                : '카테고리 선택'}
+                        </Text>
+                    </TouchableOpacity>
 
-                        <Modal
-                            visible={categoryModalVisible}
-                            transparent={true}
-                            animationType='fade'
-                            onRequestClose={() =>
-                                setCategoryModalVisible(false)
-                            }
-                        >
-                            <View style={MenuRecommendationStyles.modalOverlay}>
-                                <View
-                                    style={
-                                        MenuRecommendationStyles.modalContent
-                                    }
+                    <Modal
+                        visible={categoryModalVisible}
+                        transparent={true}
+                        animationType="fade"
+                    >
+                        <View style={MenuRecommendationStyles.modalOverlay}>
+                            <View
+                                style={MenuRecommendationStyles.modalContent}
+                            >
+                                <TouchableOpacity
+                                    style={MenuRecommendationStyles.modalCloseButton}
+                                    onPress={handleCategoryModalToggle}
                                 >
-                                    <TouchableOpacity
-                                        style={
-                                            MenuRecommendationStyles.modalCloseButton
-                                        }
-                                        onPress={() =>
-                                            setCategoryModalVisible(false)
-                                        }
-                                    >
-                                        <Ionicons
-                                            name='close'
-                                            size={20}
-                                            color={colors.text.secondary}
-                                        />
-                                    </TouchableOpacity>
+                                    <Ionicons
+                                        name="close"
+                                        size={24}
+                                        color={colors.text.primary}
+                                    />
+                                </TouchableOpacity>
+
+                                <Text style={MenuRecommendationStyles.modalTitle}>
+                                    카테고리 선택
+                                </Text>
+
+                                <TouchableOpacity
+                                    style={MenuRecommendationStyles.categoryModalItem}
+                                    onPress={() => handleCategorySelect(null)}
+                                >
                                     <Text
-                                        style={
-                                            MenuRecommendationStyles.modalTitle
-                                        }
+                                        style={[
+                                            MenuRecommendationStyles.categoryModalItemText,
+                                            !categoryId &&
+                                                MenuRecommendationStyles.categoryModalItemTextActive,
+                                        ]}
                                     >
-                                        카테고리 선택
+                                        전체
                                     </Text>
-                                    <ScrollView
-                                        showsVerticalScrollIndicator={false}
-                                    >
-                                        <TouchableOpacity
-                                            style={
-                                                MenuRecommendationStyles.categoryModalItem
-                                            }
-                                            onPress={() => {
-                                                setCategoryId(null);
-                                                setCategoryModalVisible(false);
-                                            }}
-                                        >
-                                            <Text
-                                                style={[
-                                                    MenuRecommendationStyles.categoryModalItemText,
-                                                    !categoryId &&
-                                                        MenuRecommendationStyles.categoryModalItemTextActive,
-                                                ]}
-                                            >
-                                                전체
-                                            </Text>
-                                        </TouchableOpacity>
-                                        {categories.map((category) => (
-                                            <TouchableOpacity
-                                                key={category.id}
-                                                style={
-                                                    MenuRecommendationStyles.categoryModalItem
-                                                }
-                                                onPress={() => {
-                                                    setCategoryId(category.id);
-                                                    setCategoryModalVisible(
-                                                        false
-                                                    );
-                                                }}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        MenuRecommendationStyles.categoryModalItemText,
-                                                        categoryId ===
-                                                            category.id &&
-                                                            MenuRecommendationStyles.categoryModalItemTextActive,
-                                                    ]}
-                                                >
-                                                    {category.name}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </ScrollView>
+                                </TouchableOpacity>
+
+                                {categories.map((category) => (
                                     <TouchableOpacity
-                                        style={
-                                            MenuRecommendationStyles.categoryModalCloseButton
-                                        }
-                                        onPress={() =>
-                                            setCategoryModalVisible(false)
-                                        }
+                                        key={category.id}
+                                        style={MenuRecommendationStyles.categoryModalItem}
+                                        onPress={() => handleCategorySelect(category.id)}
                                     >
                                         <Text
-                                            style={
-                                                MenuRecommendationStyles.categoryModalCloseButtonText
-                                            }
+                                            style={[
+                                                MenuRecommendationStyles.categoryModalItemText,
+                                                categoryId === category.id &&
+                                                    MenuRecommendationStyles.categoryModalItemTextActive,
+                                            ]}
                                         >
-                                            닫기
+                                            {category.name}
                                         </Text>
                                     </TouchableOpacity>
-                                </View>
+                                ))}
+
+                                <TouchableOpacity
+                                    style={MenuRecommendationStyles.categoryModalCloseButton}
+                                    onPress={handleCategoryModalToggle}
+                                >
+                                    <Text style={MenuRecommendationStyles.categoryModalCloseButtonText}>
+                                        닫기
+                                    </Text>
+                                </TouchableOpacity>
                             </View>
-                        </Modal>
-                    </View>
+                        </View>
+                    </Modal>
 
                     <TouchableOpacity
                         onPress={getMenuRecommendations}
                         style={MenuRecommendationStyles.button}
-                        disabled={loading}
                     >
                         <Text style={MenuRecommendationStyles.buttonText}>
-                            {loading
-                                ? '추천 중...'
-                                : `${
-                                      timeSlotOptions.find(
-                                          (opt) =>
-                                              opt.value === selectedTimeSlot
-                                      )?.label
-                                  } 메뉴 추천받기`}
+                            추천받기
                         </Text>
                     </TouchableOpacity>
                 </View>
-            ) : mode === 'chujon' ? (
-                <View style={{ marginTop: 8 }}>
-                    {chujon.loading && (
-                        <ActivityIndicator
-                            size='large'
-                            color='#007AFF'
-                            style={{ marginVertical: 20 }}
+            ) : null}
+
+            {mode === 'chujon' && (
+                <ChujonRecommendation
+                    questions={chujon.questions}
+                    onSubmit={() => {
+                        chujon.getChujonRecommendations();
+                    }}
+                    onAnswerChange={(questionId, answer) => {
+                        chujon.setAnswer(questionId, answer);
+                    }}
+                    onRestart={() => {
+                        chujon.loadQuestions();
+                    }}
+                />
+            )}
+
+            {mode === 'chujon' && chujon.recommendations.length > 0 && (
+                <View
+                    style={MenuRecommendationStyles.recommendationsContainer}
+                >
+                    <Text style={MenuRecommendationStyles.recommendationsTitle}>
+                        취존 추천 결과
+                    </Text>
+                    {chujon.recommendations.map(({ menu, reason }) => (
+                        <MenuCard
+                            key={menu.id}
+                            menu={menu}
+                            reason={reason}
+                            isSaved={savedMenus.some((saved) => saved.id === menu.id)}
+                            onRemove={() => removeMenuFromSaved(menu)}
+                            onAdd={() => addMenuToSaved(menu)}
+                            showABTestInfo={showABTestInfo}
+                            abTestInfo={chujon.abTestInfo}
                         />
-                    )}
-                    {chujon.error && (
-                        <Text style={{ color: 'red', marginBottom: 8 }}>
-                            {chujon.error}
-                        </Text>
-                    )}
-                    {showABTestInfo && chujon.abTestInfo && (
-                        <View style={{ marginBottom: 8 }}>
-                            {renderABTestInfo(chujon.abTestInfo)}
-                        </View>
-                    )}
-                    {chujon.questions.length > 0 && (
-                        <ChujonRecommendation
-                            questions={chujon.questions}
-                            onSubmit={() => {
-                                chujon.getChujonRecommendations();
-                            }}
-                            onAnswerChange={(questionId, answer) => {
-                                chujon.setAnswer(questionId, answer);
-                            }}
-                            onRestart={() => {
-                                chujon.loadQuestions();
-                            }}
-                        />
-                    )}
-                    {chujon.recommendations.length > 0 && (
-                        <View
-                            style={
-                                MenuRecommendationStyles.recommendationsContainer
-                            }
-                        >
-                            <Text
-                                style={
-                                    MenuRecommendationStyles.recommendationsTitle
-                                }
-                            >
-                                추천 메뉴
-                            </Text>
-                            {chujon.recommendations.map(({ menu, reason }) => (
-                                <MenuCard
-                                    key={`${renderKey}-${menu.id}`}
-                                    menu={menu}
-                                    reason={reason}
-                                    onRemove={
-                                        isLoggedIn
-                                            ? removeMenuFromSaved
-                                            : undefined
-                                    }
-                                    onAdd={
-                                        isLoggedIn ? addMenuToSaved : undefined
-                                    }
-                                    isSaved={savedMenus.some(
-                                        (m) => m.id === menu.id
-                                    )}
-                                />
-                            ))}
-                        </View>
-                    )}
+                    ))}
                 </View>
-            ) : (
-                // 협업 필터링 모드
-                <View style={{ marginTop: 8 }}>
-                    {collaborative.loading && (
-                        <ActivityIndicator
-                            size='large'
-                            color='#007AFF'
-                            style={{ marginVertical: 20 }}
-                        />
-                    )}
-                    {collaborative.error && (
-                        <Text style={{ color: 'red', marginBottom: 8 }}>
-                            {collaborative.error}
-                        </Text>
-                    )}
+            )}
 
-                    <View style={MenuRecommendationStyles.inputContainer}>
-                        <Text style={MenuRecommendationStyles.sectionTitle}>
-                            협업 필터링 추천
+            {mode === 'collaborative' && (
+                <View style={MenuRecommendationStyles.inputContainer}>
+                    <Text style={MenuRecommendationStyles.sectionTitle}>
+                        협업 필터링 추천
+                    </Text>
+                    <TouchableOpacity
+                        onPress={() =>
+                            collaborative.getCollaborativeRecommendations(
+                                sessionId,
+                                10
+                            )
+                        }
+                        style={MenuRecommendationStyles.button}
+                    >
+                        <Text style={MenuRecommendationStyles.buttonText}>
+                            협업 필터링 추천받기
                         </Text>
-                        <Text style={{ color: '#666', marginBottom: 15 }}>
-                            유사한 취향을 가진 다른 사용자들이 좋아한 메뉴를
-                            추천해드립니다.
-                        </Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
-                        <TouchableOpacity
-                            onPress={() =>
-                                collaborative.getCollaborativeRecommendations(
-                                    sessionId,
-                                    5
-                                )
-                            }
-                            style={MenuRecommendationStyles.button}
-                            disabled={collaborative.loading}
-                        >
-                            <Text style={MenuRecommendationStyles.buttonText}>
-                                {collaborative.loading
-                                    ? '추천 중...'
-                                    : '협업 필터링 추천받기'}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {collaborative.recommendations.length > 0 && (
-                        <View
-                            style={
-                                MenuRecommendationStyles.recommendationsContainer
-                            }
-                        >
-                            <Text
-                                style={
-                                    MenuRecommendationStyles.recommendationsTitle
-                                }
-                            >
-                                협업 필터링 추천 메뉴
-                            </Text>
-                            {collaborative.recommendations.map(
-                                ({
-                                    menu,
-                                    reason,
-                                    similarityScore,
-                                    similarUsersCount,
-                                }) => (
-                                    <CollaborativeMenuCard
-                                        key={`${renderKey}-${menu.id}`}
-                                        menu={{
-                                            ...menu,
-                                            id: Number(menu.id),
-                                            category:
-                                                menu.category?.name ||
-                                                '카테고리 없음',
-                                        }}
-                                        reason={reason}
-                                        similarityScore={similarityScore}
-                                        similarUsersCount={similarUsersCount}
-                                        onRemove={
-                                            isLoggedIn
-                                                ? (collaborativeMenu) =>
-                                                      removeMenuFromSaved({
-                                                          ...collaborativeMenu,
-                                                          id: String(
-                                                              collaborativeMenu.id
-                                                          ),
-                                                          category:
-                                                              collaborativeMenu.category
-                                                                  ? ({
-                                                                        name: collaborativeMenu.category,
-                                                                    } as any)
-                                                                  : undefined,
-                                                      })
-                                                : undefined
-                                        }
-                                        onAdd={
-                                            isLoggedIn
-                                                ? (collaborativeMenu) =>
-                                                      addMenuToSaved({
-                                                          ...collaborativeMenu,
-                                                          id: String(
-                                                              collaborativeMenu.id
-                                                          ),
-                                                          category:
-                                                              collaborativeMenu.category
-                                                                  ? ({
-                                                                        name: collaborativeMenu.category,
-                                                                    } as any)
-                                                                  : undefined,
-                                                      })
-                                                : undefined
-                                        }
-                                        isSaved={savedMenus.some(
-                                            (m) => m.id === String(menu.id)
-                                        )}
-                                    />
-                                )
-                            )}
-                        </View>
+            {mode === 'collaborative' && collaborative.recommendations.length > 0 && (
+                <View
+                    style={MenuRecommendationStyles.recommendationsContainer}
+                >
+                    <Text style={MenuRecommendationStyles.recommendationsTitle}>
+                        협업 필터링 추천 결과
+                    </Text>
+                    {collaborative.recommendations.map(
+                        ({ menu, reason, similarityScore, similarUsersCount }) => (
+                            <CollaborativeMenuCard
+                                key={menu.id}
+                                menu={{
+                                    ...menu,
+                                    id: Number(menu.id),
+                                    category: typeof menu.category === 'string' 
+                                        ? menu.category 
+                                        : menu.category?.name || '카테고리 없음',
+                                }}
+                                reason={reason}
+                                similarityScore={similarityScore}
+                                similarUsersCount={similarUsersCount}
+                                isSaved={savedMenus.some(
+                                    (saved) => saved.id === menu.id
+                                )}
+                                onRemove={() => removeMenuFromSaved(menu)}
+                                onAdd={() => addMenuToSaved(menu)}
+                            />
+                        )
                     )}
                 </View>
             )}
 
             {loading && (
                 <View style={MenuRecommendationStyles.loadingContainer}>
-                    <ActivityIndicator size='large' color='#007AFF' />
+                    <ActivityIndicator size="large" color={colors.primary} />
                     <Text style={MenuRecommendationStyles.loadingText}>
-                        맛있는 메뉴를 찾고 있어요...
+                        추천 메뉴를 가져오는 중...
                     </Text>
                 </View>
             )}
@@ -561,25 +436,6 @@ export default function MenuRecommendationScreen() {
                 </View>
             )}
 
-            {savedMenus.length > 0 && (
-                <View style={MenuRecommendationStyles.recommendationsContainer}>
-                    <Text style={MenuRecommendationStyles.recommendationsTitle}>
-                        내가 선택한 메뉴
-                    </Text>
-                    {savedMenus.map((menu) => (
-                        <MenuCard
-                            key={`${renderKey}-${menu.id}`}
-                            menu={menu}
-                            isSaved
-                            onRemove={
-                                isLoggedIn ? removeMenuFromSaved : undefined
-                            }
-                            onAdd={isLoggedIn ? addMenuToSaved : undefined}
-                        />
-                    ))}
-                </View>
-            )}
-
             {recommendations.length > 0 && (
                 <View style={MenuRecommendationStyles.recommendationsContainer}>
                     <Text style={MenuRecommendationStyles.recommendationsTitle}>
@@ -587,14 +443,14 @@ export default function MenuRecommendationScreen() {
                     </Text>
                     {recommendations.map(({ menu, reason }) => (
                         <MenuCard
-                            key={`${renderKey}-${menu.id}`}
+                            key={menu.id}
                             menu={menu}
                             reason={reason}
-                            onRemove={
-                                isLoggedIn ? removeMenuFromSaved : undefined
-                            }
-                            onAdd={isLoggedIn ? addMenuToSaved : undefined}
-                            isSaved={savedMenus.some((m) => m.id === menu.id)}
+                            isSaved={savedMenus.some((saved) => saved.id === menu.id)}
+                            onRemove={() => removeMenuFromSaved(menu)}
+                            onAdd={() => addMenuToSaved(menu)}
+                            showABTestInfo={showABTestInfo}
+                            abTestInfo={abTestInfo}
                         />
                     ))}
                 </View>
