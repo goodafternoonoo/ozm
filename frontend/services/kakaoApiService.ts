@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { KAKAO_API_CONFIG } from '../config/api';
-import { logApi, logError } from '../utils/logger';
-import { LogCategory } from '../utils/logger';
+import { logApi, logError , LogCategory } from '../utils/logger';
+
 
 // 카카오 JavaScript 키 (웹/앱에서 사용)
 const KAKAO_API_KEY = KAKAO_API_CONFIG.RESTAPI_KEY;

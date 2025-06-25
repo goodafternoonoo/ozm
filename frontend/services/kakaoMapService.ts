@@ -1,7 +1,7 @@
 // 카카오 맵 JavaScript API를 사용한 대안 서비스
 // 이 방법은 웹에서만 작동하며, React Native에서는 제한적입니다.
 
-import { logApi, logError, LogCategory } from '../utils/logger';
+import { logError, LogCategory } from '../utils/logger';
 
 export class KakaoMapService {
   private static isKakaoMapLoaded = false;

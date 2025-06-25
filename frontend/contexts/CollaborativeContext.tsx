@@ -5,7 +5,7 @@ import React, {
     useCallback,
     ReactNode,
 } from 'react';
-import { RecommendationService, Menu } from '../services/recommendationService';
+import { RecommendationService } from '../services/recommendationService';
 import { AppError } from '../utils/apiClient';
 import { logRecommendation, logError, LogCategory } from '../utils/logger';
 import { RECOMMENDATION } from '../constants';

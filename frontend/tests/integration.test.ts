@@ -1,5 +1,8 @@
 // 반드시 최상단에 선언
 import axios from 'axios';
+
+import { RecommendationService as RecommendationServiceType } from '../services/recommendationService';
+import { AppError as AppErrorType } from '../utils/apiClient';
 jest.mock('axios');
 
 // axios.create()가 실제 인스턴스처럼 동작하도록 mock
@@ -15,9 +18,6 @@ const mockAxiosInstance = {
     patch: jest.fn(),
 };
 (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
-
-import { RecommendationService as RecommendationServiceType } from '../services/recommendationService';
-import { AppError as AppErrorType } from '../utils/apiClient';
 
 let RecommendationService: typeof RecommendationServiceType;
 let favoriteService: any;
