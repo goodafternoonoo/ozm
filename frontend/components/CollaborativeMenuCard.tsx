@@ -21,7 +21,6 @@ interface CollaborativeMenuCardProps {
     similarityScore: number;
     similarUsersCount: number;
     onMenuClick?: (menu: CollaborativeMenu) => void;
-    onAdd?: (menu: CollaborativeMenu) => void;
     onRemove?: (menu: CollaborativeMenu) => void;
     isSaved?: boolean;
     interactionEnabled?: boolean;
@@ -72,7 +71,6 @@ export const CollaborativeMenuCard: React.FC<CollaborativeMenuCardProps> = ({
     similarityScore,
     similarUsersCount,
     onMenuClick,
-    onAdd,
     onRemove,
     isSaved,
     interactionEnabled = true,
@@ -80,12 +78,6 @@ export const CollaborativeMenuCard: React.FC<CollaborativeMenuCardProps> = ({
     const handleCardPress = () => {
         if (onMenuClick && interactionEnabled) {
             onMenuClick(menu);
-        }
-    };
-
-    const handleAddPress = () => {
-        if (onAdd) {
-            onAdd(menu);
         }
     };
 
@@ -196,50 +188,47 @@ export const CollaborativeMenuCard: React.FC<CollaborativeMenuCardProps> = ({
                     </Text>
                 </View>
 
-                {onAdd && !isSaved && (
-                    <TouchableOpacity
-                        style={MenuRecommendationStyles.addButton}
-                        onPress={handleAddPress}
-                    >
-                        <Ionicons
-                            name='add-circle-outline'
-                            size={24}
-                            color='#007AFF'
-                        />
-                        <Text style={MenuRecommendationStyles.addButtonText}>
-                            메뉴 추가
-                        </Text>
-                    </TouchableOpacity>
-                )}
-
-                {isSaved && onRemove && (
-                    <TouchableOpacity
-                        style={MenuRecommendationStyles.addButton}
-                        onPress={handleRemovePress}
-                    >
-                        <Ionicons
-                            name='remove-circle-outline'
-                            size={24}
-                            color='#FF3B30'
-                        />
-                        <Text
-                            style={[
-                                MenuRecommendationStyles.addButtonText,
-                                { color: '#FF3B30' },
-                            ]}
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 8,
+                    }}
+                >
+                    {/* 즐겨찾기 하트 버튼 */}
+                    {onRemove && (
+                        <TouchableOpacity
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                            }}
+                            onPress={handleRemovePress}
                         >
-                            추가 취소
-                        </Text>
-                    </TouchableOpacity>
-                )}
+                            <Ionicons
+                                name={isSaved ? 'heart' : 'heart-outline'}
+                                size={26}
+                                color={isSaved ? '#FF3B30' : '#C7C7CC'}
+                            />
+                            <Text
+                                style={{
+                                    marginLeft: 4,
+                                    color: isSaved ? '#FF3B30' : '#888',
+                                    fontSize: 14,
+                                }}
+                            >
+                                {isSaved ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
 
-                {isSaved && !onRemove && (
-                    <Ionicons
-                        name='checkmark-circle'
-                        size={24}
-                        color='#4CD964'
-                    />
-                )}
+                    {isSaved && !onRemove && (
+                        <Ionicons
+                            name='checkmark-circle'
+                            size={24}
+                            color='#4CD964'
+                        />
+                    )}
+                </View>
             </View>
         </TouchableOpacity>
     );

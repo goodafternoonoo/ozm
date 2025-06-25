@@ -1,20 +1,11 @@
 import { api } from '../utils/apiClient';
+import { Menu, Category } from './recommendationService';
 
 export interface FavoriteResponse {
     id: string;
     user_id: string;
     menu_id: string;
     created_at: string;
-}
-
-export interface Menu {
-    id: string;
-    name: string;
-    description: string;
-    category: string;
-    rating: number;
-    image_url?: string;
-    // 필요한 필드 추가
 }
 
 // 즐겨찾기 추가

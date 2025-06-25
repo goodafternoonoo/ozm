@@ -117,26 +117,6 @@ export function useMenuRecommendations() {
         await fetchCollaborativeRecommendations(sessionId, 5);
     };
 
-    const addMenuToSaved = async (menuToAdd: Menu) => {
-        if (savedMenus.some((menu) => menu.id === menuToAdd.id)) {
-            Alert.alert('알림', '이미 추가된 메뉴입니다.');
-        } else {
-            try {
-                await addFavorite(menuToAdd.id);
-                setSavedMenus([...savedMenus, menuToAdd]);
-                Alert.alert(
-                    '성공',
-                    `${menuToAdd.name} 메뉴를 즐겨찾기에 추가했습니다.`
-                );
-            } catch (e) {
-                console.error('즐겨찾기 추가 에러:', e);
-                Alert.alert('오류', '즐겨찾기 추가에 실패했습니다.');
-            }
-            // 즐겨찾기 상호작용 기록
-            await recordMenuFavorite(sessionId, menuToAdd.id, true);
-        }
-    };
-
     const removeMenuFromSaved = async (menuToRemove: Menu) => {
         try {
             await removeFavorite(menuToRemove.id);
@@ -180,7 +160,6 @@ export function useMenuRecommendations() {
         collaborativeLoading,
         getMenuRecommendations,
         getCollaborativeRecommendations,
-        addMenuToSaved,
         removeMenuFromSaved,
         handleMenuClick,
     };

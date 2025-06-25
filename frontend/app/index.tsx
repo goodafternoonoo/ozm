@@ -41,7 +41,6 @@ export default function MenuRecommendationScreen() {
         sessionId,
         getMenuRecommendations,
         getCollaborativeRecommendations,
-        addMenuToSaved,
         removeMenuFromSaved,
         handleMenuClick,
     } = useMenuRecommendations();
@@ -402,7 +401,7 @@ export default function MenuRecommendationScreen() {
                                     key={menu.id}
                                     menu={menu}
                                     reason={reason}
-                                    onAdd={addMenuToSaved}
+                                    onRemove={removeMenuFromSaved}
                                     onMenuClick={handleMenuClick}
                                     isSaved={savedMenus.some(
                                         (m) => m.id === menu.id
@@ -480,16 +479,25 @@ export default function MenuRecommendationScreen() {
                                         menu={{
                                             ...menu,
                                             id: Number(menu.id),
+                                            category:
+                                                menu.category?.name ||
+                                                '카테고리 없음',
                                         }}
                                         reason={reason}
                                         similarityScore={similarityScore}
                                         similarUsersCount={similarUsersCount}
-                                        onAdd={(collaborativeMenu) =>
-                                            addMenuToSaved({
+                                        onRemove={(collaborativeMenu) =>
+                                            removeMenuFromSaved({
                                                 ...collaborativeMenu,
                                                 id: String(
                                                     collaborativeMenu.id
                                                 ),
+                                                category:
+                                                    collaborativeMenu.category
+                                                        ? ({
+                                                              name: collaborativeMenu.category,
+                                                          } as any)
+                                                        : undefined,
                                             })
                                         }
                                         onMenuClick={(collaborativeMenu) =>
@@ -498,6 +506,12 @@ export default function MenuRecommendationScreen() {
                                                 id: String(
                                                     collaborativeMenu.id
                                                 ),
+                                                category:
+                                                    collaborativeMenu.category
+                                                        ? ({
+                                                              name: collaborativeMenu.category,
+                                                          } as any)
+                                                        : undefined,
                                             })
                                         }
                                         isSaved={savedMenus.some(
@@ -555,7 +569,7 @@ export default function MenuRecommendationScreen() {
                             key={menu.id}
                             menu={menu}
                             reason={reason}
-                            onAdd={addMenuToSaved}
+                            onRemove={removeMenuFromSaved}
                             onMenuClick={handleMenuClick}
                             isSaved={savedMenus.some((m) => m.id === menu.id)}
                         />

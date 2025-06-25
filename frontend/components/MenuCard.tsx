@@ -7,7 +7,6 @@ import { Menu, ABTestInfo } from '../services/recommendationService';
 interface MenuCardProps {
     menu: Menu;
     reason?: string;
-    onAdd?: (menu: Menu) => void;
     onRemove?: (menu: Menu) => void;
     onMenuClick?: (menu: Menu) => void;
     isSaved?: boolean;
@@ -68,7 +67,6 @@ export const renderABTestInfo = (abTestInfo: ABTestInfo) => {
 export const MenuCard: React.FC<MenuCardProps> = ({
     menu,
     reason,
-    onAdd,
     onRemove,
     onMenuClick,
     isSaved,
@@ -79,12 +77,6 @@ export const MenuCard: React.FC<MenuCardProps> = ({
     const handleCardPress = () => {
         if (onMenuClick && interactionEnabled) {
             onMenuClick(menu);
-        }
-    };
-
-    const handleAddPress = () => {
-        if (onAdd) {
-            onAdd(menu);
         }
     };
 
@@ -190,69 +182,50 @@ export const MenuCard: React.FC<MenuCardProps> = ({
 
             <View style={MenuRecommendationStyles.cardFooter}>
                 <View style={MenuRecommendationStyles.categoryContainer}>
+                    <Ionicons
+                        name='restaurant-outline'
+                        size={14}
+                        color='#007AFF'
+                        style={{ marginRight: 4 }}
+                    />
                     <Text style={MenuRecommendationStyles.categoryText}>
                         {menu.category?.cuisine_type || '카테고리 없음'}
                     </Text>
                 </View>
 
-                {/* 즐겨찾기 하트 버튼 */}
-                {(onAdd || onRemove) && (
-                    <TouchableOpacity
-                        onPress={isSaved ? handleRemovePress : handleAddPress}
-                        style={{
-                            marginLeft: 12,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                        }}
-                    >
-                        <Ionicons
-                            name={isSaved ? 'heart' : 'heart-outline'}
-                            size={26}
-                            color={isSaved ? '#FF3B30' : '#C7C7CC'}
-                        />
-                        <Text
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 8,
+                    }}
+                >
+                    {/* 즐겨찾기 하트 버튼 */}
+                    {onRemove && (
+                        <TouchableOpacity
                             style={{
-                                marginLeft: 4,
-                                color: isSaved ? '#FF3B30' : '#888',
-                                fontSize: 14,
+                                flexDirection: 'row',
+                                alignItems: 'center',
                             }}
+                            onPress={handleRemovePress}
                         >
-                            {isSaved ? '즐겨찾기 해제' : '즐겨찾기 추가'}
-                        </Text>
-                    </TouchableOpacity>
-                )}
-
-                {/* 메뉴 추가/제거 버튼 (원래대로 복원) */}
-                {onAdd && !isSaved && (
-                    <TouchableOpacity
-                        style={MenuRecommendationStyles.addButton}
-                        onPress={handleAddPress}
-                    >
-                        <Ionicons
-                            name='add-circle-outline'
-                            size={24}
-                            color='#007AFF'
-                        />
-                        <Text style={MenuRecommendationStyles.addButtonText}>
-                            메뉴 추가
-                        </Text>
-                    </TouchableOpacity>
-                )}
-                {onRemove && isSaved && (
-                    <TouchableOpacity
-                        style={MenuRecommendationStyles.removeButton}
-                        onPress={handleRemovePress}
-                    >
-                        <Ionicons
-                            name='remove-circle-outline'
-                            size={24}
-                            color='#FF3B30'
-                        />
-                        <Text style={MenuRecommendationStyles.removeButtonText}>
-                            메뉴 제거
-                        </Text>
-                    </TouchableOpacity>
-                )}
+                            <Ionicons
+                                name={isSaved ? 'heart' : 'heart-outline'}
+                                size={26}
+                                color={isSaved ? '#FF3B30' : '#C7C7CC'}
+                            />
+                            <Text
+                                style={{
+                                    marginLeft: 4,
+                                    color: isSaved ? '#FF3B30' : '#888',
+                                    fontSize: 14,
+                                }}
+                            >
+                                {isSaved ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
         </TouchableOpacity>
     );
