@@ -407,7 +407,17 @@ export default function MenuRecommendationScreen() {
                                     isSaved={savedMenus.some(
                                         (m) => m.id === menu.id
                                     )}
-                                    onAdd={addMenuToSaved}
+                                    onAdd={(collaborativeMenu) =>
+                                        addMenuToSaved({
+                                            ...collaborativeMenu,
+                                            id: String(collaborativeMenu.id),
+                                            category: collaborativeMenu.category
+                                                ? ({
+                                                      name: collaborativeMenu.category,
+                                                  } as any)
+                                                : undefined,
+                                        })
+                                    }
                                 />
                             ))}
                         </View>
@@ -519,7 +529,20 @@ export default function MenuRecommendationScreen() {
                                         isSaved={savedMenus.some(
                                             (m) => m.id === String(menu.id)
                                         )}
-                                        onAdd={addMenuToSaved}
+                                        onAdd={(collaborativeMenu) =>
+                                            addMenuToSaved({
+                                                ...collaborativeMenu,
+                                                id: String(
+                                                    collaborativeMenu.id
+                                                ),
+                                                category:
+                                                    collaborativeMenu.category
+                                                        ? ({
+                                                              name: collaborativeMenu.category,
+                                                          } as any)
+                                                        : undefined,
+                                            })
+                                        }
                                     />
                                 )
                             )}
