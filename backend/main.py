@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import setup_middleware
+from app.core.cache import start_cache_cleanup_scheduler
 from app.api.v1.router import api_router
 from app.db.init_db import init_db
 from app.schemas.common import error_response
@@ -24,6 +25,7 @@ async def lifespan(app: FastAPI):
     if settings.env != "prod":
         logger.info("개발 환경: 샘플 데이터 초기화 중...")
         await init_db()
+    start_cache_cleanup_scheduler()
     logger.info("애플리케이션 시작 완료")
     yield
     # 종료 시 실행

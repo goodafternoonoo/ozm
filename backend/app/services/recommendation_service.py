@@ -8,6 +8,7 @@ from app.models.user_answer import UserAnswer
 from app.models.user_preference import UserPreference, UserInteraction
 from app.schemas.menu import MenuRecommendation, MenuResponse
 from app.services.preference_service import PreferenceService
+from app.core.cache import cached, recommendation_cache, cache_key
 import uuid
 import random
 import json
@@ -20,6 +21,7 @@ class RecommendationService:
     """고도화된 추천 시스템 (개인화/협업필터링/하이브리드)"""
 
     @staticmethod
+    @cached(ttl=900, key_prefix="simple_rec")  # 15분 캐싱
     async def get_simple_recommendations(
         db: AsyncSession,
         time_slot: TimeSlot,
@@ -28,7 +30,7 @@ class RecommendationService:
         user_id: Optional[uuid.UUID] = None,
         limit: int = 5,
     ) -> List[MenuRecommendation]:
-        """시간대별 개인화 추천 (선호도 기반)"""
+        """시간대별 개인화 추천 (선호도 기반) - 캐싱 적용"""
         slot = time_slot.value if hasattr(time_slot, "value") else time_slot
 
         # 사용자 선호도 조회
@@ -102,6 +104,7 @@ class RecommendationService:
         return recommendations
 
     @staticmethod
+    @cached(ttl=600, key_prefix="quiz_rec")  # 10분 캐싱 (질답은 더 짧게)
     async def get_quiz_recommendations(
         db: AsyncSession,
         answers: Dict[str, str],
@@ -111,7 +114,7 @@ class RecommendationService:
         limit: int = 5,
     ) -> List[MenuRecommendation]:
         """
-        고도화된 질답 기반 추천 (하이브리드)
+        고도화된 질답 기반 추천 (하이브리드) - 캐싱 적용
         - 필수 조건 필터링 + 개인화 점수 + 협업 필터링
         """
         # 1. 전체 메뉴 + 카테고리 join 조회

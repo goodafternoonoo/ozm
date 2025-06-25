@@ -1,11 +1,13 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.schemas.recommendation import (
     RecommendationResponse,
     SimpleRecommendationRequest,
     QuizRecommendationRequest,
+    CollaborativeRecommendationRequest,
+    InteractionRecordRequest,
 )
 from app.schemas.user_preference import (
     PreferenceAnalysis,
@@ -22,6 +24,7 @@ from fastapi.encoders import jsonable_encoder
 from app.schemas.menu import MenuRecommendation, MenuResponse
 from app.core.utils import menu_to_dict
 from app.core.config_weights import get_weight_set
+from app.core.cache import get_cache_stats, invalidate_recommendation_cache
 import uuid
 import json
 
@@ -343,3 +346,61 @@ async def get_collaborative_recommendations_raw(
         db=db, session_id=session_id, user_id=user_id, limit=limit
     )
     return JSONResponse(content=jsonable_encoder(succeed_response(recommendations)))
+
+
+@router.get("/cache-stats", response_model=dict)
+async def get_cache_statistics(
+    db: AsyncSession = Depends(get_db),
+    authorization: Optional[str] = Header(None),
+):
+    """
+    캐시 통계 조회
+    - 캐시 히트율, 캐시 미스율, 캐시 히트 및 미스 횟수 등의 통계 정보 조회
+    """
+    user_id = None
+
+    # 로그인 사용자인 경우 사용자 ID 추출
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            token = authorization.replace("Bearer ", "")
+            user = await AuthService.get_current_user(db, token)
+            user_id = user.id if user else None
+        except:
+            pass
+
+    stats = get_cache_stats()
+    return JSONResponse(content=jsonable_encoder(succeed_response(stats)))
+
+
+@router.post("/invalidate-cache")
+async def invalidate_cache(
+    session_id: str,
+    db: AsyncSession = Depends(get_db),
+    authorization: Optional[str] = Header(None),
+):
+    """
+    캐시 무효화
+    - 특정 세션의 캐시를 무효화하여 새로운 추천 결과를 생성
+    """
+    user_id = None
+
+    # 로그인 사용자인 경우 사용자 ID 추출
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            token = authorization.replace("Bearer ", "")
+            user = await AuthService.get_current_user(db, token)
+            user_id = user.id if user else None
+        except:
+            pass
+
+    invalidate_recommendation_cache(session_id, user_id)
+    return JSONResponse(
+        content=jsonable_encoder(
+            succeed_response(
+                {
+                    "message": "캐시가 성공적으로 무효화되었습니다",
+                }
+            )
+        ),
+        status_code=201,
+    )
