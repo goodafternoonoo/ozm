@@ -96,11 +96,16 @@ export const CollaborativeMenuCard: React.FC<CollaborativeMenuCardProps> = ({
         }
     };
 
+    const CardContainer =
+        onMenuClick && interactionEnabled ? TouchableOpacity : View;
+
     return (
-        <TouchableOpacity
+        <CardContainer
             style={MenuRecommendationStyles.menuCard}
-            onPress={handleCardPress}
-            disabled={!interactionEnabled}
+            {...(onMenuClick && interactionEnabled
+                ? { onPress: handleCardPress }
+                : {})}
+            disabled={onMenuClick && interactionEnabled ? false : undefined}
         >
             {renderCollaborativeInfo(similarityScore, similarUsersCount)}
 
@@ -415,6 +420,6 @@ export const CollaborativeMenuCard: React.FC<CollaborativeMenuCardProps> = ({
                     )}
                 </View>
             </View>
-        </TouchableOpacity>
+        </CardContainer>
     );
 };

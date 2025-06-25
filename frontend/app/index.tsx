@@ -413,10 +413,6 @@ export default function MenuRecommendationScreen() {
                                     onAdd={
                                         isLoggedIn ? addMenuToSaved : undefined
                                     }
-                                    onMenuClick={handleMenuClick}
-                                    isSaved={savedMenus.some(
-                                        (m) => m.id === menu.id
-                                    )}
                                 />
                             ))}
                         </View>
@@ -531,23 +527,6 @@ export default function MenuRecommendationScreen() {
                                                       })
                                                 : undefined
                                         }
-                                        onMenuClick={(collaborativeMenu) =>
-                                            handleMenuClick({
-                                                ...collaborativeMenu,
-                                                id: String(
-                                                    collaborativeMenu.id
-                                                ),
-                                                category:
-                                                    collaborativeMenu.category
-                                                        ? ({
-                                                              name: collaborativeMenu.category,
-                                                          } as any)
-                                                        : undefined,
-                                            })
-                                        }
-                                        isSaved={savedMenus.some(
-                                            (m) => m.id === String(menu.id)
-                                        )}
                                     />
                                 )
                             )}
@@ -587,7 +566,6 @@ export default function MenuRecommendationScreen() {
                                 isLoggedIn ? removeMenuFromSaved : undefined
                             }
                             onAdd={isLoggedIn ? addMenuToSaved : undefined}
-                            onMenuClick={handleMenuClick}
                         />
                     ))}
                 </View>
@@ -607,7 +585,6 @@ export default function MenuRecommendationScreen() {
                                 isLoggedIn ? removeMenuFromSaved : undefined
                             }
                             onAdd={isLoggedIn ? addMenuToSaved : undefined}
-                            onMenuClick={handleMenuClick}
                             isSaved={savedMenus.some((m) => m.id === menu.id)}
                         />
                     ))}

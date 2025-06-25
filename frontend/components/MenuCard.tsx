@@ -95,11 +95,16 @@ export const MenuCard: React.FC<MenuCardProps> = ({
         }
     };
 
+    const CardContainer =
+        onMenuClick && interactionEnabled ? TouchableOpacity : View;
+
     return (
-        <TouchableOpacity
+        <CardContainer
             style={MenuRecommendationStyles.menuCard}
-            onPress={handleCardPress}
-            disabled={!interactionEnabled}
+            {...(onMenuClick && interactionEnabled
+                ? { onPress: handleCardPress }
+                : {})}
+            disabled={onMenuClick && interactionEnabled ? false : undefined}
         >
             {reason && (
                 <View style={MenuRecommendationStyles.reasonContainer}>
@@ -420,6 +425,6 @@ export const MenuCard: React.FC<MenuCardProps> = ({
                     )}
                 </View>
             </View>
-        </TouchableOpacity>
+        </CardContainer>
     );
 };
