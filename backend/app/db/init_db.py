@@ -9,8 +9,6 @@ from app.models import (
     Menu,
     Question,
 )
-from app.models.category import Category
-from app.models.question import Question
 
 
 async def init_db():

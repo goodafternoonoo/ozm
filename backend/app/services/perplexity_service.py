@@ -126,7 +126,7 @@ class PerplexityService:
             # Perplexity 응답에서 소스 정보 추출 (구조에 따라 조정 필요)
             if "sources" in data:
                 sources = data["sources"]
-        except:
+        except Exception:
             pass
         return sources
 

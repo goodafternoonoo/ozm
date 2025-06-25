@@ -55,7 +55,7 @@ async def get_simple_recommendations(
             token = authorization.replace("Bearer ", "")
             user = await AuthService.get_current_user(db, token)
             user_id = user.id if user else None
-        except:
+        except Exception:
             pass  # 토큰이 유효하지 않아도 세션 기반으로 진행
 
     recommendations = await RecommendationService.get_simple_recommendations(
@@ -119,7 +119,7 @@ async def get_quiz_recommendations(
             token = authorization.replace("Bearer ", "")
             user = await AuthService.get_current_user(db, token)
             user_id = user.id if user else None
-        except:
+        except Exception:
             pass  # 토큰이 유효하지 않아도 세션 기반으로 진행
 
     recommendations = await RecommendationService.get_quiz_recommendations(
@@ -188,7 +188,7 @@ async def get_collaborative_recommendations(
             token = authorization.replace("Bearer ", "")
             user = await AuthService.get_current_user(db, token)
             user_id = user.id if user else None
-        except:
+        except Exception:
             pass
 
     recommendations = await RecommendationService.get_collaborative_recommendations(
@@ -249,7 +249,7 @@ async def get_preference_analysis(
             token = authorization.replace("Bearer ", "")
             user = await AuthService.get_current_user(db, token)
             user_id = user.id if user else None
-        except:
+        except Exception:
             pass
 
     analysis = await PreferenceService.get_preference_analysis(
@@ -277,7 +277,7 @@ async def record_interaction(
             token = authorization.replace("Bearer ", "")
             user = await AuthService.get_current_user(db, token)
             user_id = user.id if user else None
-        except:
+        except Exception:
             pass
 
     # 사용자 ID 업데이트
@@ -339,7 +339,7 @@ async def get_collaborative_recommendations_raw(
             token = authorization.replace("Bearer ", "")
             user = await AuthService.get_current_user(db, token)
             user_id = user.id if user else None
-        except:
+        except Exception:
             pass
 
     recommendations = await PreferenceService.get_collaborative_recommendations(
@@ -363,7 +363,7 @@ async def get_cache_statistics(
         try:
             token = authorization.replace("Bearer ", "")
             await AuthService.get_current_user(db, token)
-        except:
+        except Exception:
             pass
 
     stats = get_cache_stats()
@@ -388,7 +388,7 @@ async def invalidate_cache(
             token = authorization.replace("Bearer ", "")
             user = await AuthService.get_current_user(db, token)
             user_id = user.id if user else None
-        except:
+        except Exception:
             pass
 
     invalidate_recommendation_cache(session_id, user_id)
