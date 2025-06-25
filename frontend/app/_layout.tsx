@@ -2,13 +2,13 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography } from '../styles/GlobalStyles';
 import { Platform } from 'react-native';
-import { AuthProvider } from '../contexts/AuthContext';
+import { AppProvider } from '../contexts/AppProvider';
 
 const isWeb = typeof window !== 'undefined';
 
 export default function RootLayout() {
     return (
-        <AuthProvider>
+        <AppProvider>
             <Tabs
                 screenOptions={{
                     tabBarActiveTintColor: colors.primary,
@@ -121,6 +121,6 @@ export default function RootLayout() {
                     }}
                 />
             </Tabs>
-        </AuthProvider>
+        </AppProvider>
     );
 }

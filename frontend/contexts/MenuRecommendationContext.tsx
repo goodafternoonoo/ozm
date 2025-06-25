@@ -1,0 +1,253 @@
+import React, {
+    createContext,
+    useContext,
+    useState,
+    useEffect,
+    ReactNode,
+} from 'react';
+import { Alert } from 'react-native';
+import { useUserInteraction } from './UserInteractionContext';
+import { useCollaborativeRecommendations } from './CollaborativeContext';
+import { useAuth } from './AuthContext';
+import { CategoryService, Category } from '../services/categoryService';
+import {
+    RecommendationService,
+    Menu,
+    MenuRecommendation,
+    ABTestInfo,
+} from '../services/recommendationService';
+import { AppError } from '../utils/apiClient';
+import {
+    getFavorites,
+    addFavorite,
+    removeFavorite,
+} from '../services/favoriteService';
+import { abTestInfoToCamel } from '../utils/case';
+
+export type TimeSlot = 'breakfast' | 'lunch' | 'dinner';
+
+interface MenuRecommendationContextType {
+    selectedTimeSlot: TimeSlot;
+    setSelectedTimeSlot: (timeSlot: TimeSlot) => void;
+    categoryId: string | null;
+    setCategoryId: (categoryId: string | null) => void;
+    categories: Category[];
+    recommendations: MenuRecommendation[];
+    savedMenus: Menu[];
+    loading: boolean;
+    error: string | null;
+    abTestInfo: ABTestInfo | null;
+    sessionId: string;
+    showCollaborative: boolean;
+    setShowCollaborative: (show: boolean) => void;
+    renderKey: number;
+    getMenuRecommendations: () => Promise<MenuRecommendation[] | undefined>;
+    getCollaborativeRecommendations: () => Promise<void>;
+    removeMenuFromSaved: (menuToRemove: Menu) => Promise<void>;
+    addMenuToSaved: (menuToAdd: Menu) => Promise<void>;
+    handleMenuClick: (menu: Menu) => Promise<void>;
+    fetchCategories: () => Promise<void>;
+}
+
+const MenuRecommendationContext = createContext<MenuRecommendationContextType | undefined>(undefined);
+
+interface MenuRecommendationProviderProps {
+    children: ReactNode;
+}
+
+export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProps> = ({ children }) => {
+    const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot>('lunch');
+    const [categoryId, setCategoryId] = useState<string | null>(null);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [recommendations, setRecommendations] = useState<MenuRecommendation[]>([]);
+    const [savedMenus, setSavedMenus] = useState<Menu[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [abTestInfo, setAbTestInfo] = useState<ABTestInfo | null>(null);
+    const [sessionId, setSessionId] = useState<string>('');
+    const [showCollaborative, setShowCollaborative] = useState(false);
+    const [renderKey, setRenderKey] = useState<number>(0);
+
+    const { isLoggedIn } = useAuth();
+    const { recordMenuClick, recordMenuFavorite, recordRecommendationSelect } = useUserInteraction();
+    const { getCollaborativeRecommendations: fetchCollaborativeRecommendations } = useCollaborativeRecommendations();
+
+    useEffect(() => {
+        fetchCategories();
+        // 세션 ID 생성
+        setSessionId(
+            `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        );
+    }, []);
+
+    // 로그인 상태가 변경될 때마다 즐겨찾기 목록을 다시 불러옴
+    useEffect(() => {
+        if (isLoggedIn) {
+            (async () => {
+                try {
+                    const favs = await getFavorites();
+                    setSavedMenus(favs);
+                } catch (e) {
+                    console.error('즐겨찾기 목록 불러오기 에러:', e);
+                    setSavedMenus([]);
+                }
+            })();
+        } else {
+            setSavedMenus([]);
+        }
+    }, [isLoggedIn]);
+
+    // 로그인 상태가 변경될 때 기존 추천 목록이 있으면 다시 불러와서 UI 업데이트
+    useEffect(() => {
+        if (recommendations.length > 0) {
+            setRenderKey((prev) => prev + 1);
+        }
+    }, [isLoggedIn]);
+
+    const fetchCategories = async () => {
+        try {
+            const response = await CategoryService.getCategories(1, 50);
+            setCategories(response.categories);
+        } catch (err) {
+            console.error('카테고리 조회 에러:', err);
+            setCategories([]);
+        }
+    };
+
+    const getMenuRecommendations = async () => {
+        setLoading(true);
+        setError(null);
+        setAbTestInfo(null);
+
+        try {
+            const response = await RecommendationService.getSimpleRecommendations({
+                time_slot: selectedTimeSlot,
+                category_id: categoryId || undefined,
+                session_id: sessionId,
+            });
+
+            setRecommendations(response.recommendations);
+
+            // A/B 테스트 정보 추출
+            if (response.ab_test_info) {
+                setAbTestInfo(abTestInfoToCamel(response.ab_test_info));
+            }
+
+            // 추천 선택 상호작용 기록
+            for (const rec of response.recommendations) {
+                await recordRecommendationSelect(
+                    sessionId,
+                    rec.menu.id,
+                    'simple_personalized'
+                );
+            }
+
+            return response.recommendations;
+        } catch (err) {
+            const errorMessage =
+                err instanceof AppError
+                    ? err.message
+                    : '메뉴 추천을 가져오는데 실패했습니다';
+            setError(errorMessage);
+            console.error('API 에러:', err);
+            return undefined;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getCollaborativeRecommendations = async () => {
+        try {
+            await fetchCollaborativeRecommendations(sessionId, 5);
+        } catch (err) {
+            console.error('협업 필터링 추천 에러:', err);
+        }
+    };
+
+    const removeMenuFromSaved = async (menuToRemove: Menu) => {
+        if (!isLoggedIn) {
+            Alert.alert('로그인 필요', '즐겨찾기 기능을 사용하려면 로그인이 필요합니다.');
+            return;
+        }
+
+        try {
+            await removeFavorite(menuToRemove.id);
+            setSavedMenus((prev) =>
+                prev.filter((menu) => menu.id !== menuToRemove.id)
+            );
+            Alert.alert(
+                '삭제',
+                `${menuToRemove.name} 메뉴를 즐겨찾기에서 삭제했습니다.`
+            );
+        } catch (e) {
+            console.error('즐겨찾기 삭제 에러:', e);
+            Alert.alert('오류', '즐겨찾기 삭제에 실패했습니다.');
+        }
+        await recordMenuFavorite(sessionId, menuToRemove.id, false);
+    };
+
+    const addMenuToSaved = async (menuToAdd: Menu) => {
+        if (!isLoggedIn) {
+            Alert.alert('로그인 필요', '즐겨찾기 기능을 사용하려면 로그인이 필요합니다.');
+            return;
+        }
+
+        try {
+            await addFavorite(menuToAdd.id);
+            setSavedMenus((prev) => [...prev, menuToAdd]);
+            Alert.alert(
+                '저장',
+                `${menuToAdd.name} 메뉴를 즐겨찾기에 추가했습니다.`
+            );
+        } catch (e) {
+            console.error('즐겨찾기 추가 에러:', e);
+            Alert.alert('오류', '즐겨찾기 추가에 실패했습니다.');
+        }
+        await recordMenuFavorite(sessionId, menuToAdd.id, true);
+    };
+
+    const handleMenuClick = async (menu: Menu) => {
+        await recordMenuClick(sessionId, menu.id, {
+            time_slot: selectedTimeSlot,
+            category_id: categoryId,
+            source: 'menu_recommendations',
+        });
+    };
+
+    const value = {
+        selectedTimeSlot,
+        setSelectedTimeSlot,
+        categoryId,
+        setCategoryId,
+        categories,
+        recommendations,
+        savedMenus,
+        loading,
+        error,
+        abTestInfo,
+        sessionId,
+        showCollaborative,
+        setShowCollaborative,
+        renderKey,
+        getMenuRecommendations,
+        getCollaborativeRecommendations,
+        removeMenuFromSaved,
+        addMenuToSaved,
+        handleMenuClick,
+        fetchCategories,
+    };
+
+    return (
+        <MenuRecommendationContext.Provider value={value}>
+            {children}
+        </MenuRecommendationContext.Provider>
+    );
+};
+
+export const useMenuRecommendations = (): MenuRecommendationContextType => {
+    const context = useContext(MenuRecommendationContext);
+    if (context === undefined) {
+        throw new Error('useMenuRecommendations must be used within a MenuRecommendationProvider');
+    }
+    return context;
+}; 

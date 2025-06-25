@@ -1,97 +1,190 @@
 # OZM Frontend
 
-React Native Expo 기반의 맛집 추천 앱입니다.
+음식 추천 시스템의 React Native 프론트엔드입니다.
 
-## 기능
+## 🏗️ 아키텍처
 
-- 🍽️ 메뉴 추천 (시간대별)
-- 📍 근처 맛집 검색 (카카오 맵 API 연동)
-- 💬 질문-답변 채팅
-- 📱 위치 기반 서비스
+### Context API 기반 상태 관리
 
-## 설치 및 실행
+프로젝트는 React Context API를 사용하여 전역 상태를 관리합니다. 각 기능별로 독립적인 Context를 구현하여 관심사를 분리했습니다.
 
-   ```bash
-# 의존성 설치
-   npm install
+#### Context 구조
 
-# 개발 서버 시작
-   npx expo start
-   ```
+```
+AppProvider
+├── AuthProvider (인증 상태)
+├── UserInteractionProvider (사용자 상호작용)
+├── CollaborativeProvider (협업 필터링)
+├── MenuRecommendationProvider (메뉴 추천)
+├── ChujonProvider (취존 추천)
+├── NearbyProvider (근처 맛집)
+└── QuestionsProvider (AI 질문)
+```
 
-## 카카오 API 설정
+#### 주요 Context
 
-맛집 검색 기능을 사용하려면 카카오 개발자 계정과 API 키가 필요합니다.
+- **AuthContext**: 사용자 로그인/로그아웃 상태 관리
+- **UserInteractionContext**: 메뉴 클릭, 즐겨찾기, 검색 등 사용자 상호작용 기록
+- **MenuRecommendationContext**: 메뉴 추천 관련 상태 및 로직
+- **ChujonContext**: 취존 추천 시스템 관련 상태
+- **NearbyContext**: 근처 맛집 검색 및 위치 기반 서비스
+- **QuestionsContext**: AI 챗봇 질문/답변 관리
+- **CollaborativeContext**: 협업 필터링 추천 관리
 
-### 1. 카카오 개발자 계정 생성
-- [Kakao Developers](https://developers.kakao.com/) 에서 계정을 생성하세요.
-
-### 2. 애플리케이션 생성
-- 개발자 콘솔에서 새 애플리케이션을 생성하세요.
-- 앱 이름과 플랫폼을 설정하세요.
-
-### 3. REST API 키 발급
-- 애플리케이션 설정에서 "REST API 키"를 복사하세요.
-
-### 4. API 키 설정
-`config/api.ts` 파일에서 `KAKAO_REST_API_KEY`를 실제 API 키로 교체하세요:
+### 사용법
 
 ```typescript
-export const API_CONFIG = {
-  KAKAO_REST_API_KEY: 'your_actual_kakao_rest_api_key_here',
-  // ...
+// 개별 Context 사용
+import { useAuth } from '../contexts/AuthContext';
+import { useMenuRecommendations } from '../contexts/MenuRecommendationContext';
+
+// 또는 hooks를 통한 사용
+import { useAuth, useMenuRecommendations } from '../hooks';
+
+const MyComponent = () => {
+    const { isLoggedIn, userInfo } = useAuth();
+    const { recommendations, loading } = useMenuRecommendations();
+    
+    // 컴포넌트 로직
 };
 ```
 
-### 5. 플랫폼 설정
-- **Android**: 패키지명을 `app.json`의 `expo.android.package`와 일치하도록 설정
-- **iOS**: 번들 ID를 `app.json`의 `expo.ios.bundleIdentifier`와 일치하도록 설정
+## 🚀 시작하기
 
-## 주요 기능
+### 필수 요구사항
 
-### 맛집 검색
-- 현재 위치 기반 근처 맛집 검색
-- 키워드 검색 (맛집 이름, 음식 종류)
-- 검색 반경 조절 (500m ~ 3km)
-- 카카오맵 연동
+- Node.js 18+
+- npm 또는 yarn
+- Expo CLI
 
-### 메뉴 추천
-- 시간대별 메뉴 추천 (아침/점심/저녁)
-- 추천 메뉴 저장 기능
+### 설치
 
-### 질문-답변
-- AI 기반 음식 관련 질문-답변
-- 채팅 형태의 인터페이스
+```bash
+npm install
+```
 
-## 기술 스택
+### 개발 서버 실행
 
-- React Native
-- Expo
-- TypeScript
-- Axios
-- Expo Location
-- 카카오 로컬 API
+```bash
+npm start
+```
 
-## 파일 구조
+### 플랫폼별 실행
+
+```bash
+# 웹
+npm run web
+
+# iOS
+npm run ios
+
+# Android
+npm run android
+```
+
+## 📁 프로젝트 구조
 
 ```
 frontend/
-├── app/                    # 메인 앱 컴포넌트
-│   ├── _layout.tsx        # 탭 네비게이션
-│   ├── index.tsx          # 메뉴 추천 페이지
-│   ├── nearby.tsx         # 근처 맛집 페이지
-│   └── questions.tsx      # 질문-답변 페이지
-├── config/                # 설정 파일
-│   └── api.ts            # API 설정
-├── styles/               # 스타일 파일들
-├── utils/                # 유틸리티 함수들
-│   ├── locationService.ts # 위치 서비스
-│   └── kakaoApiService.ts # 카카오 API 서비스
-└── package.json
+├── app/                    # Expo Router 페이지
+├── components/             # 재사용 가능한 컴포넌트
+├── contexts/              # Context API 구현
+│   ├── AuthContext.tsx
+│   ├── MenuRecommendationContext.tsx
+│   ├── ChujonContext.tsx
+│   ├── NearbyContext.tsx
+│   ├── QuestionsContext.tsx
+│   ├── UserInteractionContext.tsx
+│   ├── CollaborativeContext.tsx
+│   ├── AppProvider.tsx
+│   └── index.ts
+├── hooks/                 # Context 기반 커스텀 훅
+├── services/              # API 서비스
+├── styles/                # 스타일 정의
+├── utils/                 # 유틸리티 함수
+└── config/                # 설정 파일
 ```
 
-## 주의사항
+## 🔧 주요 기능
 
-- 카카오 API 키는 보안을 위해 환경 변수로 관리하는 것을 권장합니다.
-- 실제 배포 시에는 API 키를 안전하게 관리하세요.
-- 카카오 API 사용량 제한을 확인하세요.
+### 1. 메뉴 추천 시스템
+- 개인화된 메뉴 추천
+- 시간대별 추천 (아침/점심/저녁)
+- 카테고리별 필터링
+- A/B 테스트 지원
+
+### 2. 취존 추천 시스템
+- 사용자 선호도 기반 추천
+- 질문-답변 기반 개인화
+- 하이브리드 추천 알고리즘
+
+### 3. 근처 맛집 검색
+- 실시간 위치 기반 검색
+- 카카오 맵 API 연동
+- 무한 스크롤 지원
+
+### 4. AI 챗봇
+- Perplexity AI 기반 질문/답변
+- 음식 관련 정보 제공
+- 대화 기록 관리
+
+### 5. 사용자 인증
+- 카카오 로그인 연동
+- JWT 토큰 기반 인증
+- 자동 로그인 상태 관리
+
+## 🎨 UI/UX 특징
+
+- **반응형 디자인**: 웹과 모바일 모두 지원
+- **다크/라이트 모드**: 시스템 설정에 따른 자동 전환
+- **접근성**: 스크린 리더 지원
+- **성능 최적화**: 메모이제이션과 지연 로딩 적용
+
+## 🔒 보안
+
+- 환경 변수를 통한 API 키 관리
+- HTTPS 통신 강제
+- 입력 데이터 검증
+- XSS 방지
+
+## 📱 지원 플랫폼
+
+- iOS 13+
+- Android 8+
+- Web (Chrome, Safari, Firefox)
+
+## 🧪 테스트
+
+```bash
+# 테스트 실행
+npm test
+
+# 테스트 커버리지
+npm run test:coverage
+```
+
+## 📦 빌드
+
+```bash
+# 프로덕션 빌드
+npm run build
+
+# EAS 빌드 (Expo Application Services)
+eas build
+```
+
+## 🤝 기여하기
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+
+## 📞 문의
+
+프로젝트에 대한 문의사항이 있으시면 이슈를 생성해 주세요.

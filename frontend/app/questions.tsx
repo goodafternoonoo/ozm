@@ -40,7 +40,7 @@ export default function QuestionsScreen() {
         messages,
         loading,
         sendMessage,
-        clearAllMessages,
+        clearMessages,
     } = useQuestions();
     const scrollViewRef = useRef<ScrollView>(null);
     const headerHeight = useHeaderHeight();
@@ -132,7 +132,7 @@ export default function QuestionsScreen() {
                             <TouchableOpacity
                                 style={QuestionsStyles.confirmDelete}
                                 onPress={() => {
-                                    clearAllMessages(true);
+                                    clearMessages();
                                     setShowDeleteConfirm(false);
                                 }}
                             >

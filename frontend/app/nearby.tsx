@@ -17,22 +17,7 @@ import { NearbyStyles } from '../styles/NearbyStyles';
 import { colors } from '../styles/GlobalStyles';
 import RestaurantMap from '../components/RestaurantMap';
 import { RestaurantListItem } from '../components/RestaurantListItem';
-import { useNearbyRestaurants } from '../hooks/useNearbyRestaurants';
-
-interface Restaurant {
-    id: string;
-    name: string;
-    category: string;
-    distance: number;
-    distanceFormatted: string;
-    rating: number;
-    address: string;
-    phone: string;
-    placeUrl: string;
-    roadAddress: string;
-    latitude: number;
-    longitude: number;
-}
+import { useNearbyRestaurants, Restaurant } from '../hooks/useNearbyRestaurants';
 
 export default function NearbyScreen() {
     const {
@@ -46,8 +31,8 @@ export default function NearbyScreen() {
         searchRadius,
         setSearchRadius,
         getCurrentLocation,
-        onRefresh,
-        handleSearch,
+        refreshRestaurants,
+        searchByKeyword,
         loadMoreRestaurants,
         loadingMore,
         hasMoreData,
@@ -123,7 +108,7 @@ export default function NearbyScreen() {
     // 무한 스크롤 처리
     const handleLoadMore = () => {
         if (hasMoreData && !loadingMore) {
-            loadMoreRestaurants('distance');
+            loadMoreRestaurants();
         }
     };
 
@@ -215,11 +200,11 @@ export default function NearbyScreen() {
                     placeholder='맛집 이름이나 음식 종류를 검색하세요'
                     value={searchKeyword}
                     onChangeText={setSearchKeyword}
-                    onSubmitEditing={() => handleSearch('distance')}
+                    onSubmitEditing={() => searchByKeyword(searchKeyword)}
                 />
                 <TouchableOpacity
                     style={NearbyStyles.searchButton}
-                    onPress={() => handleSearch('distance')}
+                    onPress={() => searchByKeyword(searchKeyword)}
                 >
                     <Ionicons
                         name='search'
@@ -242,12 +227,7 @@ export default function NearbyScreen() {
                                 searchRadius === radius &&
                                     NearbyStyles.radiusButtonActive,
                             ]}
-                            onPress={() => {
-                                setSearchRadius(radius);
-                                if (location) {
-                                    handleSearch('distance');
-                                }
-                            }}
+                            onPress={() => setSearchRadius(radius)}
                         >
                             <Text
                                 style={[
@@ -298,9 +278,8 @@ export default function NearbyScreen() {
     const renderRestaurantItem = ({ item }: { item: Restaurant }) => (
         <RestaurantListItem
             restaurant={item}
-            onPress={setSelectedRestaurant}
-            onCall={callRestaurant}
-            onMap={openMap}
+            onPress={() => openMap(item)}
+            onCall={() => callRestaurant(item.phone)}
         />
     );
 
@@ -347,7 +326,7 @@ export default function NearbyScreen() {
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
-                        onRefresh={onRefresh}
+                        onRefresh={refreshRestaurants}
                     />
                 }
                 onEndReached={handleLoadMore}
@@ -409,7 +388,7 @@ export default function NearbyScreen() {
                                     setRatingSort('asc');
                                     setShowRatingModal(false);
                                     if (location) {
-                                        handleSearch('distance');
+                                        searchByKeyword(searchKeyword);
                                     }
                                 }}
                             >
@@ -443,7 +422,7 @@ export default function NearbyScreen() {
                                     setRatingSort('desc');
                                     setShowRatingModal(false);
                                     if (location) {
-                                        handleSearch('distance');
+                                        searchByKeyword(searchKeyword);
                                     }
                                 }}
                             >
