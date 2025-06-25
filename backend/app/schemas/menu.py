@@ -13,6 +13,30 @@ class TimeSlot(str, Enum):
     DINNER = "dinner"
 
 
+class CategoryResponse(BaseModel):
+    """카테고리 응답 스키마"""
+
+    id: uuid.UUID
+    name: str
+    description: Optional[str] = None
+    country: str
+    cuisine_type: str
+    is_active: bool
+    display_order: int
+    icon_url: Optional[str] = None
+    color_code: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value
+
+    @field_serializer("updated_at")
+    def serialize_updated_at(self, value):
+        return value.isoformat() if isinstance(value, datetime) else value
+
+
 class MenuBase(BaseModel):
     """메뉴 공통 필드"""
 
@@ -77,6 +101,7 @@ class MenuResponse(MenuBase):
 
     id: uuid.UUID
     category_id: uuid.UUID
+    category: Optional[CategoryResponse] = None
     created_at: datetime
     updated_at: datetime
 

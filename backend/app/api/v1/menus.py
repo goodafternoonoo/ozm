@@ -36,9 +36,13 @@ async def create_menu(
     """새 메뉴 생성"""
     try:
         menu = await menu_service.create(db, menu_data.model_dump())
+        # 생성 후 카테고리와 함께 조회
+        menu_with_category = await menu_service.get_by_id_with_category(db, menu.id)
         return JSONResponse(
             content=jsonable_encoder(
-                succeed_response(MenuResponse.model_validate(menu_to_dict(menu)))
+                succeed_response(
+                    MenuResponse.model_validate(menu_to_dict(menu_with_category))
+                )
             ),
             status_code=status.HTTP_201_CREATED,
         )
@@ -58,7 +62,7 @@ async def create_menu(
 @router.get("/{menu_id}", response_model=MenuResponse)
 async def get_menu(menu_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """ID로 메뉴 조회"""
-    menu = await menu_service.get_by_id(db, menu_id, load_relationships=True)
+    menu = await menu_service.get_by_id_with_category(db, menu_id)
     if not menu:
         return JSONResponse(
             content=jsonable_encoder(
@@ -88,7 +92,7 @@ async def get_menus(
     if category_id:
         menus = await menu_service.get_menus_by_category(db, category_id, skip, limit)
     else:
-        menus = await menu_service.get_all(db, skip, limit, load_relationships=True)
+        menus = await menu_service.get_all_with_category(db, skip, limit)
 
     return JSONResponse(
         content=jsonable_encoder(

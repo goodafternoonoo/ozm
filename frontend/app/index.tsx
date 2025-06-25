@@ -1,30 +1,24 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
+    Modal,
+    ScrollView,
     Text,
     TouchableOpacity,
     View,
-    ScrollView,
-    Alert,
-    Modal,
-    FlatList,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { MenuRecommendationStyles } from '../styles/MenuRecommendationStyles';
+import ChujonRecommendation from '../components/ChujonRecommendation';
+import { CollaborativeMenuCard } from '../components/CollaborativeMenuCard';
 import { MenuCard, renderABTestInfo } from '../components/MenuCard';
-import {
-    CollaborativeMenuCard,
-    CollaborativeMenu,
-} from '../components/CollaborativeMenuCard';
-import {
-    useMenuRecommendations,
-    TimeSlot,
-} from '../hooks/useMenuRecommendations';
 import { useChujonRecommendation } from '../hooks/useChujonRecommendation';
 import { useCollaborativeRecommendations } from '../hooks/useCollaborativeRecommendations';
-import ChujonRecommendation from '../components/ChujonRecommendation';
-import { Menu, MenuRecommendation } from '../services/recommendationService';
+import {
+    TimeSlot,
+    useMenuRecommendations,
+} from '../hooks/useMenuRecommendations';
 import { colors } from '../styles/GlobalStyles';
+import { MenuRecommendationStyles } from '../styles/MenuRecommendationStyles';
 
 export default function MenuRecommendationScreen() {
     const [mode, setMode] = useState<'simple' | 'chujon' | 'collaborative'>(
@@ -45,7 +39,6 @@ export default function MenuRecommendationScreen() {
         error,
         abTestInfo,
         sessionId,
-        collaborativeLoading,
         getMenuRecommendations,
         getCollaborativeRecommendations,
         addMenuToSaved,
@@ -69,21 +62,6 @@ export default function MenuRecommendationScreen() {
         },
         { value: 'dinner' as TimeSlot, label: '저녁', icon: 'moon-outline' },
     ];
-
-    const renderStars = (rating: number) => {
-        const stars = [];
-        for (let i = 1; i <= 5; i++) {
-            stars.push(
-                <Ionicons
-                    key={i}
-                    name={i <= rating ? 'star' : 'star-outline'}
-                    size={16}
-                    color={i <= rating ? '#FFD700' : colors.text.tertiary}
-                />
-            );
-        }
-        return stars;
-    };
 
     const handleCollaborativeMode = () => {
         setMode('collaborative');
@@ -499,14 +477,31 @@ export default function MenuRecommendationScreen() {
                                 }) => (
                                     <CollaborativeMenuCard
                                         key={menu.id}
-                                        menu={menu}
+                                        menu={{
+                                            ...menu,
+                                            id: Number(menu.id),
+                                        }}
                                         reason={reason}
                                         similarityScore={similarityScore}
                                         similarUsersCount={similarUsersCount}
-                                        onAdd={addMenuToSaved}
-                                        onMenuClick={handleMenuClick}
+                                        onAdd={(collaborativeMenu) =>
+                                            addMenuToSaved({
+                                                ...collaborativeMenu,
+                                                id: String(
+                                                    collaborativeMenu.id
+                                                ),
+                                            })
+                                        }
+                                        onMenuClick={(collaborativeMenu) =>
+                                            handleMenuClick({
+                                                ...collaborativeMenu,
+                                                id: String(
+                                                    collaborativeMenu.id
+                                                ),
+                                            })
+                                        }
                                         isSaved={savedMenus.some(
-                                            (m) => m.id === menu.id
+                                            (m) => m.id === String(menu.id)
                                         )}
                                     />
                                 )

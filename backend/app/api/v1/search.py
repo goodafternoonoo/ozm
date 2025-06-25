@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_
+from sqlalchemy.orm import selectinload
 from app.db.database import AsyncSessionLocal
 from app.models.menu import Menu
 from app.models.category import Category
@@ -46,7 +47,11 @@ async def search_menus(
     """메뉴 검색 및 필터링"""
 
     # 기본 쿼리 생성
-    query = select(Menu).join(Category, Menu.category_id == Category.id)
+    query = (
+        select(Menu)
+        .options(selectinload(Menu.category))
+        .join(Category, Menu.category_id == Category.id)
+    )
     conditions = []
 
     # 검색어 필터
