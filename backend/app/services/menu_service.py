@@ -1,14 +1,16 @@
-from typing import List, Optional, Dict, Any
+import uuid
+from typing import Any, Dict, List, Optional
+
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, func
 from sqlalchemy.orm import selectinload
-from app.models.menu import Menu
+
+from app.core.cache import cache_key, cached, menu_cache
 from app.models.category import Category
 from app.models.favorite import Favorite
+from app.models.menu import Menu
 from app.services.base_service import BaseService
-from app.core.cache import cached, menu_cache, cache_key
-import uuid
-from sqlalchemy.exc import IntegrityError
 
 
 class MenuService(BaseService[Menu]):

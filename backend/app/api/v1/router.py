@@ -1,13 +1,7 @@
 from fastapi import APIRouter
-from app.api.v1 import (
-    menus,
-    recommendations,
-    questions,
-    categories,
-    auth,
-    users,
-    search,
-)
+
+from app.api.v1 import (auth, categories, menus, questions, recommendations,
+                        search, users)
 
 api_router = APIRouter()
 

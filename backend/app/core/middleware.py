@@ -1,20 +1,21 @@
+import asyncio
+import threading
 import time
 import uuid
-from typing import Callable, Dict, Any
+from collections import defaultdict
+from typing import Any, Callable, Dict
+
 from fastapi import Request, Response
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
-from app.core.config import settings
-from app.core.logging import get_logger, RequestLogger
-from app.core.exceptions import RateLimitException, create_error_response
-import asyncio
-from collections import defaultdict
-import threading
-from fastapi.encoders import jsonable_encoder
 
+from app.core.config import settings
+from app.core.exceptions import RateLimitException, create_error_response
+from app.core.logging import RequestLogger, get_logger
 
 logger = get_logger(__name__)
 

@@ -1,16 +1,18 @@
+import uuid
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.db.database import AsyncSessionLocal
 from app.models.user import User
+from app.schemas.common import error_response, succeed_response
+from app.schemas.error_codes import ErrorCode
 from app.schemas.user import UserProfile, UserProfileUpdate, UserResponse
 from app.services.auth_service import AuthService
-from sqlalchemy import select
-from typing import List
-import uuid
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
-from app.schemas.common import succeed_response, error_response
-from app.schemas.error_codes import ErrorCode
 
 router = APIRouter()
 

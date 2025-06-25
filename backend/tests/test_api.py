@@ -1,16 +1,18 @@
+import asyncio
+import os
+import random
+import uuid
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
-from unittest.mock import patch, MagicMock, AsyncMock
-from main import app
-from app.db.database import async_engine, Base, AsyncSessionLocal
+
+from app.db.database import AsyncSessionLocal, Base, async_engine
 from app.db.init_db import init_db
 from app.models.user import User
-import uuid
-import os
 from app.services.auth_service import get_current_user
-import asyncio
-import random
+from main import app
 
 
 @pytest.fixture(scope="session")

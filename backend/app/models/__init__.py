@@ -1,11 +1,11 @@
-from .user import User
-from .menu import Menu, TimeSlot
 from .category import Category
-from .question import Question
-from .user_answer import UserAnswer
-from .recommendation import Recommendation
 from .favorite import Favorite
-from .user_preference import UserPreference, UserInteraction
+from .menu import Menu, TimeSlot
+from .question import Question
+from .recommendation import Recommendation
+from .user import User
+from .user_answer import UserAnswer
+from .user_preference import UserInteraction, UserPreference
 
 __all__ = [
     "User",

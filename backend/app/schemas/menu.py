@@ -1,8 +1,9 @@
-from pydantic import BaseModel, Field, ConfigDict, field_serializer
-from typing import List, Optional
-from enum import Enum
 import uuid
 from datetime import datetime
+from enum import Enum
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class TimeSlot(str, Enum):

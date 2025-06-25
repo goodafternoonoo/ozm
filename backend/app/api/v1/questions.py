@@ -1,20 +1,18 @@
 import re
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.database import get_db
-from app.schemas.question import (
-    Question,
-    QuestionCreate,
-    AIQuestionRequest,
-    AIQuestionResponse,
-)
-from app.services.question_service import QuestionService
-from app.services.perplexity_service import perplexity_service
-from app.schemas.common import succeed_response, error_response
-from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config import settings
+from app.db.database import get_db
+from app.schemas.common import error_response, succeed_response
+from app.schemas.question import (AIQuestionRequest, AIQuestionResponse,
+                                  Question, QuestionCreate)
+from app.services.perplexity_service import perplexity_service
+from app.services.question_service import QuestionService
 
 router = APIRouter()
 

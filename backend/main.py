@@ -1,16 +1,18 @@
+import time
 from contextlib import asynccontextmanager
+
+import asyncpg
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
+
+from app.api.v1.router import api_router
+from app.core.cache import start_cache_cleanup_scheduler
 from app.core.config import settings
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import setup_middleware
-from app.core.cache import start_cache_cleanup_scheduler
-from app.api.v1.router import api_router
 from app.db.init_db import init_db
 from app.schemas.common import error_response
-import time
-from sqlalchemy.exc import IntegrityError
-import asyncpg
 
 # 로깅 설정 초기화
 setup_logging()

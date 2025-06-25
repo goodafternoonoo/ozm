@@ -1,20 +1,22 @@
-from typing import List, Dict, Optional
+import json
+import random
+import uuid
+from datetime import datetime, timezone
+from typing import Dict, List, Optional
+
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
+
+from app.core.cache import cache_key, cached, recommendation_cache
+from app.core.config_weights import get_weight_set
+from app.core.utils import menu_to_dict
 from app.models.menu import Menu, TimeSlot
 from app.models.recommendation import Recommendation, RecommendationLog
 from app.models.user_answer import UserAnswer
-from app.models.user_preference import UserPreference, UserInteraction
+from app.models.user_preference import UserInteraction, UserPreference
 from app.schemas.menu import MenuRecommendation, MenuResponse
 from app.services.preference_service import PreferenceService
-from app.core.cache import cached, recommendation_cache, cache_key
-import uuid
-import random
-import json
-from datetime import datetime, timezone
-from app.core.utils import menu_to_dict
-from app.core.config_weights import get_weight_set
 
 
 class RecommendationService:
@@ -596,8 +598,9 @@ class RecommendationService:
         - 최근 days일 기준, action_types별로 집계
         - 반환: {ab_group: {action_type: 비율, ...}, ...}
         """
-        from sqlalchemy import func
         from datetime import datetime, timedelta
+
+        from sqlalchemy import func
 
         since = datetime.now() - timedelta(days=days)
         # 전체 추천 로그 중 기간 내 ab_group/action_type별 카운트 집계

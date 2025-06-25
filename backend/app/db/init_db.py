@@ -1,25 +1,18 @@
 import asyncio
-from sqlalchemy.ext.asyncio import AsyncSession
+import json
+import uuid
+
 from sqlalchemy import select
-from app.db.database import async_engine, Base, AsyncSessionLocal
-from app.models import (
-    User,
-    Menu,
-    Category,
-    Question,
-    UserAnswer,
-    Recommendation,
-    Favorite,
-    UserPreference,
-    UserInteraction,
-)
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.database import AsyncSessionLocal, Base, async_engine
+from app.models import (Category, Favorite, Menu, Question, Recommendation,
+                        User, UserAnswer, UserInteraction, UserPreference)
+from app.models.category import Category
 from app.models.menu import TimeSlot
 from app.models.question import Question
-from app.models.user_answer import UserAnswer
 from app.models.recommendation import Recommendation
-from app.models.category import Category
-import uuid
-import json
+from app.models.user_answer import UserAnswer
 
 
 async def init_db():

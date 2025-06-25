@@ -3,8 +3,11 @@
 개발용 FastAPI 서버 실행 스크립트
 """
 import asyncio
+
 import uvicorn
+
 from app.db.init_db import init_db
+
 
 async def startup():
     """서버 시작 전 초기화"""

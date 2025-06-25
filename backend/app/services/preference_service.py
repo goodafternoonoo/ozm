@@ -1,23 +1,23 @@
 import json
-import uuid
-from typing import Dict, List, Optional, Tuple
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc
-from sqlalchemy.orm import selectinload
-from app.models.user_preference import UserPreference, UserInteraction
-from app.models.menu import Menu
-from app.models.favorite import Favorite
-from app.core.cache import cached, user_preference_cache, cache_key
-from app.schemas.user_preference import (
-    UserPreferenceCreate,
-    UserPreferenceUpdate,
-    UserInteractionCreate,
-    PreferenceAnalysis,
-    CollaborativeRecommendation,
-)
-import numpy as np
-from datetime import datetime, timedelta
 import random
+import uuid
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Tuple
+
+import numpy as np
+from sqlalchemy import desc, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.core.cache import cache_key, cached, user_preference_cache
+from app.models.favorite import Favorite
+from app.models.menu import Menu
+from app.models.user_preference import UserInteraction, UserPreference
+from app.schemas.user_preference import (CollaborativeRecommendation,
+                                         PreferenceAnalysis,
+                                         UserInteractionCreate,
+                                         UserPreferenceCreate,
+                                         UserPreferenceUpdate)
 
 
 class PreferenceService:

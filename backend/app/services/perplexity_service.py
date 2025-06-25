@@ -1,5 +1,7 @@
+from typing import Any, Dict, Optional
+
 import aiohttp
-from typing import Optional, Dict, Any
+
 from app.core.config import settings
 from app.core.logging import get_logger
 

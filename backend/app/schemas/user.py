@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr, field_serializer
-from typing import Optional
 import uuid
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, EmailStr, field_serializer
 
 
 class UserBase(BaseModel):

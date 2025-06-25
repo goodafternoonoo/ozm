@@ -1,7 +1,8 @@
-from typing import Dict, Optional, List, Any
-from pydantic import BaseModel, Field, ConfigDict, field_serializer
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class UserPreferenceBase(BaseModel):

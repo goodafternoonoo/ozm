@@ -1,32 +1,31 @@
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Header, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.database import get_db
-from app.schemas.recommendation import (
-    RecommendationResponse,
-    SimpleRecommendationRequest,
-    QuizRecommendationRequest,
-    CollaborativeRecommendationRequest,
-    InteractionRecordRequest,
-)
-from app.schemas.user_preference import (
-    PreferenceAnalysis,
-    UserInteractionCreate,
-    CollaborativeRecommendation,
-)
-from app.services.recommendation_service import RecommendationService
-from app.services.preference_service import PreferenceService
-from app.services.auth_service import AuthService
-from app.models.menu import TimeSlot as ModelTimeSlot, Menu
-from app.schemas.common import succeed_response, error_response
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
-from app.schemas.menu import MenuRecommendation, MenuResponse
-from app.core.utils import menu_to_dict
-from app.core.config_weights import get_weight_set
-from app.core.cache import get_cache_stats, invalidate_recommendation_cache
-import uuid
 import json
+import uuid
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.cache import get_cache_stats, invalidate_recommendation_cache
+from app.core.config_weights import get_weight_set
+from app.core.utils import menu_to_dict
+from app.db.database import get_db
+from app.models.menu import Menu
+from app.models.menu import TimeSlot as ModelTimeSlot
+from app.schemas.common import error_response, succeed_response
+from app.schemas.menu import MenuRecommendation, MenuResponse
+from app.schemas.recommendation import (CollaborativeRecommendationRequest,
+                                        InteractionRecordRequest,
+                                        QuizRecommendationRequest,
+                                        RecommendationResponse,
+                                        SimpleRecommendationRequest)
+from app.schemas.user_preference import (CollaborativeRecommendation,
+                                         PreferenceAnalysis,
+                                         UserInteractionCreate)
+from app.services.auth_service import AuthService
+from app.services.preference_service import PreferenceService
+from app.services.recommendation_service import RecommendationService
 
 router = APIRouter()
 

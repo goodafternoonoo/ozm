@@ -1,22 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from uuid import UUID
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
 
-from app.db.database import get_db
-from app.services.category_service import CategoryService
-from app.schemas.category import (
-    CategoryCreate,
-    CategoryUpdate,
-    CategoryResponse,
-    CategoryListResponse,
-)
-from app.schemas.common import succeed_response, error_response
-from app.schemas.error_codes import ErrorCode
-from app.models.category import Category
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.utils import category_to_dict
+from app.db.database import get_db
+from app.models.category import Category
+from app.schemas.category import (CategoryCreate, CategoryListResponse,
+                                  CategoryResponse, CategoryUpdate)
+from app.schemas.common import error_response, succeed_response
+from app.schemas.error_codes import ErrorCode
+from app.services.category_service import CategoryService
 
 router = APIRouter()
 

@@ -1,10 +1,11 @@
+import json
 import logging
 import logging.config
-import json
+import os
 from datetime import datetime
 from typing import Any, Dict
+
 from app.core.config import settings
-import os
 
 
 class JSONFormatter(logging.Formatter):

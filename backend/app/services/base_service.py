@@ -1,18 +1,16 @@
-from typing import TypeVar, Generic, Type, Optional, List, Any, Dict
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete
-from sqlalchemy.orm import selectinload
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from app.core.logging import get_logger
-from app.core.exceptions import (
-    NotFoundException,
-    DatabaseException,
-    DuplicateException,
-    ValidationException,
-)
-from app.db.database import Base
 import uuid
 from datetime import datetime
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
+
+from sqlalchemy import delete, select, update
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.core.exceptions import (DatabaseException, DuplicateException,
+                                 NotFoundException, ValidationException)
+from app.core.logging import get_logger
+from app.db.database import Base
 
 ModelType = TypeVar("ModelType", bound=Base)
 

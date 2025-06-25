@@ -1,14 +1,16 @@
-import requests
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from app.models.user import User
-from app.schemas.user import UserCreate
-from jose import jwt, JWTError
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
+
+import requests
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.db.database import AsyncSessionLocal
+from app.models.user import User
+from app.schemas.user import UserCreate
 
 KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me"
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "testsecret")
