@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -8,10 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.utils import orm_to_dict
 from app.db.database import get_db
-from app.models.user import User
 from app.schemas.common import error_response, succeed_response
 from app.schemas.error_codes import ErrorCode
-from app.schemas.user import LoginResponse, Token, UserResponse
+from app.schemas.user import LoginResponse, UserResponse
 from app.services.auth_service import AuthService
 
 router = APIRouter()

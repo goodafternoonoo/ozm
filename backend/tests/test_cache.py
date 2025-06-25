@@ -1,8 +1,6 @@
 import time
-import uuid
 
 import pytest
-import pytest_asyncio
 
 from app.core.cache import (
     MemoryCache,

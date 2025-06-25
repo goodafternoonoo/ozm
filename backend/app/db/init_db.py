@@ -1,27 +1,16 @@
 import asyncio
 import json
-import uuid
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import AsyncSessionLocal, Base, async_engine
 from app.models import (
     Category,
-    Favorite,
     Menu,
     Question,
-    Recommendation,
-    User,
-    UserAnswer,
-    UserInteraction,
-    UserPreference,
 )
 from app.models.category import Category
-from app.models.menu import TimeSlot
 from app.models.question import Question
-from app.models.recommendation import Recommendation
-from app.models.user_answer import UserAnswer
 
 
 async def init_db():
@@ -41,7 +30,6 @@ async def create_sample_data():
     - 카테고리 생성 후 id 매핑 → 메뉴에 category_id 할당
     - 실전 서비스 수준의 샘플 구조
     """
-    from app.db.database import AsyncSessionLocal
 
     async with AsyncSessionLocal() as db:
         # 기존 데이터 확인 (중복 방지)

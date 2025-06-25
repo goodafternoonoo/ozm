@@ -3,7 +3,6 @@ import logging
 import logging.config
 import os
 from datetime import datetime
-from typing import Any, Dict
 
 from app.core.config import settings
 

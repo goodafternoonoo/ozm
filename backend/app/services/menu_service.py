@@ -6,8 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.cache import cache_key, cached, menu_cache
-from app.models.category import Category
+from app.core.cache import cached
 from app.models.favorite import Favorite
 from app.models.menu import Menu
 from app.services.base_service import BaseService

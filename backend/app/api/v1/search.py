@@ -11,7 +11,7 @@ from app.core.utils import menu_to_dict
 from app.db.database import AsyncSessionLocal
 from app.models.category import Category
 from app.models.menu import Menu
-from app.schemas.common import error_response, succeed_response
+from app.schemas.common import succeed_response
 from app.schemas.menu import MenuResponse
 
 router = APIRouter()

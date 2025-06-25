@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import AsyncSessionLocal
 from app.models.user import User
-from app.schemas.user import UserCreate
 
 KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me"
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "testsecret")

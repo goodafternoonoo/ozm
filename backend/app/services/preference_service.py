@@ -1,24 +1,19 @@
 import json
 import random
 import uuid
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional
 
-import numpy as np
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.cache import cache_key, cached, user_preference_cache
+from app.core.cache import cached
 from app.models.favorite import Favorite
 from app.models.menu import Menu
 from app.models.user_preference import UserInteraction, UserPreference
 from app.schemas.user_preference import (
     CollaborativeRecommendation,
     PreferenceAnalysis,
-    UserInteractionCreate,
-    UserPreferenceCreate,
-    UserPreferenceUpdate,
 )
 
 

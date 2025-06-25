@@ -4,11 +4,11 @@ import uuid
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from sqlalchemy import desc, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.cache import cache_key, cached, recommendation_cache
+from app.core.cache import cached
 from app.core.config_weights import get_weight_set
 from app.core.utils import menu_to_dict
 from app.models.menu import Menu, TimeSlot

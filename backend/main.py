@@ -1,7 +1,6 @@
 import time
 from contextlib import asynccontextmanager
 
-import asyncpg
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError

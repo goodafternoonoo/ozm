@@ -1,17 +1,13 @@
 import uuid
 from typing import List, Optional
 
-import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.utils import favorite_to_dict, menu_to_dict
 from app.db.database import get_db
-from app.models.favorite import Favorite
-from app.models.menu import Menu
 from app.models.user import User
 from app.schemas.common import error_response, succeed_response
 from app.schemas.error_codes import ErrorCode

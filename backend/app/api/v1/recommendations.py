@@ -2,7 +2,7 @@ import json
 import uuid
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,8 +16,6 @@ from app.models.menu import TimeSlot as ModelTimeSlot
 from app.schemas.common import error_response, succeed_response
 from app.schemas.menu import MenuRecommendation, MenuResponse
 from app.schemas.recommendation import (
-    CollaborativeRecommendationRequest,
-    InteractionRecordRequest,
     QuizRecommendationRequest,
     RecommendationResponse,
     SimpleRecommendationRequest,
@@ -286,7 +284,6 @@ async def record_interaction(
     interaction.user_id = user_id
 
     # menu_id 존재 여부 체크
-    from app.models.menu import Menu
 
     menu_id = getattr(interaction, "menu_id", None)
     if menu_id:
