@@ -92,7 +92,6 @@ class Logger {
         }
 
         const prefix = `[${entry.timestamp}] [${entry.category}]`;
-        const levelText = LogLevel[entry.level];
 
         if (this.config.enableConsole) {
             switch (entry.level) {
