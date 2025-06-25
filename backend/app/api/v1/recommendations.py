@@ -357,14 +357,12 @@ async def get_cache_statistics(
     캐시 통계 조회
     - 캐시 히트율, 캐시 미스율, 캐시 히트 및 미스 횟수 등의 통계 정보 조회
     """
-    user_id = None
 
     # 로그인 사용자인 경우 사용자 ID 추출
     if authorization and authorization.startswith("Bearer "):
         try:
             token = authorization.replace("Bearer ", "")
-            user = await AuthService.get_current_user(db, token)
-            user_id = user.id if user else None
+            await AuthService.get_current_user(db, token)
         except:
             pass
 

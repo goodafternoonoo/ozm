@@ -37,7 +37,7 @@ class MenuService(BaseService[Menu]):
         stmt = (
             select(Menu)
             .options(selectinload(Menu.category))
-            .where(Menu.is_active == True)
+            .where(Menu.is_active)
             .order_by(Menu.display_order, Menu.name)
             .offset(skip)
             .limit(limit)
@@ -101,7 +101,7 @@ class MenuService(BaseService[Menu]):
             conditions.append(Menu.cooking_time <= cooking_time)
 
         # 활성 메뉴만 조회
-        conditions.append(Menu.is_active == True)
+        conditions.append(Menu.is_active)
 
         stmt = (
             select(Menu)
@@ -122,7 +122,7 @@ class MenuService(BaseService[Menu]):
             select(Menu, func.count(Favorite.id).label("favorite_count"))
             .options(selectinload(Menu.category))
             .outerjoin(Favorite, Menu.id == Favorite.menu_id)
-            .where(Menu.is_active == True)
+            .where(Menu.is_active)
             .group_by(Menu.id)
             .order_by(func.count(Favorite.id).desc(), Menu.name)
             .limit(limit)
@@ -139,7 +139,7 @@ class MenuService(BaseService[Menu]):
         limit: int = 50,
     ) -> List[Menu]:
         """속성별 메뉴 조회"""
-        conditions = [Menu.is_active == True]
+        conditions = [Menu.is_active]
 
         # 매운맛 필터
         if attributes.get("spicy_level"):
@@ -213,7 +213,7 @@ class FavoriteService(BaseService[Favorite]):
             and_(
                 Favorite.user_id == user_id,
                 Favorite.menu_id == menu_id,
-                Favorite.is_active == True,
+                Favorite.is_active,
             )
         )
         result = await db.execute(stmt)
@@ -226,7 +226,7 @@ class FavoriteService(BaseService[Favorite]):
         stmt = (
             select(Favorite)
             .options(selectinload(Favorite.menu))
-            .where(and_(Favorite.user_id == user_id, Favorite.is_active == True))
+            .where(and_(Favorite.user_id == user_id, Favorite.is_active))
             .order_by(Favorite.created_at.desc())
             .offset(skip)
             .limit(limit)

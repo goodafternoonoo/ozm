@@ -22,7 +22,7 @@ class QuestionService:
         """활성화된 질문만 조회 (display_order 순)"""
         stmt = (
             select(Question)
-            .where(Question.is_active == True)
+            .where(Question.is_active)
             .order_by(Question.display_order)
         )
         result = await db.execute(stmt)
@@ -35,7 +35,7 @@ class QuestionService:
         """타입별 질문 조회 (display_order 순)"""
         stmt = (
             select(Question)
-            .where(Question.question_type == question_type, Question.is_active == True)
+            .where(Question.question_type == question_type, Question.is_active)
             .order_by(Question.display_order)
         )
         result = await db.execute(stmt)

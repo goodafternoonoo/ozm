@@ -85,7 +85,7 @@ class CategoryService:
             .outerjoin(
                 menu_count_subquery, Category.id == menu_count_subquery.c.category_id
             )
-            .where(Category.is_active == True)
+            .where(Category.is_active)
             .order_by(Category.display_order, Category.name)
             .offset(skip)
             .limit(limit)
@@ -123,7 +123,7 @@ class CategoryService:
         """국가별 카테고리 조회"""
         result = await self.db.execute(
             select(Category)
-            .where(and_(Category.country == country, Category.is_active == True))
+            .where(and_(Category.country == country, Category.is_active))
             .order_by(Category.display_order, Category.name)
         )
         return result.scalars().all()
@@ -133,7 +133,7 @@ class CategoryService:
         result = await self.db.execute(
             select(Category)
             .where(
-                and_(Category.cuisine_type == cuisine_type, Category.is_active == True)
+                and_(Category.cuisine_type == cuisine_type, Category.is_active)
             )
             .order_by(Category.display_order, Category.name)
         )
@@ -144,7 +144,7 @@ class CategoryService:
     ) -> int:
         """카테고리 총 개수 조회"""
         query = select(func.count(Category.id))
-        filters = [Category.is_active == True]
+        filters = [Category.is_active]
         if country:
             filters.append(Category.country == country)
         if cuisine_type:

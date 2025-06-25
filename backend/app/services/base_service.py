@@ -166,7 +166,7 @@ class BaseService(Generic[ModelType]):
             self.logger.debug(f"{self.model.__name__} 업데이트 시작: {id}")
 
             # 엔티티 존재 확인
-            entity = await self.get_by_id(db, id)
+            await self.get_by_id(db, id)
 
             # 업데이트할 필드만 추출
             update_data = {k: v for k, v in obj_in.items() if v is not None}

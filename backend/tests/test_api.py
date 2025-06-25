@@ -461,7 +461,7 @@ def test_favorite_add_and_get(test_user):
             fav_payload = {"menu_id": menu_id}
             resp = await client.post("/api/v1/menus/favorites", json=fav_payload)
             assert resp.status_code == 201
-            fav_id = resp.json()["data"]["id"]
+            resp.json()["data"]["id"]
             # 즐겨찾기 조회
             resp = await client.get("/api/v1/menus/favorites/")
             assert resp.status_code == 200
@@ -626,7 +626,7 @@ async def test_create_category_duplicate():
             "icon_url": None,
             "color_code": "#111111",
         }
-        resp1 = await client.post("/api/v1/categories/", json=payload)
+        await client.post("/api/v1/categories/", json=payload)
         resp2 = await client.post("/api/v1/categories/", json=payload)
         assert resp2.status_code in (400, 409)
 
