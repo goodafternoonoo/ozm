@@ -24,6 +24,7 @@ import {
     removeFavorite,
 } from '../services/favoriteService';
 import { abTestInfoToCamel } from '../utils/case';
+import { logRecommendation, logError, LogCategory } from '../utils/logger';
 
 export type TimeSlot = 'breakfast' | 'lunch' | 'dinner';
 
@@ -78,7 +79,7 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
             const response = await CategoryService.getCategories(1, 50);
             setCategories(response.categories);
         } catch (err) {
-            console.error('카테고리 조회 에러:', err);
+            logError(LogCategory.RECOMMENDATION, '카테고리 조회 에러', err as Error);
             setCategories([]);
         }
     }, []);
@@ -99,7 +100,7 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
                     const favs = await getFavorites();
                     setSavedMenus(favs);
                 } catch (e) {
-                    console.error('즐겨찾기 목록 불러오기 에러:', e);
+                    logError(LogCategory.RECOMMENDATION, '즐겨찾기 목록 불러오기 에러', e as Error);
                     setSavedMenus([]);
                 }
             })();
@@ -119,14 +120,16 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
         setLoading(true);
         setError(null);
         setAbTestInfo(null);
-
+        
         try {
+            logRecommendation('메뉴 추천 요청', { timeSlot: selectedTimeSlot });
             const response = await RecommendationService.getSimpleRecommendations({
                 time_slot: selectedTimeSlot,
                 category_id: categoryId || undefined,
                 session_id: sessionId,
             });
-
+            logRecommendation('메뉴 추천 응답 수신', { count: response.recommendations.length });
+            
             setRecommendations(response.recommendations);
 
             // A/B 테스트 정보 추출
@@ -150,18 +153,39 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
                     ? err.message
                     : '메뉴 추천을 가져오는데 실패했습니다';
             setError(errorMessage);
-            console.error('API 에러:', err);
+            logError(LogCategory.RECOMMENDATION, '메뉴 추천 에러', err as Error);
             return undefined;
         } finally {
             setLoading(false);
         }
     }, [selectedTimeSlot, categoryId, sessionId, recordRecommendationSelect]);
 
+    const refreshRecommendations = useCallback(async () => {
+        if (!selectedTimeSlot) return;
+        
+        setLoading(true);
+        try {
+            logRecommendation('메뉴 추천 새로고침', { timeSlot: selectedTimeSlot });
+            const response = await RecommendationService.getSimpleRecommendations({
+                time_slot: selectedTimeSlot,
+                session_id: sessionId,
+            });
+            logRecommendation('메뉴 추천 새로고침 완료', { count: response.recommendations.length });
+            
+            setRecommendations(response.recommendations);
+        } catch (error) {
+            logError(LogCategory.RECOMMENDATION, '메뉴 추천 새로고침 에러', error as Error);
+            setError('추천 메뉴를 새로고침하는데 실패했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [sessionId, selectedTimeSlot]);
+
     const getCollaborativeRecommendations = useCallback(async () => {
         try {
             await fetchCollaborativeRecommendations(sessionId, 5);
         } catch (err) {
-            console.error('협업 필터링 추천 에러:', err);
+            logError(LogCategory.RECOMMENDATION, '협업 필터링 추천 에러', err as Error);
         }
     }, [sessionId, fetchCollaborativeRecommendations]);
 
@@ -181,7 +205,7 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
                 `${menuToRemove.name} 메뉴를 즐겨찾기에서 삭제했습니다.`
             );
         } catch (e) {
-            console.error('즐겨찾기 삭제 에러:', e);
+            logError(LogCategory.RECOMMENDATION, '즐겨찾기 삭제 에러', e as Error);
             Alert.alert('오류', '즐겨찾기 삭제에 실패했습니다.');
         }
         await recordMenuFavorite(sessionId, menuToRemove.id, false);

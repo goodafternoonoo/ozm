@@ -2,10 +2,12 @@ import React, {
     createContext,
     useContext,
     useState,
+    useCallback,
     ReactNode,
 } from 'react';
 import { RecommendationService, Menu } from '../services/recommendationService';
 import { AppError } from '../utils/apiClient';
+import { logRecommendation, logError, LogCategory } from '../utils/logger';
 
 export type CollaborativeMenu = Menu;
 
@@ -42,7 +44,7 @@ export const CollaborativeProvider: React.FC<CollaborativeProviderProps> = ({ ch
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const getCollaborativeRecommendations = async (
+    const getCollaborativeRecommendations = useCallback(async (
         sessionId: string,
         limit: number = 5
     ) => {
@@ -50,6 +52,7 @@ export const CollaborativeProvider: React.FC<CollaborativeProviderProps> = ({ ch
         setError(null);
 
         try {
+            logRecommendation('협업 필터링 추천 요청', { sessionId, limit });
             const response = await RecommendationService.getCollaborativeRecommendations({
                 session_id: sessionId,
                 limit: limit,
@@ -79,6 +82,7 @@ export const CollaborativeProvider: React.FC<CollaborativeProviderProps> = ({ ch
             });
 
             setRecommendations(transformedRecs);
+            logRecommendation('협업 필터링 추천 응답 수신', { count: transformedRecs.length });
             return transformedRecs;
         } catch (err) {
             const errorMessage =
@@ -86,14 +90,14 @@ export const CollaborativeProvider: React.FC<CollaborativeProviderProps> = ({ ch
                     ? err.message
                     : '협업 필터링 추천을 가져오는데 실패했습니다';
             setError(errorMessage);
-            console.error('협업 필터링 추천 에러:', err);
+            logError(LogCategory.RECOMMENDATION, '협업 필터링 추천 에러', err as Error);
             return undefined;
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const getCollaborativeRecommendationsRaw = async (
+    const getCollaborativeRecommendationsRaw = useCallback(async (
         sessionId: string,
         limit: number = 5
     ) => {
@@ -101,11 +105,13 @@ export const CollaborativeProvider: React.FC<CollaborativeProviderProps> = ({ ch
         setError(null);
 
         try {
+            logRecommendation('협업 필터링 원시 데이터 요청', { sessionId, limit });
             const response = await RecommendationService.getCollaborativeRecommendations({
                 session_id: sessionId,
                 limit: limit,
             });
 
+            logRecommendation('협업 필터링 원시 데이터 응답 수신');
             return response;
         } catch (err) {
             const errorMessage =
@@ -113,12 +119,12 @@ export const CollaborativeProvider: React.FC<CollaborativeProviderProps> = ({ ch
                     ? err.message
                     : '협업 필터링 추천을 가져오는데 실패했습니다';
             setError(errorMessage);
-            console.error('협업 필터링 추천 에러:', err);
+            logError(LogCategory.RECOMMENDATION, '협업 필터링 원시 데이터 에러', err as Error);
             return null;
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     const value = {
         recommendations,

@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import { LocationService, LocationData } from '../services/locationService';
 import { KakaoApiService } from '../services/kakaoApiService';
+import { logLocation, logError, LogCategory } from '../utils/logger';
 
 export interface Restaurant {
     id: string;
@@ -124,37 +125,37 @@ export const NearbyProvider: React.FC<NearbyProviderProps> = ({ children }) => {
             setHasMoreData(kakaoPlaces.length === 15); // 카카오 API는 한 번에 최대 15개 반환
             
         } catch (error) {
-            console.error('❌ searchNearbyRestaurants 에러:', error);
+            logError(LogCategory.LOCATION, 'searchNearbyRestaurants 에러', error as Error);
         }
     }, [searchKeyword, searchRadius]);
 
     const getCurrentLocation = useCallback(async () => {
-        console.log('🔄 getCurrentLocation 호출됨');
+        logLocation('getCurrentLocation 호출됨');
         setLoading(true);
         try {
-            console.log('📍 LocationService.getCurrentLocation() 호출...');
+            logLocation('LocationService.getCurrentLocation() 호출...');
             const currentLocation = await LocationService.getCurrentLocation();
-            console.log('📍 LocationService 결과:', currentLocation);
+            logLocation('LocationService 결과', { currentLocation });
             
             if (currentLocation) {
-                console.log('✅ 위치 정보 설정:', currentLocation);
+                logLocation('위치 정보 설정', { currentLocation });
                 setLocation(currentLocation);
                 setLocationPermission('granted');
-                console.log('📍 맛집 검색 시작...');
+                logLocation('맛집 검색 시작...');
                 // 초기 검색 시 페이지 리셋
                 setCurrentPage(1);
                 setHasMoreData(true);
                 await searchNearbyRestaurants(currentLocation.latitude, currentLocation.longitude, 1, true);
             } else {
-                console.log('❌ 위치 정보 없음, 권한 거부됨');
+                logLocation('위치 정보 없음, 권한 거부됨');
                 setLocationPermission('denied');
             }
         } catch (error) {
-            console.error('❌ getCurrentLocation 에러:', error);
+            logError(LogCategory.LOCATION, 'getCurrentLocation 에러', error as Error);
             setLocationPermission('denied');
         } finally {
             setLoading(false);
-            console.log('🔄 getCurrentLocation 완료');
+            logLocation('getCurrentLocation 완료');
         }
     }, [searchNearbyRestaurants]);
 
@@ -167,7 +168,7 @@ export const NearbyProvider: React.FC<NearbyProviderProps> = ({ children }) => {
             await searchNearbyRestaurants(location.latitude, location.longitude, nextPage, false);
             setCurrentPage(nextPage);
         } catch (error) {
-            console.error('❌ loadMoreRestaurants 에러:', error);
+            logError(LogCategory.LOCATION, 'loadMoreRestaurants 에러', error as Error);
         } finally {
             setLoadingMore(false);
         }
@@ -182,7 +183,7 @@ export const NearbyProvider: React.FC<NearbyProviderProps> = ({ children }) => {
             setHasMoreData(true);
             await searchNearbyRestaurants(location.latitude, location.longitude, 1, true);
         } catch (error) {
-            console.error('❌ refreshRestaurants 에러:', error);
+            logError(LogCategory.LOCATION, 'refreshRestaurants 에러', error as Error);
         } finally {
             setRefreshing(false);
         }
