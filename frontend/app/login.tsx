@@ -47,47 +47,27 @@ export const LoginScreen: React.FC = () => {
 
     const handleKakaoTokenExchange = async (code: string) => {
         try {
-            // 실제 운영/정상 로직 (항상 새로 토큰 발급)
-            // const tokenResponse = await axios.post(
-            //     'https://kauth.kakao.com/oauth/token',
-            //     {
-            //         grant_type: 'authorization_code',
-            //         client_id: KAKAO_REST_API_KEY,
-            //         client_secret: KAKAO_CLIENT_SECRET,
-            //         redirect_uri: REDIRECT_URI,
-            //         code: code,
-            //     },
-            //     {
-            //         headers: {
-            //             'Content-Type': 'application/x-www-form-urlencoded',
-            //         },
-            //     }
-            // );
-            // const accessToken = tokenResponse.data.access_token;
-
-            // TODO: 임시 캐싱 - 차후에는 항상 새로 요청하도록 원복할 것
-            let accessToken = await AsyncStorage.getItem('kakao_access_token');
-            if (!accessToken) {
-                // TODO: 아래 부분만 남기고 위 캐싱 로직은 삭제 예정
-                const tokenResponse = await axios.post(
-                    'https://kauth.kakao.com/oauth/token',
-                    {
-                        grant_type: 'authorization_code',
-                        client_id: KAKAO_REST_API_KEY,
-                        client_secret: KAKAO_CLIENT_SECRET,
-                        redirect_uri: REDIRECT_URI,
-                        code: code,
+            // 임시 캐싱 비활성화 - 항상 새로운 토큰 발급
+            console.log('새로운 토큰 발급 시작...');
+            const tokenResponse = await axios.post(
+                'https://kauth.kakao.com/oauth/token',
+                {
+                    grant_type: 'authorization_code',
+                    client_id: KAKAO_REST_API_KEY,
+                    client_secret: KAKAO_CLIENT_SECRET,
+                    redirect_uri: REDIRECT_URI,
+                    code: code,
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    {
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                    }
-                );
-                accessToken = tokenResponse.data.access_token;
-                await AsyncStorage.setItem('kakao_access_token', accessToken);
-            }
+                }
+            );
+            const accessToken = tokenResponse.data.access_token;
+            console.log('새 토큰 발급 성공:', accessToken ? '있음' : '없음');
 
+            console.log('백엔드 로그인 요청 시작...');
             // 백엔드로 access_token 전송하여 로그인
             const loginResponse = await axios.post(
                 'http://localhost:8000/api/v1/auth/kakao-login',
@@ -95,6 +75,7 @@ export const LoginScreen: React.FC = () => {
                     access_token: accessToken,
                 }
             );
+            console.log('백엔드 로그인 응답:', loginResponse.status);
 
             // 응답 구조에 맞게 파싱
             const { access_token, user } = loginResponse.data?.data || {};
@@ -119,7 +100,12 @@ export const LoginScreen: React.FC = () => {
             setLoginSuccess(true);
             Alert.alert('로그인 성공', '카카오 로그인이 완료되었습니다!');
         } catch (error) {
-            console.error('카카오 로그인 에러:', error);
+            console.error('카카오 로그인 에러 상세:', {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                message: error.message
+            });
             Alert.alert('로그인 실패', '카카오 로그인 중 오류가 발생했습니다.');
         } finally {
             setLoading(false);
@@ -130,6 +116,7 @@ export const LoginScreen: React.FC = () => {
         setLoginSuccess(false);
         setUserInfo(null);
         AsyncStorage.removeItem('jwt_token');
+        AsyncStorage.removeItem('kakao_access_token'); // 임시 캐싱 토큰도 삭제
         // 쿠키에서 삭제
         Cookies.remove('ozm_nickname');
         Cookies.remove('ozm_email');
