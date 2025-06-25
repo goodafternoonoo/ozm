@@ -90,7 +90,19 @@ def menu_to_dict(menu: Any) -> Dict[str, Any]:
         "updated_at",
         "category_id",
     ]
-    return orm_to_dict(menu, fields)
+    result = orm_to_dict(menu, fields)
+
+    # 카테고리 정보 추가 (안전하게 처리)
+    try:
+        if hasattr(menu, "category") and menu.category is not None:
+            result["category"] = category_to_dict(menu.category)
+        else:
+            result["category"] = None
+    except Exception:
+        # 카테고리 로딩에 실패하면 None으로 설정
+        result["category"] = None
+
+    return result
 
 
 def favorite_to_dict(favorite: Any) -> Dict[str, Any]:

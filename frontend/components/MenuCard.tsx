@@ -191,7 +191,7 @@ export const MenuCard: React.FC<MenuCardProps> = ({
             <View style={MenuRecommendationStyles.cardFooter}>
                 <View style={MenuRecommendationStyles.categoryContainer}>
                     <Text style={MenuRecommendationStyles.categoryText}>
-                        {menu.category}
+                        {menu.category?.cuisine_type || '카테고리 없음'}
                     </Text>
                 </View>
 

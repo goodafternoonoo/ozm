@@ -16,12 +16,38 @@ class MenuService(BaseService[Menu]):
     def __init__(self):
         super().__init__(Menu)
 
+    async def get_by_id_with_category(
+        self, db: AsyncSession, menu_id: uuid.UUID
+    ) -> Optional[Menu]:
+        """카테고리와 함께 메뉴 조회"""
+        stmt = (
+            select(Menu).options(selectinload(Menu.category)).where(Menu.id == menu_id)
+        )
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_all_with_category(
+        self, db: AsyncSession, skip: int = 0, limit: int = 50
+    ) -> List[Menu]:
+        """카테고리와 함께 모든 메뉴 조회"""
+        stmt = (
+            select(Menu)
+            .options(selectinload(Menu.category))
+            .where(Menu.is_active == True)
+            .order_by(Menu.display_order, Menu.name)
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await db.execute(stmt)
+        return result.scalars().all()
+
     async def get_menus_by_category(
         self, db: AsyncSession, category_id: uuid.UUID, skip: int = 0, limit: int = 50
     ) -> List[Menu]:
         """카테고리별 메뉴 조회"""
         stmt = (
             select(Menu)
+            .options(selectinload(Menu.category))
             .where(Menu.category_id == category_id)
             .order_by(Menu.display_order, Menu.name)
             .offset(skip)
@@ -74,6 +100,7 @@ class MenuService(BaseService[Menu]):
 
         stmt = (
             select(Menu)
+            .options(selectinload(Menu.category))
             .where(and_(*conditions))
             .order_by(Menu.display_order, Menu.name)
             .offset(skip)
@@ -87,6 +114,7 @@ class MenuService(BaseService[Menu]):
         """인기 메뉴 조회 (즐겨찾기 수 기준)"""
         stmt = (
             select(Menu, func.count(Favorite.id).label("favorite_count"))
+            .options(selectinload(Menu.category))
             .outerjoin(Favorite, Menu.id == Favorite.menu_id)
             .where(Menu.is_active == True)
             .group_by(Menu.id)
@@ -125,6 +153,7 @@ class MenuService(BaseService[Menu]):
 
         stmt = (
             select(Menu)
+            .options(selectinload(Menu.category))
             .where(and_(*conditions))
             .order_by(Menu.display_order, Menu.name)
             .offset(skip)

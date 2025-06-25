@@ -1,11 +1,25 @@
 import { api, AppError } from '../utils/apiClient';
 
 // 타입 정의
+export interface Category {
+    id: string;
+    name: string;
+    description?: string;
+    country: string;
+    cuisine_type: string;
+    is_active: boolean;
+    display_order: number;
+    icon_url?: string;
+    color_code?: string;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface Menu {
     id: string;
     name: string;
     description: string;
-    category: string;
+    category?: Category;
     rating: number;
     calories?: number;
     protein?: number;
