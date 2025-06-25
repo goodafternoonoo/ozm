@@ -151,6 +151,7 @@ class FavoriteResponse(FavoriteBase):
 
     id: uuid.UUID
     created_at: datetime
+    menu: Optional[MenuResponse] = None
 
     @field_serializer("created_at")
     def serialize_created_at(self, value):

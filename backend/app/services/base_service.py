@@ -30,6 +30,29 @@ class BaseService(Generic[ModelType]):
         self.model = model
         self.logger = get_logger(f"{__name__}.{model.__name__}")
 
+    async def _handle_db_error(self, operation: str, error: SQLAlchemyError) -> None:
+        """데이터베이스 오류 처리 공통 로직"""
+        self.logger.error(
+            f"데이터베이스 오류 - {self.model.__name__} {operation} 실패: {str(error)}"
+        )
+
+        if isinstance(error, IntegrityError):
+            await self._handle_integrity_error(error)
+        else:
+            raise DatabaseException(
+                f"{self.model.__name__} {operation} 중 데이터베이스 오류가 발생했습니다."
+            )
+
+    async def _handle_integrity_error(self, error: IntegrityError) -> None:
+        """무결성 제약 조건 오류 처리"""
+        error_msg = str(error).lower()
+        if "duplicate" in error_msg or "unique" in error_msg:
+            raise DuplicateException(self.model.__name__, "필드", "값")
+        elif "foreign key" in error_msg:
+            raise ValidationException("참조하는 데이터가 존재하지 않습니다.")
+        else:
+            raise DatabaseException("데이터 무결성 오류가 발생했습니다.")
+
     async def get_by_id(
         self, db: AsyncSession, id: uuid.UUID, load_relationships: bool = False
     ) -> Optional[ModelType]:
@@ -65,12 +88,7 @@ class BaseService(Generic[ModelType]):
         except NotFoundException:
             raise
         except SQLAlchemyError as e:
-            self.logger.error(
-                f"데이터베이스 오류 - {self.model.__name__} 조회 실패: {str(e)}"
-            )
-            raise DatabaseException(
-                f"{self.model.__name__} 조회 중 데이터베이스 오류가 발생했습니다."
-            )
+            await self._handle_db_error("조회", e)
 
     async def get_all(
         self,
@@ -116,12 +134,7 @@ class BaseService(Generic[ModelType]):
             return entities
 
         except SQLAlchemyError as e:
-            self.logger.error(
-                f"데이터베이스 오류 - {self.model.__name__} 목록 조회 실패: {str(e)}"
-            )
-            raise DatabaseException(
-                f"{self.model.__name__} 목록 조회 중 데이터베이스 오류가 발생했습니다."
-            )
+            await self._handle_db_error("목록 조회", e)
 
     async def create(self, db: AsyncSession, obj_in: Dict[str, Any]) -> ModelType:
         """
@@ -134,19 +147,24 @@ class BaseService(Generic[ModelType]):
         Returns:
             생성된 엔티티
         """
-        self.logger.debug(f"{self.model.__name__} 생성 시작")
+        try:
+            self.logger.debug(f"{self.model.__name__} 생성 시작")
 
-        # ID가 없으면 생성
-        if "id" not in obj_in:
-            obj_in["id"] = uuid.uuid4()
+            # ID가 없으면 생성
+            if "id" not in obj_in:
+                obj_in["id"] = uuid.uuid4()
 
-        entity = self.model(**obj_in)
-        db.add(entity)
-        await db.commit()
-        await db.refresh(entity)
+            entity = self.model(**obj_in)
+            db.add(entity)
+            await db.commit()
+            await db.refresh(entity)
 
-        self.logger.info(f"{self.model.__name__} 생성 성공: {entity.id}")
-        return entity
+            self.logger.info(f"{self.model.__name__} 생성 성공: {entity.id}")
+            return entity
+
+        except SQLAlchemyError as e:
+            await db.rollback()
+            await self._handle_db_error("생성", e)
 
     async def update(
         self, db: AsyncSession, id: uuid.UUID, obj_in: Dict[str, Any]
@@ -189,20 +207,9 @@ class BaseService(Generic[ModelType]):
 
         except (NotFoundException, ValidationException):
             raise
-        except IntegrityError as e:
-            await db.rollback()
-            self.logger.error(
-                f"중복 데이터 오류 - {self.model.__name__} 업데이트 실패: {str(e)}"
-            )
-            raise DuplicateException(self.model.__name__, "필드", "값")
         except SQLAlchemyError as e:
             await db.rollback()
-            self.logger.error(
-                f"데이터베이스 오류 - {self.model.__name__} 업데이트 실패: {str(e)}"
-            )
-            raise DatabaseException(
-                f"{self.model.__name__} 업데이트 중 데이터베이스 오류가 발생했습니다."
-            )
+            await self._handle_db_error("업데이트", e)
 
     async def delete(self, db: AsyncSession, id: uuid.UUID) -> bool:
         """
@@ -238,12 +245,7 @@ class BaseService(Generic[ModelType]):
             raise
         except SQLAlchemyError as e:
             await db.rollback()
-            self.logger.error(
-                f"데이터베이스 오류 - {self.model.__name__} 삭제 실패: {str(e)}"
-            )
-            raise DatabaseException(
-                f"{self.model.__name__} 삭제 중 데이터베이스 오류가 발생했습니다."
-            )
+            await self._handle_db_error("삭제", e)
 
     async def exists(self, db: AsyncSession, id: uuid.UUID) -> bool:
         """
@@ -257,15 +259,11 @@ class BaseService(Generic[ModelType]):
             존재 여부
         """
         try:
-            result = await db.execute(select(self.model).where(self.model.id == id))
+            stmt = select(self.model.id).where(self.model.id == id)
+            result = await db.execute(stmt)
             return result.scalar_one_or_none() is not None
         except SQLAlchemyError as e:
-            self.logger.error(
-                f"데이터베이스 오류 - {self.model.__name__} 존재 확인 실패: {str(e)}"
-            )
-            raise DatabaseException(
-                f"{self.model.__name__} 존재 확인 중 데이터베이스 오류가 발생했습니다."
-            )
+            await self._handle_db_error("존재 여부 확인", e)
 
     async def count(self, db: AsyncSession, filters: Dict[str, Any] = None) -> int:
         """
@@ -281,7 +279,7 @@ class BaseService(Generic[ModelType]):
         try:
             self.logger.debug(f"{self.model.__name__} 개수 조회")
 
-            query = select(self.model)
+            query = select(self.model.id)
 
             # 필터 적용
             if filters:
@@ -296,12 +294,7 @@ class BaseService(Generic[ModelType]):
             return count
 
         except SQLAlchemyError as e:
-            self.logger.error(
-                f"데이터베이스 오류 - {self.model.__name__} 개수 조회 실패: {str(e)}"
-            )
-            raise DatabaseException(
-                f"{self.model.__name__} 개수 조회 중 데이터베이스 오류가 발생했습니다."
-            )
+            await self._handle_db_error("개수 조회", e)
 
     def validate_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """데이터 검증"""
