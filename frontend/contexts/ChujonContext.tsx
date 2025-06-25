@@ -10,7 +10,7 @@ import { RecommendationService, Menu } from '../services/recommendationService';
 import { useUserInteraction } from './UserInteractionContext';
 import { abTestInfoToCamel } from '../utils/case';
 import { logUserInteraction, logRecommendation, logError, LogCategory } from '../utils/logger';
-import { TIME_SLOTS, RECOMMENDATION } from '../constants';
+import { TIME_SLOTS } from '../constants/business';
 
 export interface ChujonRecommendation {
     menu: Menu;

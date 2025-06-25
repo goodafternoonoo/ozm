@@ -161,27 +161,6 @@ export const MenuRecommendationProvider: React.FC<MenuRecommendationProviderProp
         }
     }, [selectedTimeSlot, categoryId, sessionId, recordRecommendationSelect]);
 
-    const refreshRecommendations = useCallback(async () => {
-        if (!selectedTimeSlot) return;
-        
-        setLoading(true);
-        try {
-            logRecommendation('메뉴 추천 새로고침', { timeSlot: selectedTimeSlot });
-            const response = await RecommendationService.getSimpleRecommendations({
-                time_slot: selectedTimeSlot,
-                session_id: sessionId,
-            });
-            logRecommendation('메뉴 추천 새로고침 완료', { count: response.recommendations.length });
-            
-            setRecommendations(response.recommendations);
-        } catch (error) {
-            logError(LogCategory.RECOMMENDATION, '메뉴 추천 새로고침 에러', error as Error);
-            setError('추천 메뉴를 새로고침하는데 실패했습니다.');
-        } finally {
-            setLoading(false);
-        }
-    }, [sessionId, selectedTimeSlot]);
-
     const getCollaborativeRecommendations = useCallback(async () => {
         try {
             await fetchCollaborativeRecommendations(sessionId, RECOMMENDATION.LIMITS.DEFAULT);

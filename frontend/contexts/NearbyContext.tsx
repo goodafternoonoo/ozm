@@ -8,7 +8,7 @@ import React, {
 import { LocationService, LocationData } from '../services/locationService';
 import { KakaoApiService } from '../services/kakaoApiService';
 import { logLocation, logError, LogCategory } from '../utils/logger';
-import { LOCATION, SEARCH } from '../constants';
+import { LOCATION } from '../constants/business';
 
 export interface Restaurant {
     id: string;
@@ -63,7 +63,6 @@ export const NearbyProvider: React.FC<NearbyProviderProps> = ({ children }) => {
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'loading'>('loading');
     const [searchKeyword, setSearchKeyword] = useState('');
     const [searchRadius, setSearchRadius] = useState(LOCATION.RADIUS.DEFAULT);
