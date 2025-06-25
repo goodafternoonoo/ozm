@@ -32,7 +32,7 @@ interface LogEntry {
     level: LogLevel;
     category: LogCategory;
     message: string;
-    data?: any;
+    data?: unknown;
     error?: Error;
 }
 
@@ -72,7 +72,7 @@ class Logger {
         level: LogLevel,
         category: LogCategory,
         message: string,
-        data?: any,
+        data?: unknown,
         error?: Error
     ): LogEntry {
         return {
@@ -132,48 +132,48 @@ class Logger {
     }
 
     // 공개 메서드들
-    public debug(category: LogCategory, message: string, data?: any): void {
+    public debug(category: LogCategory, message: string, data?: unknown): void {
         this.output(this.createLogEntry(LogLevel.DEBUG, category, message, data));
     }
 
-    public info(category: LogCategory, message: string, data?: any): void {
+    public info(category: LogCategory, message: string, data?: unknown): void {
         this.output(this.createLogEntry(LogLevel.INFO, category, message, data));
     }
 
-    public warn(category: LogCategory, message: string, data?: any): void {
+    public warn(category: LogCategory, message: string, data?: unknown): void {
         this.output(this.createLogEntry(LogLevel.WARN, category, message, data));
     }
 
-    public error(category: LogCategory, message: string, error?: Error, data?: any): void {
+    public error(category: LogCategory, message: string, error?: Error, data?: unknown): void {
         this.output(this.createLogEntry(LogLevel.ERROR, category, message, data, error));
     }
 
     // 카테고리별 편의 메서드들
-    public auth(message: string, data?: any): void {
+    public auth(message: string, data?: unknown): void {
         this.info(LogCategory.AUTH, message, data);
     }
 
-    public api(message: string, data?: any): void {
+    public api(message: string, data?: unknown): void {
         this.info(LogCategory.API, message, data);
     }
 
-    public location(message: string, data?: any): void {
+    public location(message: string, data?: unknown): void {
         this.info(LogCategory.LOCATION, message, data);
     }
 
-    public recommendation(message: string, data?: any): void {
+    public recommendation(message: string, data?: unknown): void {
         this.info(LogCategory.RECOMMENDATION, message, data);
     }
 
-    public userInteraction(message: string, data?: any): void {
+    public userInteraction(message: string, data?: unknown): void {
         this.info(LogCategory.USER_INTERACTION, message, data);
     }
 
-    public ui(message: string, data?: any): void {
+    public ui(message: string, data?: unknown): void {
         this.info(LogCategory.UI, message, data);
     }
 
-    public system(message: string, data?: any): void {
+    public system(message: string, data?: unknown): void {
         this.info(LogCategory.SYSTEM, message, data);
     }
 }
@@ -182,23 +182,23 @@ class Logger {
 export const logger = Logger.getInstance();
 
 // 편의 함수들
-export const logDebug = (category: LogCategory, message: string, data?: any) => 
+export const logDebug = (category: LogCategory, message: string, data?: unknown) => 
     logger.debug(category, message, data);
 
-export const logInfo = (category: LogCategory, message: string, data?: any) => 
+export const logInfo = (category: LogCategory, message: string, data?: unknown) => 
     logger.info(category, message, data);
 
-export const logWarn = (category: LogCategory, message: string, data?: any) => 
+export const logWarn = (category: LogCategory, message: string, data?: unknown) => 
     logger.warn(category, message, data);
 
-export const logError = (category: LogCategory, message: string, error?: Error, data?: any) => 
+export const logError = (category: LogCategory, message: string, error?: Error, data?: unknown) => 
     logger.error(category, message, error, data);
 
 // 카테고리별 편의 함수들
-export const logAuth = (message: string, data?: any) => logger.auth(message, data);
-export const logApi = (message: string, data?: any) => logger.api(message, data);
-export const logLocation = (message: string, data?: any) => logger.location(message, data);
-export const logRecommendation = (message: string, data?: any) => logger.recommendation(message, data);
-export const logUserInteraction = (message: string, data?: any) => logger.userInteraction(message, data);
-export const logUi = (message: string, data?: any) => logger.ui(message, data);
-export const logSystem = (message: string, data?: any) => logger.system(message, data); 
+export const logAuth = (message: string, data?: unknown) => logger.auth(message, data);
+export const logApi = (message: string, data?: unknown) => logger.api(message, data);
+export const logLocation = (message: string, data?: unknown) => logger.location(message, data);
+export const logRecommendation = (message: string, data?: unknown) => logger.recommendation(message, data);
+export const logUserInteraction = (message: string, data?: unknown) => logger.userInteraction(message, data);
+export const logUi = (message: string, data?: unknown) => logger.ui(message, data);
+export const logSystem = (message: string, data?: unknown) => logger.system(message, data); 

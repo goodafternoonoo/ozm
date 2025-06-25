@@ -11,7 +11,7 @@ import {
     FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LocationService } from '../services/locationService';
+import { LocationService } from '../utils/locationService';
 import { NearbyStyles } from '../styles/NearbyStyles';
 import { colors } from '../styles/GlobalStyles';
 import RestaurantMap from '../components/RestaurantMap';

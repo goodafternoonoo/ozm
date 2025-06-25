@@ -1,5 +1,5 @@
 import { api } from '../utils/apiClient';
-import { Menu, Category } from './recommendationService';
+import { Menu } from './recommendationService';
 
 export interface FavoriteResponse {
     id: string;

@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { KAKAO_API_CONFIG } from '../config/api';
+import { logApi, logError } from '../utils/logger';
+import { LogCategory } from '../utils/logger';
 
 // 카카오 JavaScript 키 (웹/앱에서 사용)
 const KAKAO_API_KEY = KAKAO_API_CONFIG.RESTAPI_KEY;
@@ -71,11 +73,11 @@ export class KakaoApiService {
 
       return response.data.documents;
     } catch (error) {
-      console.error('카카오 API 직접 호출 실패:', error);
+      logError(LogCategory.API, `카카오 API 직접 호출 실패: ${error.message}`, error);
       
       // 방법 2: CORS 프록시 사용 (백업)
       try {
-        console.log('CORS 프록시를 통해 재시도...');
+        logApi(LogCategory.API, 'CORS 프록시 재시도');
         const proxyResponse = await axios.get<KakaoSearchResponse>(
           `${this.corsProxy}${this.baseURL}/search/category.json`,
           {
@@ -98,7 +100,7 @@ export class KakaoApiService {
         
         return proxyResponse.data.documents;
       } catch (proxyError) {
-        console.error('프록시 호출도 실패:', proxyError);
+        logError(LogCategory.API, `프록시 호출도 실패: ${proxyError.message}`, proxyError);
         throw new Error('맛집 검색에 실패했습니다. 카카오 API 키와 도메인 설정을 확인해주세요.');
       }
     }
@@ -137,11 +139,11 @@ export class KakaoApiService {
 
       return response.data.documents;
     } catch (error) {
-      console.error('카카오 API 키워드 검색 실패:', error);
+      logError(LogCategory.API, `카카오 API 키워드 검색 실패: ${error.message}`, error);
       
       // CORS 프록시 사용 (백업)
       try {
-        console.log('CORS 프록시를 통해 재시도...');
+        logApi(LogCategory.API, 'CORS 프록시 재시도');
         const proxyResponse = await axios.get<KakaoSearchResponse>(
           `${this.corsProxy}${this.baseURL}/search/keyword.json`,
           {
@@ -165,7 +167,7 @@ export class KakaoApiService {
         
         return proxyResponse.data.documents;
       } catch (proxyError) {
-        console.error('프록시 호출도 실패:', proxyError);
+        logError(LogCategory.API, `프록시 호출도 실패: ${proxyError.message}`, proxyError);
         throw new Error('맛집 검색에 실패했습니다. 카카오 API 키와 도메인 설정을 확인해주세요.');
       }
     }
@@ -197,7 +199,7 @@ export class KakaoApiService {
       }
       return null;
     } catch (error) {
-      console.error('주소 변환 실패:', error);
+      logError(LogCategory.API, `주소 변환 실패: ${error.message}`, error);
       return null;
     }
   }
@@ -208,7 +210,7 @@ export class KakaoApiService {
     longitude: number
   ): Promise<string | null> {
     try {
-      console.log('📍 좌표를 주소로 변환 시도:', { latitude, longitude });
+      logApi(LogCategory.API, `좌표를 주소로 변환 시도: ${JSON.stringify({ latitude, longitude })}`);
       
       const response = await axios.get(
         `${this.baseURL}/geo/coord2address.json`,
@@ -225,24 +227,24 @@ export class KakaoApiService {
         }
       );
 
-      console.log('📍 coord2address 응답:', response.data);
+      logApi(LogCategory.API, `coord2address 응답: ${JSON.stringify(response.data)}`);
 
       if (response.data.documents && response.data.documents.length > 0) {
         const doc = response.data.documents[0];
         // coord2address API는 address와 road_address 객체를 반환
         const address = doc.address?.address_name || doc.road_address?.address_name || null;
-        console.log('✅ 주소 변환 성공:', address);
+        logApi(LogCategory.API, `주소 변환 성공: ${address}`);
         return address;
       }
       
-      console.log('❌ 주소 정보 없음');
+      logApi(LogCategory.API, '주소 정보 없음');
       return null;
     } catch (error) {
-      console.error('❌ 좌표 변환 실패:', error);
+      logError(LogCategory.API, `좌표 변환 실패: ${error.message}`, error);
       
       // CORS 프록시를 통한 재시도
       try {
-        console.log('📍 CORS 프록시로 좌표 변환 재시도...');
+        logApi(LogCategory.API, 'CORS 프록시로 좌표 변환 재시도...');
         const proxyResponse = await axios.get(
           `${this.corsProxy}${this.baseURL}/geo/coord2address.json`,
           {
@@ -261,13 +263,13 @@ export class KakaoApiService {
         if (proxyResponse.data.documents && proxyResponse.data.documents.length > 0) {
           const doc = proxyResponse.data.documents[0];
           const address = doc.address?.address_name || doc.road_address?.address_name || null;
-          console.log('✅ 프록시 주소 변환 성공:', address);
+          logApi(LogCategory.API, `프록시 주소 변환 성공: ${address}`);
           return address;
         }
         
         return null;
       } catch (proxyError) {
-        console.error('❌ 프록시 좌표 변환도 실패:', proxyError);
+        logError(LogCategory.API, `프록시 좌표 변환도 실패: ${proxyError.message}`, proxyError);
         return null;
       }
     }

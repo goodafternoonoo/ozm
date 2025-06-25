@@ -6,7 +6,7 @@ import React, {
     ReactNode,
 } from 'react';
 import { QuestionService, ChujonQuestion } from '../services/questionService';
-import { RecommendationService, Menu } from '../services/recommendationService';
+import { RecommendationService, Menu, ABTestInfo } from '../services/recommendationService';
 import { useUserInteraction } from './UserInteractionContext';
 import { abTestInfoToCamel } from '../utils/case';
 import { logUserInteraction, logRecommendation, logError, LogCategory } from '../utils/logger';
@@ -28,7 +28,7 @@ interface ChujonContextType {
     recommendations: ChujonRecommendation[];
     loading: boolean;
     error: string | null;
-    abTestInfo: any;
+    abTestInfo: ABTestInfo | null;
     sessionId: string;
     loadQuestions: () => Promise<void>;
     setAnswer: (questionId: string, answer: string) => void;
@@ -48,7 +48,7 @@ export const ChujonProvider: React.FC<ChujonProviderProps> = ({ children }) => {
     const [recommendations, setRecommendations] = useState<ChujonRecommendation[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [abTestInfo, setAbTestInfo] = useState<any>(null);
+    const [abTestInfo, setAbTestInfo] = useState<ABTestInfo | null>(null);
     const [sessionId, setSessionId] = useState<string>('');
 
     const { recordRecommendationSelect } = useUserInteraction();

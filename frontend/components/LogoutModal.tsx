@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Cookies from 'js-cookie';
+import { logApi, LogCategory } from '../utils/logger';
 
 interface LogoutModalProps {
     visible: boolean;
@@ -16,7 +17,7 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
     onLogoutSuccess,
 }) => {
     const handleLogoutWithCache = () => {
-        console.log('캐싱 유지하고 로그아웃');
+        logApi(LogCategory.API, '캐싱 유지하고 로그아웃');
         // JWT 토큰만 삭제, 카카오 토큰은 유지 (캐싱)
         AsyncStorage.removeItem('jwt_token');
         // 쿠키에서 삭제
@@ -28,7 +29,7 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
     };
 
     const handleLogoutWithoutCache = () => {
-        console.log('캐싱 삭제하고 로그아웃');
+        logApi(LogCategory.API, '캐싱 삭제하고 로그아웃');
         // 모든 토큰 삭제
         AsyncStorage.removeItem('jwt_token');
         AsyncStorage.removeItem('kakao_access_token'); // 캐싱된 토큰도 삭제

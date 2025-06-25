@@ -9,6 +9,7 @@ import {
     RecommendationService,
     InteractionData,
 } from '../services/recommendationService';
+import { UserInteractionRecordResponse } from '../types/domain';
 import { AppError } from '../utils/apiClient';
 import { logUserInteraction, logError, LogCategory } from '../utils/logger';
 import { INTERACTION } from '../constants';
@@ -24,37 +25,37 @@ export type InteractionType =
 interface UserInteractionContextType {
     loading: boolean;
     error: string | null;
-    recordInteraction: (interactionData: InteractionData) => Promise<any>;
+    recordInteraction: (interactionData: InteractionData) => Promise<UserInteractionRecordResponse | null>;
     recordMenuClick: (
         sessionId: string,
         menuId: string,
         extraData?: Record<string, any>
-    ) => Promise<any>;
+    ) => Promise<UserInteractionRecordResponse | null>;
     recordMenuFavorite: (
         sessionId: string,
         menuId: string,
         isFavorite: boolean
-    ) => Promise<any>;
+    ) => Promise<UserInteractionRecordResponse | null>;
     recordRecommendationSelect: (
         sessionId: string,
         menuId: string,
         recommendationType: string
-    ) => Promise<any>;
+    ) => Promise<UserInteractionRecordResponse | null>;
     recordSearch: (
         sessionId: string,
         searchQuery: string,
         resultsCount: number
-    ) => Promise<any>;
+    ) => Promise<UserInteractionRecordResponse | null>;
     recordViewDetail: (
         sessionId: string,
         menuId: string,
         source: string
-    ) => Promise<any>;
+    ) => Promise<UserInteractionRecordResponse | null>;
     recordShare: (
         sessionId: string,
         menuId: string,
         shareMethod: string
-    ) => Promise<any>;
+    ) => Promise<UserInteractionRecordResponse | null>;
 }
 
 const UserInteractionContext = createContext<UserInteractionContextType | undefined>(undefined);
@@ -67,7 +68,7 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const recordInteraction = useCallback(async (interactionData: InteractionData) => {
+    const recordInteraction = useCallback(async (interactionData: InteractionData): Promise<UserInteractionRecordResponse | null> => {
         setLoading(true);
         setError(null);
 
@@ -76,7 +77,7 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
             const response = await RecommendationService.recordInteraction(
                 interactionData
             );
-            return response;
+            return response as UserInteractionRecordResponse;
         } catch (err) {
             const errorMessage =
                 err instanceof AppError
@@ -94,17 +95,18 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
         sessionId: string,
         menuId: string,
         extraData?: Record<string, any>
-    ) => {
+    ): Promise<UserInteractionRecordResponse | null> => {
         try {
             logUserInteraction('메뉴 클릭 기록', { sessionId, menuId, extraData });
-            await RecommendationService.recordInteraction({
+            return await RecommendationService.recordInteraction({
                 session_id: sessionId,
                 menu_id: menuId,
                 interaction_type: INTERACTION.TYPES.CLICK,
                 extra_data: extraData,
-            });
+            }) as UserInteractionRecordResponse;
         } catch (error) {
             logError(LogCategory.USER_INTERACTION, '메뉴 클릭 기록 에러', error as Error);
+            return null;
         }
     }, []);
 
@@ -112,18 +114,19 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
         sessionId: string,
         menuId: string,
         isFavorite: boolean
-    ) => {
+    ): Promise<UserInteractionRecordResponse | null> => {
         try {
             logUserInteraction('메뉴 즐겨찾기 기록', { sessionId, menuId, isFavorite });
-            await RecommendationService.recordInteraction({
+            return await RecommendationService.recordInteraction({
                 session_id: sessionId,
                 menu_id: menuId,
                 interaction_type: INTERACTION.TYPES.FAVORITE,
                 interaction_strength: isFavorite ? INTERACTION.STRENGTH.STRONG : INTERACTION.STRENGTH.NEGATIVE,
                 extra_data: { is_favorite: isFavorite },
-            });
+            }) as UserInteractionRecordResponse;
         } catch (error) {
             logError(LogCategory.USER_INTERACTION, '메뉴 즐겨찾기 기록 에러', error as Error);
+            return null;
         }
     }, []);
 
@@ -131,17 +134,18 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
         sessionId: string,
         menuId: string,
         recommendationType: string
-    ) => {
+    ): Promise<UserInteractionRecordResponse | null> => {
         try {
             logUserInteraction('추천 선택 기록', { sessionId, menuId, recommendationType });
-            await RecommendationService.recordInteraction({
+            return await RecommendationService.recordInteraction({
                 session_id: sessionId,
                 menu_id: menuId,
                 interaction_type: INTERACTION.TYPES.RECOMMEND_SELECT,
                 extra_data: { recommendation_type: recommendationType },
-            });
+            }) as UserInteractionRecordResponse;
         } catch (error) {
             logError(LogCategory.USER_INTERACTION, '추천 선택 기록 에러', error as Error);
+            return null;
         }
     }, []);
 
@@ -149,19 +153,20 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
         sessionId: string,
         searchQuery: string,
         resultsCount: number
-    ) => {
+    ): Promise<UserInteractionRecordResponse | null> => {
         try {
             logUserInteraction('검색 기록', { sessionId, searchQuery, resultsCount });
-            await RecommendationService.recordInteraction({
+            return await RecommendationService.recordInteraction({
                 session_id: sessionId,
                 interaction_type: INTERACTION.TYPES.SEARCH,
                 extra_data: {
                     search_query: searchQuery,
                     results_count: resultsCount,
                 },
-            });
+            }) as UserInteractionRecordResponse;
         } catch (error) {
             logError(LogCategory.USER_INTERACTION, '검색 기록 에러', error as Error);
+            return null;
         }
     }, []);
 
@@ -169,17 +174,18 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
         sessionId: string,
         menuId: string,
         source: string
-    ) => {
+    ): Promise<UserInteractionRecordResponse | null> => {
         try {
             logUserInteraction('상세 보기 기록', { sessionId, menuId, source });
-            await RecommendationService.recordInteraction({
+            return await RecommendationService.recordInteraction({
                 session_id: sessionId,
                 menu_id: menuId,
                 interaction_type: INTERACTION.TYPES.VIEW_DETAIL,
                 extra_data: { source: source },
-            });
+            }) as UserInteractionRecordResponse;
         } catch (error) {
             logError(LogCategory.USER_INTERACTION, '상세 보기 기록 에러', error as Error);
+            return null;
         }
     }, []);
 
@@ -187,17 +193,18 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
         sessionId: string,
         menuId: string,
         shareMethod: string
-    ) => {
+    ): Promise<UserInteractionRecordResponse | null> => {
         try {
             logUserInteraction('공유 기록', { sessionId, menuId, shareMethod });
-            await RecommendationService.recordInteraction({
+            return await RecommendationService.recordInteraction({
                 session_id: sessionId,
                 menu_id: menuId,
                 interaction_type: INTERACTION.TYPES.SHARE,
                 extra_data: { share_method: shareMethod },
-            });
+            }) as UserInteractionRecordResponse;
         } catch (error) {
             logError(LogCategory.USER_INTERACTION, '공유 기록 에러', error as Error);
+            return null;
         }
     }, []);
 

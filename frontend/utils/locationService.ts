@@ -1,6 +1,7 @@
 import * as Location from 'expo-location';
 import { Alert } from 'react-native';
 import { KakaoApiService } from '../services/kakaoApiService';
+import { logLocation, logError, LogCategory } from './logger';
 
 export interface LocationData {
   latitude: number;
@@ -14,14 +15,14 @@ export class LocationService {
    */
   static async getCurrentLocation(): Promise<LocationData | null> {
     try {
-      console.log('📍 위치 권한 요청 시작...');
+      logLocation('위치 권한 요청 시작');
       
       // 위치 권한 요청
       const { status } = await Location.requestForegroundPermissionsAsync();
-      console.log('📍 위치 권한 상태:', status);
+      logLocation(`위치 권한 상태: ${status}`);
       
       if (status !== 'granted') {
-        console.log('❌ 위치 권한이 거부됨');
+        logLocation('❌ 위치 권한이 거부됨');
         Alert.alert(
           '위치 권한 필요',
           '맛집 추천을 위해 위치 권한이 필요합니다.',
@@ -30,7 +31,7 @@ export class LocationService {
         return null;
       }
 
-      console.log('✅ 위치 권한 승인됨, 현재 위치 가져오기 시작...');
+      logLocation('✅ 위치 권한 승인됨, 현재 위치 가져오기 시작...');
 
       // 현재 위치 가져오기
       const location = await Location.getCurrentPositionAsync({
@@ -39,14 +40,14 @@ export class LocationService {
         distanceInterval: 10,
       });
 
-      console.log('📍 위치 정보:', location.coords);
-      console.log('📍 위치 정확도:', location.coords.accuracy);
-      console.log('📍 위치 타임스탬프:', new Date(location.timestamp).toLocaleString());
+      logLocation(`위치 정보: ${JSON.stringify(location.coords)}`);
+      logLocation(`위치 정확도: ${location.coords.accuracy}`);
+      logLocation(`위치 타임스탬프: ${new Date(location.timestamp).toLocaleString()}`);
 
       // 카카오 API를 사용하여 주소 정보 가져오기 (우선 시도)
       let address = '';
       try {
-        console.log('📍 카카오 API로 주소 변환 시도...');
+        logLocation('📍 카카오 API로 주소 변환 시도...');
         const kakaoAddress = await KakaoApiService.getAddressFromCoordinates(
           location.coords.latitude,
           location.coords.longitude
@@ -54,22 +55,22 @@ export class LocationService {
         
         if (kakaoAddress) {
           address = kakaoAddress;
-          console.log('✅ 카카오 API 주소:', address);
+          logLocation(`✅ 카카오 API 주소: ${address}`);
         }
       } catch (error) {
-        console.log('❌ 카카오 API 주소 변환 실패:', error);
+        logError(LogCategory.LOCATION, '카카오 API 주소 변환 실패', error);
       }
 
       // 카카오 API가 실패하면 Expo Location의 reverseGeocode 사용
       if (!address) {
         try {
-          console.log('📍 Expo Location으로 주소 변환 시도...');
+          logLocation('📍 Expo Location으로 주소 변환 시도...');
           const reverseGeocode = await Location.reverseGeocodeAsync({
             latitude: location.coords.latitude,
             longitude: location.coords.longitude,
           });
           
-          console.log('📍 Expo Location 주소 변환 결과:', reverseGeocode);
+          logLocation(`📍 Expo Location 주소 변환 결과: ${JSON.stringify(reverseGeocode)}`);
           
           if (reverseGeocode.length > 0) {
             const place = reverseGeocode[0];
@@ -88,17 +89,17 @@ export class LocationService {
             if (address.length > 50) {
               address = addressParts.slice(-3).join(' '); // 마지막 3개 부분만 사용
             }
-            console.log('✅ Expo Location 주소:', address);
+            logLocation(`✅ Expo Location 주소: ${address}`);
           }
         } catch (error) {
-          console.log('❌ Expo Location 주소 변환 실패:', error);
+          logError(LogCategory.LOCATION, 'Expo Location 주소 변환 실패', error);
         }
       }
       
       // 주소가 없으면 좌표로 대체
       if (!address) {
         address = `${location.coords.latitude.toFixed(4)}, ${location.coords.longitude.toFixed(4)}`;
-        console.log('📍 좌표로 주소 대체:', address);
+        logLocation(`📍 좌표로 주소 대체: ${address}`);
       }
 
       const result = {
@@ -107,10 +108,10 @@ export class LocationService {
         address,
       };
       
-      console.log('✅ 최종 위치 데이터:', result);
+      logLocation(`✅ 최종 위치 데이터: ${JSON.stringify(result)}`);
       return result;
     } catch (error) {
-      console.error('❌ 위치 가져오기 실패:', error);
+      logError(LogCategory.LOCATION, '위치 가져오기 실패', error);
       Alert.alert(
         '위치 오류',
         '현재 위치를 가져올 수 없습니다. GPS가 켜져 있는지 확인해주세요.',

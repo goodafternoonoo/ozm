@@ -31,8 +31,8 @@ export interface AIQuestionRequest {
 export interface AIQuestionResponse {
     answer: string;
     model: string;
-    sources: any[];
-    usage: any;
+    sources: unknown[];
+    usage: unknown;
 }
 
 // 질문 서비스 클래스

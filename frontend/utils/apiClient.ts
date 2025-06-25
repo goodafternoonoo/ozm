@@ -1,9 +1,10 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { API_CONFIG } from '../config/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logApi, logError, LogCategory } from './logger';
 
 // API 응답 타입 정의
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
     success: boolean;
     data: T;
     error?: {
@@ -20,7 +21,7 @@ export class AppError extends Error {
         message: string,
         public code: string,
         public statusCode?: number,
-        public details?: any
+        public details?: unknown
     ) {
         super(message);
         this.name = 'AppError';
@@ -41,12 +42,7 @@ apiClient.interceptors.request.use(
     async (config) => {
         // 요청 로깅 (개발 환경에서만)
         if (__DEV__) {
-            console.log('🌐 API Request:', {
-                method: config.method?.toUpperCase(),
-                url: config.url,
-                data: config.data,
-                params: config.params,
-            });
+            logApi(LogCategory.API, `API Request: ${JSON.stringify({ method: config.method?.toUpperCase(), url: config.url })}`);
         }
         // JWT 토큰이 있다면 헤더에 추가
         const token = await AsyncStorage.getItem('jwt_token');
@@ -60,7 +56,7 @@ apiClient.interceptors.request.use(
         return config;
     },
     (error) => {
-        console.error('❌ Request Error:', error);
+        logError(LogCategory.API, `Request Error: ${error.message}`, error);
         return Promise.reject(error);
     }
 );
@@ -70,11 +66,7 @@ apiClient.interceptors.response.use(
     (response: AxiosResponse<ApiResponse>) => {
         // 응답 로깅 (개발 환경에서만)
         if (__DEV__) {
-            console.log('✅ API Response:', {
-                status: response.status,
-                url: response.config.url,
-                data: response.data,
-            });
+            logApi(LogCategory.API, `API Response: ${JSON.stringify({ status: response.status, url: response.config.url, data: response.data })}`);
         }
 
         // 백엔드 응답 구조 확인
@@ -86,12 +78,7 @@ apiClient.interceptors.response.use(
     },
     (error) => {
         // 에러 로깅
-        console.error('❌ API Error:', {
-            status: error.response?.status,
-            url: error.config?.url,
-            message: error.message,
-            data: error.response?.data,
-        });
+        logError(LogCategory.API, `API Error: ${error.message} | status: ${error.response?.status} | url: ${error.config?.url} | data: ${JSON.stringify(error.response?.data)}`, error);
 
         // 에러 변환
         const appError = handleApiError(error);
@@ -100,10 +87,10 @@ apiClient.interceptors.response.use(
 );
 
 // API 에러 처리 함수
-export const handleApiError = (error: any): AppError => {
-    if (error.response) {
+export const handleApiError = (error: unknown): AppError => {
+    if ((error as any).response) {
         // 서버 응답이 있는 경우
-        const { status, data } = error.response;
+        const { status, data } = (error as any).response;
         const message =
             data?.error?.message || data?.message || '서버 오류가 발생했습니다';
         const code = data?.error?.code || 'API_ERROR';
@@ -111,14 +98,14 @@ export const handleApiError = (error: any): AppError => {
         return new AppError(message, code, status, data);
     }
 
-    if (error.request) {
+    if ((error as any).request) {
         // 요청은 보냈지만 응답이 없는 경우 (네트워크 오류)
         return new AppError('네트워크 연결을 확인해주세요', 'NETWORK_ERROR', 0);
     }
 
     // 기타 오류
     return new AppError(
-        error.message || '알 수 없는 오류가 발생했습니다',
+        (error as any).message || '알 수 없는 오류가 발생했습니다',
         'UNKNOWN_ERROR',
         0
     );
@@ -127,7 +114,7 @@ export const handleApiError = (error: any): AppError => {
 // API 메서드 래퍼 함수들
 export const api = {
     // GET 요청
-    get: async <T = any>(
+    get: async <T = unknown>(
         url: string,
         config?: AxiosRequestConfig
     ): Promise<T> => {
@@ -136,9 +123,9 @@ export const api = {
     },
 
     // POST 요청
-    post: async <T = any>(
+    post: async <T = unknown>(
         url: string,
-        data?: any,
+        data?: unknown,
         config?: AxiosRequestConfig
     ): Promise<T> => {
         const response = await apiClient.post<ApiResponse<T>>(
@@ -150,9 +137,9 @@ export const api = {
     },
 
     // PUT 요청
-    put: async <T = any>(
+    put: async <T = unknown>(
         url: string,
-        data?: any,
+        data?: unknown,
         config?: AxiosRequestConfig
     ): Promise<T> => {
         const response = await apiClient.put<ApiResponse<T>>(url, data, config);
@@ -160,7 +147,7 @@ export const api = {
     },
 
     // DELETE 요청
-    delete: async <T = any>(
+    delete: async <T = unknown>(
         url: string,
         config?: AxiosRequestConfig
     ): Promise<T> => {
@@ -169,9 +156,9 @@ export const api = {
     },
 
     // PATCH 요청
-    patch: async <T = any>(
+    patch: async <T = unknown>(
         url: string,
-        data?: any,
+        data?: unknown,
         config?: AxiosRequestConfig
     ): Promise<T> => {
         const response = await apiClient.patch<ApiResponse<T>>(

@@ -15,7 +15,7 @@ interface QuestionBubbleProps {
     text: string;
     isUser: boolean;
     timestamp: string;
-    sources?: any[];
+    sources?: unknown[];
     model?: string;
 }
 
@@ -70,26 +70,31 @@ export const QuestionBubble: React.FC<QuestionBubbleProps> = ({
                 {!isUser && sources && sources.length > 0 && (
                     <View style={styles.sourcesContainer}>
                         <Text style={styles.sourcesTitle}>참고 소스</Text>
-                        {sources.slice(0, 2).map((source, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={styles.sourceItem}
-                            >
-                                <Ionicons
-                                    name='link-outline'
-                                    size={12}
-                                    color={colors.primary}
-                                />
-                                <Text
-                                    style={styles.sourceText}
-                                    numberOfLines={1}
+                        {sources.slice(0, 2).map((source, index) => {
+                            const s = source as Record<string, unknown>;
+                            return (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={styles.sourceItem}
                                 >
-                                    {source.title ||
-                                        source.url ||
-                                        '알 수 없는 소스'}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
+                                    <Ionicons
+                                        name='link-outline'
+                                        size={12}
+                                        color={colors.primary}
+                                    />
+                                    <Text
+                                        style={styles.sourceText}
+                                        numberOfLines={1}
+                                    >
+                                        {typeof s.title === 'string'
+                                            ? s.title
+                                            : typeof s.url === 'string'
+                                            ? s.url
+                                            : '알 수 없는 소스'}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
                 )}
             </View>

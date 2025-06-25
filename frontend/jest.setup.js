@@ -1,3 +1,5 @@
+/* eslint-env jest */
+
 // Jest 전역 설정
 global.__DEV__ = true;
 

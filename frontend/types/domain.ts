@@ -100,10 +100,10 @@ export interface RecommendationResponse {
 
 // A/B 테스트 관련 타입
 export interface ABTestInfo {
-    ab_group: string;
-    weight_set: Record<string, number>;
-    recommendation_type: string;
-    variant_id: string;
+    abGroup: string;
+    weightSet: Record<string, number>;
+    recommendationType: string;
+    variantId: string;
 }
 
 // 질문 관련 타입
@@ -203,4 +203,20 @@ export interface DeviceInfo {
     version: string;
     model?: string;
     user_agent?: string;
+}
+
+// 협업 필터링 추천 타입
+export interface CollaborativeRecommendation {
+    menu: Menu;
+    score: number;
+    reason: string;
+    similarityScore: number;
+    similarUsersCount: number;
+}
+
+// 상호작용 기록 응답 타입
+export interface UserInteractionRecordResponse {
+    message: string;
+    interaction_id: string;
+    preference_updated: boolean;
 } 

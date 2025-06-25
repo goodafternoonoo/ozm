@@ -1,6 +1,8 @@
 // 카카오 맵 JavaScript API를 사용한 대안 서비스
 // 이 방법은 웹에서만 작동하며, React Native에서는 제한적입니다.
 
+import { logApi, logError, LogCategory } from '../utils/logger';
+
 export class KakaoMapService {
   private static isKakaoMapLoaded = false;
 
@@ -46,7 +48,7 @@ export class KakaoMapService {
         places.keywordSearch(keyword, callback, options);
       });
     } catch (error) {
-      console.error('카카오 맵 API 검색 실패:', error);
+      logError(LogCategory.API, `카카오 맵 API 검색 실패: ${error.message}`, error);
       throw error;
     }
   }
@@ -76,7 +78,7 @@ export class KakaoMapService {
         places.categorySearch(category, callback, options);
       });
     } catch (error) {
-      console.error('카카오 맵 API 카테고리 검색 실패:', error);
+      logError(LogCategory.API, `카카오 맵 API 카테고리 검색 실패: ${error.message}`, error);
       throw error;
     }
   }

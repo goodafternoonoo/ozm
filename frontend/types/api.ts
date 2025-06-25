@@ -1,9 +1,10 @@
 // API 응답 타입
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
     data: T;
     message?: string;
     status: number;
     success: boolean;
+    details?: Record<string, unknown>;
 }
 
 // 페이지네이션 응답 타입
@@ -29,7 +30,7 @@ export interface ApiError {
 export interface ApiRequestOptions {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
     headers?: Record<string, string>;
-    body?: any;
+    body?: unknown;
     timeout?: number;
     retries?: number;
     cache?: boolean;
@@ -60,7 +61,7 @@ export type HttpStatusCode =
 export type ApiRequestState = 'idle' | 'loading' | 'success' | 'error';
 
 // API 캐시 타입
-export interface ApiCacheEntry<T = any> {
+export interface ApiCacheEntry<T = unknown> {
     data: T;
     timestamp: number;
     ttl: number;

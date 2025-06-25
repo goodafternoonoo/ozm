@@ -5,7 +5,7 @@ import React, {
     useCallback,
     ReactNode,
 } from 'react';
-import { LocationService, LocationData } from '../services/locationService';
+import { LocationService, LocationData } from '../utils/locationService';
 import { KakaoApiService } from '../services/kakaoApiService';
 import { logLocation, logError, LogCategory } from '../utils/logger';
 import { LOCATION } from '../constants/business';

@@ -8,6 +8,7 @@ import {
     Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { logError, LogCategory } from '../utils/logger';
 
 interface RestaurantMapProps {
     restaurant: {
@@ -42,7 +43,7 @@ export default function RestaurantMap({
                 await Linking.openURL(webUrl);
             }
         } catch (error) {
-            console.error('카카오맵 열기 실패:', error);
+            logError(LogCategory.API, '카카오맵 열기 실패', error);
             Alert.alert('오류', '카카오맵을 열 수 없습니다.');
         }
     };
@@ -57,7 +58,7 @@ export default function RestaurantMap({
 
             await Linking.openURL(directionsUrl);
         } catch (error) {
-            console.error('길찾기 실패:', error);
+            logError(LogCategory.API, '길찾기 실패', error);
             Alert.alert('오류', '길찾기를 열 수 없습니다.');
         }
     };

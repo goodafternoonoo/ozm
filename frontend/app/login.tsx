@@ -16,6 +16,7 @@ import Cookies from 'js-cookie';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LogoutModal } from '../components/LogoutModal';
 import { useAuth } from '../hooks/useAuth';
+import { logApi, logError, LogCategory } from '../utils/logger';
 
 const KAKAO_REST_API_KEY = KAKAO_API_CONFIG.RESTAPI_KEY;
 const KAKAO_CLIENT_SECRET = KAKAO_API_CONFIG.CLIENT_SECRET;
@@ -40,10 +41,10 @@ export const LoginScreen: React.FC = () => {
         try {
             // 캐싱 로직: 캐시된 토큰이 있으면 사용, 없으면 새로 발급
             let accessToken = await AsyncStorage.getItem('kakao_access_token');
-            console.log('캐시된 토큰 존재 여부:', !!accessToken);
+            logApi(LogCategory.API, `캐시된 토큰 존재 여부: ${!!accessToken}`);
 
             if (!accessToken) {
-                console.log('새로운 토큰 발급 시작...');
+                logApi(LogCategory.API, '새로운 토큰 발급 시작...');
                 // 캐시된 토큰이 없으면 code로 새로 발급
                 const tokenResponse = await axios.post(
                     'https://kauth.kakao.com/oauth/token',
@@ -61,16 +62,13 @@ export const LoginScreen: React.FC = () => {
                     }
                 );
                 accessToken = tokenResponse.data.access_token;
-                console.log(
-                    '새 토큰 발급 성공:',
-                    accessToken ? '있음' : '없음'
-                );
+                logApi(LogCategory.API, `새 토큰 발급 성공: ${accessToken ? '있음' : '없음'}`);
                 await AsyncStorage.setItem('kakao_access_token', accessToken);
             } else {
-                console.log('캐시된 토큰 사용');
+                logApi(LogCategory.API, '캐시된 토큰 사용');
             }
 
-            console.log('백엔드 로그인 요청 시작...');
+            logApi(LogCategory.API, '백엔드 로그인 요청 시작...');
             // 백엔드로 access_token 전송하여 로그인
             const loginResponse = await axios.post(
                 'http://localhost:8000/api/v1/auth/kakao-login',
@@ -78,7 +76,7 @@ export const LoginScreen: React.FC = () => {
                     access_token: accessToken,
                 }
             );
-            console.log('백엔드 로그인 응답:', loginResponse.status);
+            logApi(LogCategory.API, `백엔드 로그인 응답: ${loginResponse.status}`);
 
             // 응답 구조에 맞게 파싱
             const { access_token, user } = loginResponse.data?.data || {};
@@ -108,12 +106,7 @@ export const LoginScreen: React.FC = () => {
 
             Alert.alert('로그인 성공', '카카오 로그인이 완료되었습니다!');
         } catch (error) {
-            console.error('카카오 로그인 에러 상세:', {
-                status: error.response?.status,
-                statusText: error.response?.statusText,
-                data: error.response?.data,
-                message: error.message,
-            });
+            logError(LogCategory.API, '카카오 로그인 에러 상세', error);
             // 401 에러가 발생하면 캐시된 토큰을 삭제하고 다시 시도
             if (error.response?.status === 401) {
                 await AsyncStorage.removeItem('kakao_access_token');
@@ -150,7 +143,7 @@ export const LoginScreen: React.FC = () => {
     }, [handleKakaoTokenExchange]);
 
     const handleLogout = () => {
-        console.log('handleLogout 함수 호출됨');
+        logApi(LogCategory.API, 'handleLogout 함수 호출됨');
         setShowLogoutModal(true);
     };
 
@@ -195,7 +188,7 @@ export const LoginScreen: React.FC = () => {
                 }
                 // 정상 응답이면 아무것도 안 함
             } catch (err) {
-                console.log('토큰 만료 또는 인증 실패', err);
+                logError(LogCategory.API, `토큰 만료 또는 인증 실패: ${err.message}`, err);
                 setLoginSuccess(false);
                 setUserInfo(null);
                 setJwtToken(null);
@@ -224,7 +217,7 @@ export const LoginScreen: React.FC = () => {
                 createTask: false,
             });
         } catch (error) {
-            console.error('카카오 인증 에러:', error);
+            logError(LogCategory.API, '카카오 인증 에러', error);
             Alert.alert('인증 실패', '카카오 인증 중 오류가 발생했습니다.');
             setLoading(false);
         }

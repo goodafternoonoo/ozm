@@ -7,6 +7,7 @@ export interface BaseComponentProps {
     children?: ReactNode;
     style?: ViewStyle | TextStyle | ImageStyle;
     testID?: string;
+    onPress?: (...args: unknown[]) => void;
 }
 
 // 카드 컴포넌트 Props 타입

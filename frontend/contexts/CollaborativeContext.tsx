@@ -9,16 +9,7 @@ import { RecommendationService, Menu } from '../services/recommendationService';
 import { AppError } from '../utils/apiClient';
 import { logRecommendation, logError, LogCategory } from '../utils/logger';
 import { RECOMMENDATION } from '../constants';
-
-export type CollaborativeMenu = Menu;
-
-export interface CollaborativeRecommendation {
-    menu: CollaborativeMenu;
-    score: number;
-    reason: string;
-    similarityScore: number;
-    similarUsersCount: number;
-}
+import { CollaborativeRecommendation } from '../types/domain';
 
 interface CollaborativeContextType {
     recommendations: CollaborativeRecommendation[];
@@ -31,7 +22,7 @@ interface CollaborativeContextType {
     getCollaborativeRecommendationsRaw: (
         sessionId: string,
         limit?: number
-    ) => Promise<any>;
+    ) => Promise<CollaborativeRecommendation[] | null>;
 }
 
 const CollaborativeContext = createContext<CollaborativeContextType | undefined>(undefined);
@@ -79,7 +70,7 @@ export const CollaborativeProvider: React.FC<CollaborativeProviderProps> = ({ ch
                     reason: rec.reason,
                     similarityScore: similarityScore,
                     similarUsersCount: similarUsersCount,
-                };
+                } as CollaborativeRecommendation;
             });
 
             setRecommendations(transformedRecs);
@@ -101,19 +92,19 @@ export const CollaborativeProvider: React.FC<CollaborativeProviderProps> = ({ ch
     const getCollaborativeRecommendationsRaw = useCallback(async (
         sessionId: string,
         limit: number = RECOMMENDATION.LIMITS.DEFAULT
-    ) => {
+    ): Promise<CollaborativeRecommendation[] | null> => {
         setLoading(true);
         setError(null);
 
         try {
             logRecommendation('협업 필터링 원시 데이터 요청', { sessionId, limit });
-            const response = await RecommendationService.getCollaborativeRecommendations({
-                session_id: sessionId,
-                limit: limit,
-            });
+            const response = await RecommendationService.getCollaborativeRecommendationsRaw(
+                sessionId,
+                limit,
+            );
 
             logRecommendation('협업 필터링 원시 데이터 응답 수신');
-            return response;
+            return response as CollaborativeRecommendation[];
         } catch (err) {
             const errorMessage =
                 err instanceof AppError

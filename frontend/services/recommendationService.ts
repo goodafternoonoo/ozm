@@ -1,4 +1,5 @@
 import { api, AppError } from '../utils/apiClient';
+import { UserInteractionRecordResponse, CollaborativeRecommendation } from '../types/domain';
 
 // 타입 정의
 export interface Category {
@@ -142,9 +143,9 @@ export class RecommendationService {
     // 상호작용 기록
     static async recordInteraction(
         interactionData: InteractionData
-    ): Promise<any> {
+    ): Promise<UserInteractionRecordResponse> {
         try {
-            return await api.post(
+            return await api.post<UserInteractionRecordResponse>(
                 '/api/v1/recommendations/interaction',
                 interactionData
             );
@@ -163,9 +164,9 @@ export class RecommendationService {
     static async getCollaborativeRecommendationsRaw(
         sessionId: string,
         limit: number = 5
-    ): Promise<any[]> {
+    ): Promise<CollaborativeRecommendation[]> {
         try {
-            return await api.get<any[]>(
+            return await api.get<CollaborativeRecommendation[]>(
                 `/api/v1/recommendations/collaborative-users?session_id=${sessionId}&limit=${limit}`
             );
         } catch (error) {

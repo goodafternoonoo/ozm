@@ -16,11 +16,14 @@ const mockAxiosInstance = {
 };
 (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
 
-let RecommendationService: any;
+import { RecommendationService as RecommendationServiceType } from '../services/recommendationService';
+import { AppError as AppErrorType } from '../utils/apiClient';
+
+let RecommendationService: typeof RecommendationServiceType;
 let favoriteService: any;
 let QuestionService: any;
 let CategoryService: any;
-let AppError: any;
+let AppError: typeof AppErrorType;
 
 beforeAll(async () => {
     RecommendationService = (await import('../services/recommendationService'))
@@ -100,14 +103,14 @@ describe('통합 서비스 테스트', () => {
         });
         it('상호작용 기록 정상', async () => {
             mockAxiosInstance.post.mockResolvedValueOnce({
-                data: { data: { success: true } },
+                data: { data: { message: 'ok', interaction_id: 'id', preference_updated: true } },
             });
             const res = await RecommendationService.recordInteraction({
                 session_id: 's1',
                 menu_id: '1',
                 interaction_type: 'click',
             });
-            expect(res.success).toBe(true);
+            expect(res).toMatchObject({ message: 'ok', interaction_id: 'id', preference_updated: true });
         });
     });
 
