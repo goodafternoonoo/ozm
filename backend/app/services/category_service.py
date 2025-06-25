@@ -7,13 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.category import Category
 from app.models.menu import Menu
 from app.schemas.category import CategoryCreate, CategoryUpdate
+from app.services.base_service import BaseService
 
 
-class CategoryService:
+class CategoryService(BaseService[Category]):
     """카테고리 관련 비즈니스 로직 서비스"""
 
     def __init__(self, db: AsyncSession):
-        self.db = db
+        super().__init__(db, Category)
 
     async def create_category(self, category_data: CategoryCreate) -> Category:
         """
@@ -35,13 +36,6 @@ class CategoryService:
         await self.db.commit()
         await self.db.refresh(category)
         return category
-
-    async def get_category_by_id(self, category_id: UUID) -> Optional[Category]:
-        """ID로 카테고리 조회"""
-        result = await self.db.execute(
-            select(Category).where(Category.id == category_id)
-        )
-        return result.scalar_one_or_none()
 
     async def get_categories(
         self,
@@ -100,7 +94,7 @@ class CategoryService:
         self, category_id: UUID, category_data: CategoryUpdate
     ) -> Optional[Category]:
         """카테고리 수정"""
-        category = await self.get_category_by_id(category_id)
+        category = await self.get_by_id(category_id)
         if not category:
             return None
         update_data = category_data.model_dump(exclude_unset=True)
@@ -112,7 +106,7 @@ class CategoryService:
 
     async def delete_category(self, category_id: UUID) -> bool:
         """카테고리 삭제 (실제 삭제 대신 비활성화)"""
-        category = await self.get_category_by_id(category_id)
+        category = await self.get_by_id(category_id)
         if not category:
             return False
         category.is_active = False
@@ -132,9 +126,7 @@ class CategoryService:
         """요리 타입별 카테고리 조회"""
         result = await self.db.execute(
             select(Category)
-            .where(
-                and_(Category.cuisine_type == cuisine_type, Category.is_active)
-            )
+            .where(and_(Category.cuisine_type == cuisine_type, Category.is_active))
             .order_by(Category.display_order, Category.name)
         )
         return result.scalars().all()

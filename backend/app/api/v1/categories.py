@@ -112,7 +112,7 @@ async def get_category(category_id: UUID, db: AsyncSession = Depends(get_db)):
     """
     service = CategoryService(db)
     try:
-        category = await service.get_category_by_id(category_id)
+        category = await service.get_by_id(category_id)
         if not category:
             return api_not_found(
                 "카테고리",

@@ -24,7 +24,7 @@ from app.schemas.menu import (
     MenuUpdate,
 )
 from app.services.auth_service import get_current_user
-from app.services.menu_service import favorite_service, menu_service
+from app.services.menu_service import MenuService, FavoriteService
 from app.core.exceptions import NotFoundException
 
 router = APIRouter()
@@ -38,8 +38,9 @@ async def create_menu(
 ):
     """새 메뉴 생성"""
     try:
-        menu = await menu_service.create(db, menu_data.model_dump())
-        menu_with_category = await menu_service.get_by_id_with_category(db, menu.id)
+        menu_service = MenuService(db)
+        menu = await menu_service.create(menu_data.model_dump())
+        menu_with_category = await menu_service.get_by_id_with_category(menu.id)
         return api_created(
             MenuResponse.model_validate(menu_to_dict(menu_with_category)),
             message="메뉴가 생성되었습니다.",
@@ -55,7 +56,8 @@ async def create_menu(
 @router.get("/{menu_id}", response_model=MenuResponse)
 async def get_menu(menu_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """ID로 메뉴 조회"""
-    menu = await menu_service.get_by_id_with_category(db, menu_id)
+    menu_service = MenuService(db)
+    menu = await menu_service.get_by_id_with_category(menu_id)
     if not menu:
         return api_not_found(
             "메뉴", resource_id=menu_id, error_code=ErrorCode.MENU_NOT_FOUND
@@ -72,10 +74,11 @@ async def get_menus(
     db: AsyncSession = Depends(get_db),
 ):
     """메뉴 목록 조회"""
+    menu_service = MenuService(db)
     if category_id:
-        menus = await menu_service.get_menus_by_category(db, category_id, skip, limit)
+        menus = await menu_service.get_menus_by_category(category_id, skip, limit)
     else:
-        menus = await menu_service.get_all_with_category(db, skip, limit)
+        menus = await menu_service.get_all_with_category(skip, limit)
 
     return api_success(
         [MenuResponse.model_validate(menu_to_dict(menu)) for menu in menus]
@@ -94,8 +97,8 @@ async def search_menus(
     db: AsyncSession = Depends(get_db),
 ):
     """메뉴 검색"""
+    menu_service = MenuService(db)
     menus = await menu_service.search_menus(
-        db=db,
         query=q,
         category_id=category_id,
         cuisine_type=cuisine_type,
@@ -105,7 +108,7 @@ async def search_menus(
         limit=limit,
     )
 
-    total = await menu_service.count(db)
+    total = await menu_service.count()
 
     return api_success(
         MenuSearchResponse(
@@ -123,7 +126,8 @@ async def get_popular_menus(
     db: AsyncSession = Depends(get_db),
 ):
     """인기 메뉴 조회"""
-    menus = await menu_service.get_popular_menus(db, limit)
+    menu_service = MenuService(db)
+    menus = await menu_service.get_popular_menus(limit)
     return api_success(
         [MenuResponse.model_validate(menu_to_dict(menu)) for menu in menus]
     )
@@ -138,8 +142,9 @@ async def update_menu(
 ):
     """메뉴 업데이트"""
     try:
+        menu_service = MenuService(db)
         menu = await menu_service.update(
-            db, menu_id, menu_data.model_dump(exclude_unset=True)
+            menu_id, menu_data.model_dump(exclude_unset=True)
         )
         if not menu:
             return api_not_found(
@@ -169,8 +174,9 @@ async def add_favorite(
 ):
     """즐겨찾기 추가"""
     try:
+        favorite_service = FavoriteService(db)
         favorite = await favorite_service.add_favorite(
-            db, current_user.id, favorite_data.menu_id
+            current_user.id, favorite_data.menu_id
         )
         return api_created(
             FavoriteResponse.model_validate(favorite_to_dict(favorite)),
@@ -198,27 +204,43 @@ async def add_favorite(
         )
 
 
-@router.get("/favorites/", response_model=List[MenuResponse])
+@router.get("/favorites", response_model=List[FavoriteResponse])
 async def get_user_favorites(
     skip: int = Query(0, ge=0, description="건너뛸 레코드 수"),
     limit: int = Query(50, ge=1, le=100, description="가져올 레코드 수"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """사용자 즐겨찾기 목록 조회"""
+    """사용자별 즐겨찾기 목록 조회"""
     try:
+        favorite_service = FavoriteService(db)
         favorites = await favorite_service.get_user_favorites(
-            db, current_user.id, skip, limit
+            current_user.id, skip, limit
         )
-        menus = [favorite.menu for favorite in favorites if favorite.menu]
         return api_success(
-            [MenuResponse.model_validate(menu_to_dict(menu)) for menu in menus]
+            [
+                FavoriteResponse.model_validate(favorite_to_dict(fav))
+                for fav in favorites
+            ]
         )
     except Exception as e:
         return api_error(
             f"즐겨찾기 목록 조회 실패: {str(e)}",
-            error_code=ErrorCode.FAVORITE_GET_FAILED,
+            error_code=ErrorCode.INTERNAL_ERROR,
         )
+
+
+# /favorites/도 허용 (리다이렉트 방지)
+@router.get(
+    "/favorites/", response_model=List[FavoriteResponse], include_in_schema=False
+)
+async def get_user_favorites_slash(
+    skip: int = Query(0, ge=0, description="건너뛸 레코드 수"),
+    limit: int = Query(50, ge=1, le=100, description="가져올 레코드 수"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await get_user_favorites(skip, limit, db, current_user)
 
 
 @router.delete("/favorites", status_code=status.HTTP_204_NO_CONTENT)
@@ -229,16 +251,17 @@ async def remove_favorite(
 ):
     """즐겨찾기 제거"""
     try:
-        success = await favorite_service.remove_favorite(db, current_user.id, menu_id)
-        if success:
-            return api_no_content()
-        else:
+        favorite_service = FavoriteService(db)
+        success = await favorite_service.remove_favorite(current_user.id, menu_id)
+        if not success:
             return api_not_found(
                 "즐겨찾기", resource_id=menu_id, error_code=ErrorCode.FAVORITE_NOT_FOUND
             )
+        return api_no_content()
     except Exception as e:
         return api_error(
-            f"즐겨찾기 제거 실패: {str(e)}", error_code=ErrorCode.FAVORITE_REMOVE_FAILED
+            f"즐겨찾기 제거 실패: {str(e)}",
+            error_code=ErrorCode.INTERNAL_ERROR,
         )
 
 
@@ -250,14 +273,15 @@ async def delete_menu(
 ):
     """메뉴 삭제"""
     try:
-        success = await menu_service.delete(db, menu_id)
-        if success:
-            return api_no_content()
-        else:
+        menu_service = MenuService(db)
+        success = await menu_service.delete(menu_id)
+        if not success:
             return api_not_found(
                 "메뉴", resource_id=menu_id, error_code=ErrorCode.MENU_NOT_FOUND
             )
+        return api_no_content("메뉴가 삭제되었습니다.")
     except Exception as e:
         return api_error(
-            f"메뉴 삭제 실패: {str(e)}", error_code=ErrorCode.MENU_DELETE_FAILED
+            f"메뉴 삭제 실패: {str(e)}",
+            error_code=ErrorCode.MENU_DELETE_FAILED,
         )

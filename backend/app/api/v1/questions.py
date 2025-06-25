@@ -27,7 +27,8 @@ async def get_questions(db: AsyncSession = Depends(get_db)):
     - 출력: List[Question]
     """
     try:
-        questions = await QuestionService.get_all_questions(db)
+        question_service = QuestionService(db)
+        questions = await question_service.get_all_questions()
         return api_success(questions)
     except Exception:
         return api_error("질문 목록 조회 실패", error_code=ErrorCode.GENERAL_ERROR)
@@ -43,7 +44,8 @@ async def create_question(
     - 출력: Question
     """
     try:
-        question = await QuestionService.create_question(db, question_data)
+        question_service = QuestionService(db)
+        question = await question_service.create_question(question_data)
         return api_created(question)
     except Exception:
         return api_error("질문 생성 실패", error_code=ErrorCode.GENERAL_ERROR)

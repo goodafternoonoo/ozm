@@ -117,16 +117,8 @@ def favorite_to_dict(favorite: Favorite) -> Dict[str, Any]:
         "created_at": favorite.created_at,
     }
 
-    # menu가 이미 로드되어 있는지 확인 (lazy loading 방지)
-    try:
-        if hasattr(
-            favorite, "_sa_instance_state"
-        ) and favorite._sa_instance_state.loaded_relationships.get("menu"):
-            if favorite.menu:
-                data["menu"] = MenuResponse.model_validate(menu_to_dict(favorite.menu))
-    except Exception:
-        # menu가 로드되지 않았거나 접근할 수 없는 경우 무시
-        pass
+    if favorite.menu:
+        data["menu"] = MenuResponse.model_validate(menu_to_dict(favorite.menu))
 
     return data
 
