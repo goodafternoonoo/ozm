@@ -135,6 +135,21 @@ export function useMenuRecommendations() {
         await recordMenuFavorite(sessionId, menuToRemove.id, false);
     };
 
+    const addMenuToSaved = async (menuToAdd: Menu) => {
+        try {
+            await addFavorite(menuToAdd.id);
+            setSavedMenus([...savedMenus, menuToAdd]);
+            Alert.alert(
+                '저장',
+                `${menuToAdd.name} 메뉴를 즐겨찾기에 추가했습니다.`
+            );
+        } catch (e) {
+            console.error('즐겨찾기 추가 에러:', e);
+            Alert.alert('오류', '즐겨찾기 추가에 실패했습니다.');
+        }
+        await recordMenuFavorite(sessionId, menuToAdd.id, true);
+    };
+
     const handleMenuClick = async (menu: Menu) => {
         await recordMenuClick(sessionId, menu.id, {
             time_slot: selectedTimeSlot,
@@ -161,6 +176,7 @@ export function useMenuRecommendations() {
         getMenuRecommendations,
         getCollaborativeRecommendations,
         removeMenuFromSaved,
+        addMenuToSaved,
         handleMenuClick,
     };
 }

@@ -9,6 +9,7 @@ interface MenuCardProps {
     menu: Menu;
     reason?: string;
     onRemove?: (menu: Menu) => void;
+    onAdd?: (menu: Menu) => void;
     onMenuClick?: (menu: Menu) => void;
     isSaved?: boolean;
     abTestInfo?: ABTestInfo | null;
@@ -69,6 +70,7 @@ export const MenuCard: React.FC<MenuCardProps> = ({
     menu,
     reason,
     onRemove,
+    onAdd,
     onMenuClick,
     isSaved,
     abTestInfo,
@@ -84,6 +86,12 @@ export const MenuCard: React.FC<MenuCardProps> = ({
     const handleRemovePress = () => {
         if (onRemove) {
             onRemove(menu);
+        }
+    };
+
+    const handleAddPress = () => {
+        if (onAdd) {
+            onAdd(menu);
         }
     };
 
@@ -279,47 +287,70 @@ export const MenuCard: React.FC<MenuCardProps> = ({
                     }}
                 >
                     {/* 즐겨찾기 하트 버튼 */}
-                    {onRemove && (
-                        <TouchableOpacity
-                            style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                backgroundColor: isSaved
-                                    ? colors.status.error + '15'
-                                    : colors.surfaceSecondary,
-                                paddingHorizontal: spacing.md,
-                                paddingVertical: spacing.sm,
-                                borderRadius: 20,
-                                borderWidth: 1,
-                                borderColor: isSaved
-                                    ? colors.status.error + '30'
-                                    : colors.border.light,
-                            }}
-                            onPress={handleRemovePress}
-                        >
-                            <Ionicons
-                                name={isSaved ? 'heart' : 'heart-outline'}
-                                size={20}
-                                color={
-                                    isSaved
-                                        ? colors.status.error
-                                        : colors.text.secondary
-                                }
-                            />
-                            <Text
-                                style={{
-                                    marginLeft: spacing.xs,
-                                    color: isSaved
-                                        ? colors.status.error
-                                        : colors.text.secondary,
-                                    fontSize: 13,
-                                    fontWeight: '600',
-                                }}
-                            >
-                                {isSaved ? '즐겨찾기 해제' : '즐겨찾기 추가'}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
+                    {isSaved
+                        ? onRemove && (
+                              <TouchableOpacity
+                                  style={{
+                                      flexDirection: 'row',
+                                      alignItems: 'center',
+                                      backgroundColor:
+                                          colors.status.error + '15',
+                                      paddingHorizontal: spacing.md,
+                                      paddingVertical: spacing.sm,
+                                      borderRadius: 20,
+                                      borderWidth: 1,
+                                      borderColor: colors.status.error + '30',
+                                  }}
+                                  onPress={handleRemovePress}
+                              >
+                                  <Ionicons
+                                      name={'heart'}
+                                      size={20}
+                                      color={colors.status.error}
+                                  />
+                                  <Text
+                                      style={{
+                                          marginLeft: spacing.xs,
+                                          color: colors.status.error,
+                                          fontSize: 13,
+                                          fontWeight: '600',
+                                      }}
+                                  >
+                                      즐겨찾기 해제
+                                  </Text>
+                              </TouchableOpacity>
+                          )
+                        : onAdd && (
+                              <TouchableOpacity
+                                  style={{
+                                      flexDirection: 'row',
+                                      alignItems: 'center',
+                                      backgroundColor: colors.surfaceSecondary,
+                                      paddingHorizontal: spacing.md,
+                                      paddingVertical: spacing.sm,
+                                      borderRadius: 20,
+                                      borderWidth: 1,
+                                      borderColor: colors.border.light,
+                                  }}
+                                  onPress={handleAddPress}
+                              >
+                                  <Ionicons
+                                      name={'heart-outline'}
+                                      size={20}
+                                      color={colors.text.secondary}
+                                  />
+                                  <Text
+                                      style={{
+                                          marginLeft: spacing.xs,
+                                          color: colors.text.secondary,
+                                          fontSize: 13,
+                                          fontWeight: '600',
+                                      }}
+                                  >
+                                      즐겨찾기 추가
+                                  </Text>
+                              </TouchableOpacity>
+                          )}
 
                     {isSaved && !onRemove && (
                         <View

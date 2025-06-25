@@ -42,6 +42,7 @@ export default function MenuRecommendationScreen() {
         getMenuRecommendations,
         getCollaborativeRecommendations,
         removeMenuFromSaved,
+        addMenuToSaved,
         handleMenuClick,
     } = useMenuRecommendations();
 
@@ -406,6 +407,7 @@ export default function MenuRecommendationScreen() {
                                     isSaved={savedMenus.some(
                                         (m) => m.id === menu.id
                                     )}
+                                    onAdd={addMenuToSaved}
                                 />
                             ))}
                         </View>
@@ -517,6 +519,7 @@ export default function MenuRecommendationScreen() {
                                         isSaved={savedMenus.some(
                                             (m) => m.id === String(menu.id)
                                         )}
+                                        onAdd={addMenuToSaved}
                                     />
                                 )
                             )}
@@ -554,6 +557,7 @@ export default function MenuRecommendationScreen() {
                             isSaved
                             onRemove={removeMenuFromSaved}
                             onMenuClick={handleMenuClick}
+                            onAdd={addMenuToSaved}
                         />
                     ))}
                 </View>
@@ -572,6 +576,7 @@ export default function MenuRecommendationScreen() {
                             onRemove={removeMenuFromSaved}
                             onMenuClick={handleMenuClick}
                             isSaved={savedMenus.some((m) => m.id === menu.id)}
+                            onAdd={addMenuToSaved}
                         />
                     ))}
                 </View>

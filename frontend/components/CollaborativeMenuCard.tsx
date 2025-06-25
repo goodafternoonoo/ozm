@@ -23,6 +23,7 @@ interface CollaborativeMenuCardProps {
     similarUsersCount: number;
     onMenuClick?: (menu: CollaborativeMenu) => void;
     onRemove?: (menu: CollaborativeMenu) => void;
+    onAdd?: (menu: CollaborativeMenu) => void;
     isSaved?: boolean;
     interactionEnabled?: boolean;
 }
@@ -73,6 +74,7 @@ export const CollaborativeMenuCard: React.FC<CollaborativeMenuCardProps> = ({
     similarUsersCount,
     onMenuClick,
     onRemove,
+    onAdd,
     isSaved,
     interactionEnabled = true,
 }) => {
