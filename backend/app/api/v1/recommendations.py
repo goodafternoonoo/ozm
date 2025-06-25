@@ -293,7 +293,9 @@ async def record_interaction(
         menu = await db.get(Menu, menu_id)
         if not menu:
             return JSONResponse(
-                content=jsonable_encoder(error_response("존재하지 않는 메뉴입니다", code=404)),
+                content=jsonable_encoder(
+                    error_response("존재하지 않는 메뉴입니다", code=404)
+                ),
                 status_code=404,
             )
 

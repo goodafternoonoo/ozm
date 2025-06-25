@@ -26,9 +26,9 @@ def event_loop():
 async def setup_db():
     # 테스트 환경 설정
     os.environ["TESTING"] = "true"
-    os.environ[
-        "DATABASE_URL"
-    ] = "postgresql://user:password@localhost:5432/menu_recommendation_test"
+    os.environ["DATABASE_URL"] = (
+        "postgresql://user:password@localhost:5432/menu_recommendation_test"
+    )
 
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

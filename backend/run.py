@@ -2,6 +2,7 @@
 """
 개발용 FastAPI 서버 실행 스크립트
 """
+
 import asyncio
 
 import uvicorn

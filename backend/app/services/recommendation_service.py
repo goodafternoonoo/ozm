@@ -496,7 +496,11 @@ class RecommendationService:
         if menu.rating and menu.rating >= 4.0:
             reasons.append("높은 평점의 인기 메뉴")
 
-        return ", ".join(reasons) if reasons else "하이브리드 추천 시스템이 추천하는 메뉴입니다"
+        return (
+            ", ".join(reasons)
+            if reasons
+            else "하이브리드 추천 시스템이 추천하는 메뉴입니다"
+        )
 
     @staticmethod
     async def _save_user_answers_and_learn(

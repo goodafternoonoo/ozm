@@ -25,7 +25,9 @@ async def get_db():
 @router.get("/menus", response_model=List[MenuResponse])
 async def search_menus(
     q: Optional[str] = Query(None, description="검색어"),
-    time_slot: Optional[str] = Query(None, description="시간대 (breakfast/lunch/dinner)"),
+    time_slot: Optional[str] = Query(
+        None, description="시간대 (breakfast/lunch/dinner)"
+    ),
     is_spicy: Optional[bool] = Query(None, description="매운맛 여부"),
     is_healthy: Optional[bool] = Query(None, description="건강식 여부"),
     is_vegetarian: Optional[bool] = Query(None, description="채식 여부"),

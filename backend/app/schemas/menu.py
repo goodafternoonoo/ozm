@@ -55,7 +55,9 @@ class MenuBase(BaseModel):
     cooking_time: Optional[int] = Field(None, ge=1, le=480, description="조리 시간(분)")
     difficulty: Optional[str] = Field(None, description="난이도 (쉬움/보통/어려움)")
     cuisine_type: Optional[str] = Field(None, description="요리 타입")
-    spicy_level: Optional[int] = Field(None, ge=0, le=5, description="매운맛 레벨 (0-5)")
+    spicy_level: Optional[int] = Field(
+        None, ge=0, le=5, description="매운맛 레벨 (0-5)"
+    )
     calories: Optional[int] = Field(None, ge=0, description="칼로리")
     protein: Optional[float] = Field(None, ge=0, description="단백질(g)")
     carbs: Optional[float] = Field(None, ge=0, description="탄수화물(g)")
