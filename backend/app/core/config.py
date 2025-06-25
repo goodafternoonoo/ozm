@@ -75,10 +75,6 @@ class Settings(BaseSettings):
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s", description="로그 포맷"
     )
 
-    # 캐시 설정
-    redis_url: Optional[str] = Field(None, description="Redis URL")
-    cache_ttl: int = Field(3600, description="캐시 TTL(초)")
-
     # 파일 업로드 설정
     upload_dir: str = Field("./uploads", description="파일 업로드 디렉토리")
     max_file_size: int = Field(5 * 1024 * 1024, description="최대 파일 크기(바이트)")

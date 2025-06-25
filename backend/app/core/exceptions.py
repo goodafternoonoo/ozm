@@ -62,13 +62,27 @@ class DatabaseException(AppException):
         )
 
 
-class ExternalServiceException(AppException):
-    """외부 서비스 오류 시 발생하는 예외"""
+class ExternalServiceException(BaseException):
+    """외부 서비스 연결 실패 시"""
 
-    def __init__(self, service: str, detail: str = None):
-        if not detail:
-            detail = f"{service} 서비스 오류가 발생했습니다."
-        super().__init__(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail)
+    def __init__(self, service_name: str, message: str):
+        self.service_name = service_name
+        self.message = message
+        super().__init__(f"{service_name}: {message}")
+
+
+class KakaoAPIException(ExternalServiceException):
+    """카카오 API 호출 실패 시"""
+
+    def __init__(self, message: str = "카카오 API 호출에 실패했습니다."):
+        super().__init__("Kakao API", message)
+
+
+class PerplexityAPIException(ExternalServiceException):
+    """Perplexity API 호출 실패 시"""
+
+    def __init__(self, message: str = "Perplexity API 호출에 실패했습니다."):
+        super().__init__("Perplexity API", message)
 
 
 class RateLimitException(AppException):
@@ -178,20 +192,6 @@ class DatabaseTimeoutException(DatabaseException):
 
     def __init__(self):
         super().__init__("데이터베이스 요청이 시간 초과되었습니다.")
-
-
-class RedisConnectionException(ExternalServiceException):
-    """Redis 연결 실패 시"""
-
-    def __init__(self):
-        super().__init__("Redis", "Redis 연결에 실패했습니다.")
-
-
-class KakaoServiceException(ExternalServiceException):
-    """카카오 서비스 오류 시"""
-
-    def __init__(self, detail: str = None):
-        super().__init__("카카오", detail)
 
 
 # 에러 응답 모델

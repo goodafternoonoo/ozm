@@ -82,7 +82,6 @@ async def detailed_health_check():
         "environment": settings.env,
         "checks": {
             "database": "healthy",  # 실제로는 DB 연결 확인
-            "redis": "not_configured",  # Redis 설정 여부에 따라
             "external_services": "healthy",
         },
     }
