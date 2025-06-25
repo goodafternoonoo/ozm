@@ -14,6 +14,7 @@ import axios from 'axios';
 import { KAKAO_API_CONFIG } from '@/config/api';
 import Cookies from 'js-cookie';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LogoutModal } from '../components/LogoutModal';
 
 const KAKAO_REST_API_KEY = KAKAO_API_CONFIG.RESTAPI_KEY;
 const KAKAO_CLIENT_SECRET = KAKAO_API_CONFIG.CLIENT_SECRET;
@@ -27,6 +28,7 @@ export const LoginScreen: React.FC = () => {
         email?: string;
     } | null>(null);
     const [jwtToken, setJwtToken] = useState<string | null>(null);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     useEffect(() => {
         // 메시지 리스너 등록 (콜백 창에서 보내는 메시지 처리)
@@ -128,14 +130,14 @@ export const LoginScreen: React.FC = () => {
     };
 
     const handleLogout = () => {
+        console.log('handleLogout 함수 호출됨');
+        setShowLogoutModal(true);
+    };
+
+    const handleLogoutSuccess = () => {
         setLoginSuccess(false);
         setUserInfo(null);
-        AsyncStorage.removeItem('jwt_token');
-        AsyncStorage.removeItem('kakao_access_token'); // 임시 캐싱 토큰도 삭제
-        // 쿠키에서 삭제
-        Cookies.remove('ozm_nickname');
-        Cookies.remove('ozm_email');
-        Alert.alert('로그아웃', '로그아웃되었습니다.');
+        setJwtToken(null);
     };
 
     useEffect(() => {
@@ -339,6 +341,13 @@ export const LoginScreen: React.FC = () => {
                     </Text>
                 )}
             </View>
+
+            {/* 로그아웃 모달 */}
+            <LogoutModal
+                visible={showLogoutModal}
+                onClose={() => setShowLogoutModal(false)}
+                onLogoutSuccess={handleLogoutSuccess}
+            />
         </KeyboardAvoidingView>
     );
 };
