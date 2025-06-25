@@ -2,11 +2,13 @@ import React, {
     createContext,
     useContext,
     useState,
+    useCallback,
     ReactNode,
 } from 'react';
 import { Alert } from 'react-native';
 import { QuestionService } from '../services/questionService';
 import { AppError } from '../utils/apiClient';
+import { logUserInteraction, logError, LogCategory } from '../utils/logger';
 
 export type Message = {
     id: number;
@@ -37,7 +39,7 @@ export const QuestionsProvider: React.FC<QuestionsProviderProps> = ({ children }
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
 
-    const sendMessage = async () => {
+    const sendMessage = useCallback(async () => {
         if (!userQuestion.trim()) {
             return;
         }
@@ -55,10 +57,12 @@ export const QuestionsProvider: React.FC<QuestionsProviderProps> = ({ children }
         setUserQuestion('');
         setLoading(true);
         try {
+            logUserInteraction('사용자 메시지 전송', { message: currentQuestion });
             // AI 답변 요청 (Perplexity 기반)
             const response = await QuestionService.getAIAnswer({
                 question: currentQuestion,
             });
+            logUserInteraction('AI 응답 수신', { response });
             const newBotMessage: Message = {
                 id: Date.now() + 1,
                 text: response.answer || '답변을 받지 못했습니다.',
@@ -72,20 +76,21 @@ export const QuestionsProvider: React.FC<QuestionsProviderProps> = ({ children }
             };
             setMessages((prev) => [...prev, newBotMessage]);
         } catch (err) {
+            logError(LogCategory.USER_INTERACTION, 'sendMessage 에러', err as Error);
             const errorMessage =
                 err instanceof AppError
                     ? err.message
                     : 'AI 답변을 받는데 실패했습니다';
             Alert.alert('오류', errorMessage);
-            console.error('AI 답변 에러:', err);
         } finally {
             setLoading(false);
         }
-    };
+    }, [userQuestion]);
 
-    const clearMessages = () => {
+    const clearMessages = useCallback(() => {
+        logUserInteraction('메시지 히스토리 초기화');
         setMessages([]);
-    };
+    }, []);
 
     const value = {
         userQuestion,

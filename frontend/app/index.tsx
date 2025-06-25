@@ -63,7 +63,10 @@ export default function MenuRecommendationScreen() {
             label: '점심',
             icon: 'restaurant-outline',
         },
-        { value: 'dinner' as TimeSlot, label: '저녁', icon: 'moon-outline' },
+        { 
+            value: 'dinner' as TimeSlot, 
+            label: '저녁', 
+            icon: 'moon-outline' },
     ];
 
     const handleCollaborativeMode = () => {

@@ -3,12 +3,14 @@ import React, {
     useContext,
     useState,
     ReactNode,
+    useCallback,
 } from 'react';
 import {
     RecommendationService,
     InteractionData,
 } from '../services/recommendationService';
 import { AppError } from '../utils/apiClient';
+import { logUserInteraction, logError, LogCategory } from '../utils/logger';
 
 export type InteractionType =
     | 'click'
@@ -64,11 +66,12 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const recordInteraction = async (interactionData: InteractionData) => {
+    const recordInteraction = useCallback(async (interactionData: InteractionData) => {
         setLoading(true);
         setError(null);
 
         try {
+            logUserInteraction('상호작용 기록', { interactionData });
             const response = await RecommendationService.recordInteraction(
                 interactionData
             );
@@ -79,99 +82,123 @@ export const UserInteractionProvider: React.FC<UserInteractionProviderProps> = (
                     ? err.message
                     : '상호작용 기록에 실패했습니다';
             setError(errorMessage);
-            console.error('상호작용 기록 에러:', err);
+            logError(LogCategory.USER_INTERACTION, '상호작용 기록 에러', err as Error);
             return null;
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const recordMenuClick = async (
+    const recordMenuClick = useCallback(async (
         sessionId: string,
         menuId: string,
         extraData?: Record<string, any>
     ) => {
-        return await recordInteraction({
-            session_id: sessionId,
-            menu_id: menuId,
-            interaction_type: 'click',
-            interaction_strength: 0.5,
-            extra_data: extraData,
-        });
-    };
+        try {
+            logUserInteraction('메뉴 클릭 기록', { sessionId, menuId, extraData });
+            await RecommendationService.recordInteraction({
+                session_id: sessionId,
+                menu_id: menuId,
+                interaction_type: 'click',
+                extra_data: extraData,
+            });
+        } catch (error) {
+            logError(LogCategory.USER_INTERACTION, '메뉴 클릭 기록 에러', error as Error);
+        }
+    }, []);
 
-    const recordMenuFavorite = async (
+    const recordMenuFavorite = useCallback(async (
         sessionId: string,
         menuId: string,
         isFavorite: boolean
     ) => {
-        return await recordInteraction({
-            session_id: sessionId,
-            menu_id: menuId,
-            interaction_type: 'favorite',
-            interaction_strength: isFavorite ? 1.0 : 0.3,
-            extra_data: { is_favorite: isFavorite },
-        });
-    };
+        try {
+            logUserInteraction('메뉴 즐겨찾기 기록', { sessionId, menuId, isFavorite });
+            await RecommendationService.recordInteraction({
+                session_id: sessionId,
+                menu_id: menuId,
+                interaction_type: 'favorite',
+                interaction_strength: isFavorite ? 1 : -1,
+                extra_data: { is_favorite: isFavorite },
+            });
+        } catch (error) {
+            logError(LogCategory.USER_INTERACTION, '메뉴 즐겨찾기 기록 에러', error as Error);
+        }
+    }, []);
 
-    const recordRecommendationSelect = async (
+    const recordRecommendationSelect = useCallback(async (
         sessionId: string,
         menuId: string,
         recommendationType: string
     ) => {
-        return await recordInteraction({
-            session_id: sessionId,
-            menu_id: menuId,
-            interaction_type: 'recommend_select',
-            interaction_strength: 0.8,
-            extra_data: { recommendation_type: recommendationType },
-        });
-    };
+        try {
+            logUserInteraction('추천 선택 기록', { sessionId, menuId, recommendationType });
+            await RecommendationService.recordInteraction({
+                session_id: sessionId,
+                menu_id: menuId,
+                interaction_type: 'recommend_select',
+                extra_data: { recommendation_type: recommendationType },
+            });
+        } catch (error) {
+            logError(LogCategory.USER_INTERACTION, '추천 선택 기록 에러', error as Error);
+        }
+    }, []);
 
-    const recordSearch = async (
+    const recordSearch = useCallback(async (
         sessionId: string,
         searchQuery: string,
         resultsCount: number
     ) => {
-        return await recordInteraction({
-            session_id: sessionId,
-            menu_id: '', // 검색은 특정 메뉴가 없음
-            interaction_type: 'search',
-            interaction_strength: 0.6,
-            extra_data: {
-                search_query: searchQuery,
-                results_count: resultsCount,
-            },
-        });
-    };
+        try {
+            logUserInteraction('검색 기록', { sessionId, searchQuery, resultsCount });
+            await RecommendationService.recordInteraction({
+                session_id: sessionId,
+                interaction_type: 'search',
+                extra_data: {
+                    search_query: searchQuery,
+                    results_count: resultsCount,
+                },
+            });
+        } catch (error) {
+            logError(LogCategory.USER_INTERACTION, '검색 기록 에러', error as Error);
+        }
+    }, []);
 
-    const recordViewDetail = async (
+    const recordViewDetail = useCallback(async (
         sessionId: string,
         menuId: string,
         source: string
     ) => {
-        return await recordInteraction({
-            session_id: sessionId,
-            menu_id: menuId,
-            interaction_type: 'view_detail',
-            interaction_strength: 0.7,
-            extra_data: { source: source },
-        });
-    };
+        try {
+            logUserInteraction('상세 보기 기록', { sessionId, menuId, source });
+            await RecommendationService.recordInteraction({
+                session_id: sessionId,
+                menu_id: menuId,
+                interaction_type: 'view_detail',
+                extra_data: { source: source },
+            });
+        } catch (error) {
+            logError(LogCategory.USER_INTERACTION, '상세 보기 기록 에러', error as Error);
+        }
+    }, []);
 
-    const recordShare = async (
+    const recordShare = useCallback(async (
         sessionId: string,
         menuId: string,
         shareMethod: string
     ) => {
-        return await recordInteraction({
-            session_id: sessionId,
-            menu_id: menuId,
-            interaction_type: 'share',
-            interaction_strength: 0.9,
-            extra_data: { share_method: shareMethod },
-        });
-    };
+        try {
+            logUserInteraction('공유 기록', { sessionId, menuId, shareMethod });
+            await RecommendationService.recordInteraction({
+                session_id: sessionId,
+                menu_id: menuId,
+                interaction_type: 'share',
+                extra_data: { share_method: shareMethod },
+            });
+        } catch (error) {
+            logError(LogCategory.USER_INTERACTION, '공유 기록 에러', error as Error);
+        }
+    }, []);
 
     const value = {
         loading,

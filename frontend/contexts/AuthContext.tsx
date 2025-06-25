@@ -2,11 +2,13 @@ import React, {
     createContext,
     useContext,
     useState,
+    useCallback,
     useEffect,
     ReactNode,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Cookies from 'js-cookie';
+import { logAuth, logError, LogCategory } from '../utils/logger';
 
 export interface UserInfo {
     nickname?: string;
@@ -33,8 +35,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const checkLoginStatus = async () => {
+    const checkLoginStatus = useCallback(async () => {
         try {
+            logAuth('로그인 상태 확인 시도');
             const token = await AsyncStorage.getItem('jwt_token');
             const nickname = Cookies.get('ozm_nickname');
             const email = Cookies.get('ozm_email');
@@ -44,34 +47,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setIsLoggedIn(newIsLoggedIn);
             if (newIsLoggedIn) {
                 setUserInfo({ nickname, email });
+                logAuth('로그인 상태 확인됨', { nickname, email });
             } else {
                 setUserInfo(null);
+                logAuth('로그인되지 않은 상태');
             }
         } catch (error) {
-            console.error('로그인 상태 확인 에러:', error);
+            logError(LogCategory.AUTH, '로그인 상태 확인 에러', error as Error);
             setIsLoggedIn(false);
             setUserInfo(null);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const login = (userData: UserInfo) => {
+    const login = useCallback((userData: UserInfo) => {
+        logAuth('로그인 처리', { userData });
         setIsLoggedIn(true);
         setUserInfo(userData);
-    };
+    }, []);
 
-    const logout = async () => {
+    const logout = useCallback(async () => {
         try {
+            logAuth('로그아웃 시도');
             await AsyncStorage.removeItem('jwt_token');
             Cookies.remove('ozm_nickname');
             Cookies.remove('ozm_email');
             setIsLoggedIn(false);
             setUserInfo(null);
+            logAuth('로그아웃 완료');
         } catch (error) {
-            console.error('로그아웃 에러:', error);
+            logError(LogCategory.AUTH, '로그아웃 에러', error as Error);
         }
-    };
+    }, []);
 
     useEffect(() => {
         checkLoginStatus();
@@ -80,7 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const interval = setInterval(checkLoginStatus, 5000);
 
         return () => clearInterval(interval);
-    }, []);
+    }, [checkLoginStatus]);
 
     const value = {
         isLoggedIn,
@@ -92,7 +100,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+        <AuthContext.Provider value={value}>
+            {children}
+        </AuthContext.Provider>
     );
 };
 
