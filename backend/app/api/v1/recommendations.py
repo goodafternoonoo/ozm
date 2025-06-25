@@ -15,14 +15,18 @@ from app.models.menu import Menu
 from app.models.menu import TimeSlot as ModelTimeSlot
 from app.schemas.common import error_response, succeed_response
 from app.schemas.menu import MenuRecommendation, MenuResponse
-from app.schemas.recommendation import (CollaborativeRecommendationRequest,
-                                        InteractionRecordRequest,
-                                        QuizRecommendationRequest,
-                                        RecommendationResponse,
-                                        SimpleRecommendationRequest)
-from app.schemas.user_preference import (CollaborativeRecommendation,
-                                         PreferenceAnalysis,
-                                         UserInteractionCreate)
+from app.schemas.recommendation import (
+    CollaborativeRecommendationRequest,
+    InteractionRecordRequest,
+    QuizRecommendationRequest,
+    RecommendationResponse,
+    SimpleRecommendationRequest,
+)
+from app.schemas.user_preference import (
+    CollaborativeRecommendation,
+    PreferenceAnalysis,
+    UserInteractionCreate,
+)
 from app.services.auth_service import AuthService
 from app.services.preference_service import PreferenceService
 from app.services.recommendation_service import RecommendationService
@@ -289,9 +293,7 @@ async def record_interaction(
         menu = await db.get(Menu, menu_id)
         if not menu:
             return JSONResponse(
-                content=jsonable_encoder(
-                    error_response("존재하지 않는 메뉴입니다", code=404)
-                ),
+                content=jsonable_encoder(error_response("존재하지 않는 메뉴입니다", code=404)),
                 status_code=404,
             )
 

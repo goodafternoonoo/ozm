@@ -15,8 +15,14 @@ from app.models.menu import Menu
 from app.models.user import User
 from app.schemas.common import error_response, succeed_response
 from app.schemas.error_codes import ErrorCode
-from app.schemas.menu import (FavoriteCreate, FavoriteResponse, MenuCreate,
-                              MenuResponse, MenuSearchResponse, MenuUpdate)
+from app.schemas.menu import (
+    FavoriteCreate,
+    FavoriteResponse,
+    MenuCreate,
+    MenuResponse,
+    MenuSearchResponse,
+    MenuUpdate,
+)
 from app.services.auth_service import get_current_user
 from app.services.menu_service import favorite_service, menu_service
 

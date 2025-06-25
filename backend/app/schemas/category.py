@@ -20,9 +20,7 @@ class CategoryBase(BaseModel):
     )
     is_active: bool = Field(True, description="활성화 여부")
     display_order: int = Field(0, ge=0, description="표시 순서")
-    icon_url: Optional[str] = Field(
-        None, max_length=255, description="아이콘 이미지 URL"
-    )
+    icon_url: Optional[str] = Field(None, max_length=255, description="아이콘 이미지 URL")
     color_code: Optional[str] = Field(
         None, pattern=r"^#[0-9A-Fa-f]{6}$", description="색상 코드 (예: #FF5733)"
     )

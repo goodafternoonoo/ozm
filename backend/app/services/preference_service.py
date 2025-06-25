@@ -13,11 +13,13 @@ from app.core.cache import cache_key, cached, user_preference_cache
 from app.models.favorite import Favorite
 from app.models.menu import Menu
 from app.models.user_preference import UserInteraction, UserPreference
-from app.schemas.user_preference import (CollaborativeRecommendation,
-                                         PreferenceAnalysis,
-                                         UserInteractionCreate,
-                                         UserPreferenceCreate,
-                                         UserPreferenceUpdate)
+from app.schemas.user_preference import (
+    CollaborativeRecommendation,
+    PreferenceAnalysis,
+    UserInteractionCreate,
+    UserPreferenceCreate,
+    UserPreferenceUpdate,
+)
 
 
 class PreferenceService:

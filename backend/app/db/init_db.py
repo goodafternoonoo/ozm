@@ -6,8 +6,17 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import AsyncSessionLocal, Base, async_engine
-from app.models import (Category, Favorite, Menu, Question, Recommendation,
-                        User, UserAnswer, UserInteraction, UserPreference)
+from app.models import (
+    Category,
+    Favorite,
+    Menu,
+    Question,
+    Recommendation,
+    User,
+    UserAnswer,
+    UserInteraction,
+    UserPreference,
+)
 from app.models.category import Category
 from app.models.menu import TimeSlot
 from app.models.question import Question

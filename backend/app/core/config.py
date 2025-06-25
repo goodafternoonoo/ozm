@@ -45,9 +45,7 @@ class Settings(BaseSettings):
 
     # 카카오 설정
     kakao_client_id: Optional[str] = Field(None, description="카카오 클라이언트 ID")
-    kakao_client_secret: Optional[str] = Field(
-        None, description="카카오 클라이언트 시크릿"
-    )
+    kakao_client_secret: Optional[str] = Field(None, description="카카오 클라이언트 시크릿")
     kakao_redirect_uri: Optional[str] = Field(None, description="카카오 리다이렉트 URI")
 
     # Perplexity AI 설정

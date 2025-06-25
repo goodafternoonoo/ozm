@@ -4,11 +4,19 @@ import uuid
 import pytest
 import pytest_asyncio
 
-from app.core.cache import (MemoryCache, cache, cached, get_cache_stats,
-                            invalidate_all_caches, invalidate_menu_cache,
-                            invalidate_recommendation_cache,
-                            invalidate_user_preference_cache, menu_cache,
-                            recommendation_cache, user_preference_cache)
+from app.core.cache import (
+    MemoryCache,
+    cache,
+    cached,
+    get_cache_stats,
+    invalidate_all_caches,
+    invalidate_menu_cache,
+    invalidate_recommendation_cache,
+    invalidate_user_preference_cache,
+    menu_cache,
+    recommendation_cache,
+    user_preference_cache,
+)
 
 
 class TestMemoryCache:

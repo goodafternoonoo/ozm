@@ -58,7 +58,6 @@ class PerplexityService:
                 async with session.post(
                     self.base_url, json=payload, headers=headers, timeout=30
                 ) as response:
-
                     if response.status == 200:
                         data = await response.json()
                         return self._parse_perplexity_response(data)
