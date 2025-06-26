@@ -168,6 +168,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         except RateLimitException as e:
             request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
+            logger.warning(f"Rate limit exceeded for {request.client.host}: {str(e)}")
             error_response = create_error_response(
                 error="Rate Limit Exceeded",
                 detail=str(e),
@@ -178,6 +179,38 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             )
             return JSONResponse(
                 status_code=429,
+                content=jsonable_encoder(error_response),
+                headers={"X-Request-ID": request_id},
+            )
+        except ValueError as e:
+            request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
+            logger.warning(f"Validation error: {str(e)}")
+            error_response = create_error_response(
+                error="Validation Error",
+                detail=str(e),
+                status_code=400,
+                request_id=request_id,
+                path=str(request.url.path),
+                method=request.method,
+            )
+            return JSONResponse(
+                status_code=400,
+                content=jsonable_encoder(error_response),
+                headers={"X-Request-ID": request_id},
+            )
+        except TimeoutError as e:
+            request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
+            logger.error(f"Timeout error: {str(e)}")
+            error_response = create_error_response(
+                error="Request Timeout",
+                detail="요청이 시간 초과되었습니다.",
+                status_code=408,
+                request_id=request_id,
+                path=str(request.url.path),
+                method=request.method,
+            )
+            return JSONResponse(
+                status_code=408,
                 content=jsonable_encoder(error_response),
                 headers={"X-Request-ID": request_id},
             )

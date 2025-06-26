@@ -217,17 +217,53 @@ def start_cache_cleanup_scheduler():
     """캐시 정리 스케줄러 시작"""
 
     def cleanup_task():
+        logger.info("캐시 정리 스케줄러 시작됨")
         while True:
             try:
                 time.sleep(300)  # 5분마다 실행
-                cache.cleanup_expired()
-                recommendation_cache.cleanup_expired()
-                user_preference_cache.cleanup_expired()
-                menu_cache.cleanup_expired()
-            except Exception as e:
-                logger.error(f"캐시 정리 중 오류: {e}")
 
-    cleanup_thread = threading.Thread(target=cleanup_task, daemon=True)
+                # 각 캐시별로 개별적으로 정리하여 한 캐시의 오류가 다른 캐시에 영향을 주지 않도록 함
+                try:
+                    expired_count = cache.cleanup_expired()
+                    if expired_count > 0:
+                        logger.debug(f"메인 캐시에서 {expired_count}개 항목 정리")
+                except Exception as e:
+                    logger.error(f"메인 캐시 정리 중 오류: {e}")
+
+                try:
+                    expired_count = recommendation_cache.cleanup_expired()
+                    if expired_count > 0:
+                        logger.debug(f"추천 캐시에서 {expired_count}개 항목 정리")
+                except Exception as e:
+                    logger.error(f"추천 캐시 정리 중 오류: {e}")
+
+                try:
+                    expired_count = user_preference_cache.cleanup_expired()
+                    if expired_count > 0:
+                        logger.debug(
+                            f"사용자 선호도 캐시에서 {expired_count}개 항목 정리"
+                        )
+                except Exception as e:
+                    logger.error(f"사용자 선호도 캐시 정리 중 오류: {e}")
+
+                try:
+                    expired_count = menu_cache.cleanup_expired()
+                    if expired_count > 0:
+                        logger.debug(f"메뉴 캐시에서 {expired_count}개 항목 정리")
+                except Exception as e:
+                    logger.error(f"메뉴 캐시 정리 중 오류: {e}")
+
+            except KeyboardInterrupt:
+                logger.info("캐시 정리 스케줄러 종료 요청됨")
+                break
+            except Exception as e:
+                logger.error(f"캐시 정리 스케줄러 중 예상치 못한 오류: {e}")
+                # 오류 발생 시 잠시 대기 후 재시도
+                time.sleep(60)
+
+    cleanup_thread = threading.Thread(
+        target=cleanup_task, daemon=True, name="CacheCleanupThread"
+    )
     cleanup_thread.start()
     logger.info("캐시 정리 스케줄러 시작")
 
@@ -246,18 +282,21 @@ def get_cache_stats() -> Dict[str, Dict[str, Union[int, float]]]:
 # 캐시 무효화 헬퍼 함수들
 def invalidate_recommendation_cache(session_id: str = None, user_id: str = None):
     """추천 캐시 무효화"""
-    if session_id:
-        # 세션별 캐시 무효화 로직 구현
-        # 키 패턴으로 세션 관련 캐시만 삭제
+    if session_id or user_id:
+        # 세션별/사용자별 캐시 무효화 로직 구현
+        # 키 패턴으로 세션/사용자 관련 캐시만 삭제
         keys_to_delete = []
-        for key in recommendation_cache._cache.keys():
-            if session_id in key:
-                keys_to_delete.append(key)
+        with recommendation_cache._lock:
+            for key in list(recommendation_cache._cache.keys()):
+                if (session_id and session_id in key) or (user_id and user_id in key):
+                    keys_to_delete.append(key)
 
         for key in keys_to_delete:
             recommendation_cache.delete(key)
 
-        logger.info(f"세션 {session_id}의 추천 캐시 무효화 완료")
+        logger.info(
+            f"세션 {session_id or user_id}의 추천 캐시 {len(keys_to_delete)}개 항목 무효화 완료"
+        )
     else:
         recommendation_cache.clear()
         logger.info("전체 추천 캐시 무효화 완료")
@@ -268,14 +307,17 @@ def invalidate_user_preference_cache(user_id: str = None, session_id: str = None
     if user_id or session_id:
         # 특정 사용자/세션 관련 캐시만 무효화
         keys_to_delete = []
-        for key in user_preference_cache._cache.keys():
-            if (user_id and user_id in key) or (session_id and session_id in key):
-                keys_to_delete.append(key)
+        with user_preference_cache._lock:
+            for key in list(user_preference_cache._cache.keys()):
+                if (user_id and user_id in key) or (session_id and session_id in key):
+                    keys_to_delete.append(key)
 
         for key in keys_to_delete:
             user_preference_cache.delete(key)
 
-        logger.info(f"사용자 {user_id or session_id}의 선호도 캐시 무효화 완료")
+        logger.info(
+            f"사용자 {user_id or session_id}의 선호도 캐시 {len(keys_to_delete)}개 항목 무효화 완료"
+        )
     else:
         user_preference_cache.clear()
         logger.info("전체 사용자 선호도 캐시 무효화 완료")
@@ -283,28 +325,19 @@ def invalidate_user_preference_cache(user_id: str = None, session_id: str = None
 
 def invalidate_menu_cache(menu_id: str = None, category_id: str = None):
     """메뉴 캐시 무효화"""
-    if menu_id:
-        # 특정 메뉴 캐시만 무효화
+    if menu_id or category_id:
+        # 특정 메뉴/카테고리 캐시만 무효화
         keys_to_delete = []
-        for key in menu_cache._cache.keys():
-            if menu_id in key:
-                keys_to_delete.append(key)
+        with menu_cache._lock:
+            for key in list(menu_cache._cache.keys()):
+                if (menu_id and menu_id in key) or (category_id and category_id in key):
+                    keys_to_delete.append(key)
 
         for key in keys_to_delete:
             menu_cache.delete(key)
 
-        logger.info(f"메뉴 {menu_id}의 캐시 무효화 완료")
-    elif category_id:
-        # 특정 카테고리 메뉴 캐시 무효화
-        keys_to_delete = []
-        for key in menu_cache._cache.keys():
-            if category_id in key:
-                keys_to_delete.append(key)
-
-        for key in keys_to_delete:
-            menu_cache.delete(key)
-
-        logger.info(f"카테고리 {category_id}의 메뉴 캐시 무효화 완료")
+        target = f"메뉴 {menu_id}" if menu_id else f"카테고리 {category_id}"
+        logger.info(f"{target}의 메뉴 캐시 {len(keys_to_delete)}개 항목 무효화 완료")
     else:
         menu_cache.clear()
         logger.info("전체 메뉴 캐시 무효화 완료")

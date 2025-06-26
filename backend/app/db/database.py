@@ -35,6 +35,13 @@ engine_kwargs = {
     "echo": settings.debug,  # 디버그 모드에서만 SQL 로그 출력
     "pool_pre_ping": True,  # 연결 상태 확인
     "pool_recycle": 3600,  # 1시간마다 연결 재생성
+    "connect_args": {
+        "server_settings": {
+            "application_name": "ozm_backend",  # 애플리케이션 이름 설정
+        },
+        "command_timeout": 60,  # 명령 타임아웃 60초
+    },
+    "pool_reset_on_return": "commit",  # 연결 반환 시 커밋으로 리셋
 }
 
 # 테스트 환경에서는 연결 풀 비활성화
@@ -46,6 +53,9 @@ else:
         {
             "pool_size": 10,  # 연결 풀 크기
             "max_overflow": 20,  # 최대 오버플로우 연결 수
+            "pool_pre_ping": True,  # 연결 상태 확인
+            "pool_recycle": 3600,  # 1시간마다 연결 재생성
+            "pool_timeout": 30,  # 연결 풀 타임아웃 30초 (NullPool과 호환되지 않음)
         }
     )
 

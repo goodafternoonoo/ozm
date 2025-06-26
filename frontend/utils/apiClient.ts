@@ -42,7 +42,13 @@ apiClient.interceptors.request.use(
     async (config) => {
         // 요청 로깅 (개발 환경에서만)
         if (__DEV__) {
-            logApi(LogCategory.API, `API Request: ${JSON.stringify({ method: config.method?.toUpperCase(), url: config.url })}`);
+            logApi(
+                LogCategory.API,
+                `API Request: ${JSON.stringify({
+                    method: config.method?.toUpperCase(),
+                    url: config.url,
+                })}`
+            );
         }
         // JWT 토큰이 있다면 헤더에 추가
         const token = await AsyncStorage.getItem('jwt_token');
@@ -66,7 +72,14 @@ apiClient.interceptors.response.use(
     (response: AxiosResponse<ApiResponse>) => {
         // 응답 로깅 (개발 환경에서만)
         if (__DEV__) {
-            logApi(LogCategory.API, `API Response: ${JSON.stringify({ status: response.status, url: response.config.url, data: response.data })}`);
+            logApi(
+                LogCategory.API,
+                `API Response: ${JSON.stringify({
+                    status: response.status,
+                    url: response.config.url,
+                    data: response.data,
+                })}`
+            );
         }
 
         // 백엔드 응답 구조 확인
@@ -78,7 +91,15 @@ apiClient.interceptors.response.use(
     },
     (error) => {
         // 에러 로깅
-        logError(LogCategory.API, `API Error: ${error.message} | status: ${error.response?.status} | url: ${error.config?.url} | data: ${JSON.stringify(error.response?.data)}`, error);
+        logError(
+            LogCategory.API,
+            `API Error: ${error.message} | status: ${
+                error.response?.status
+            } | url: ${error.config?.url} | data: ${JSON.stringify(
+                error.response?.data
+            )}`,
+            error
+        );
 
         // 에러 변환
         const appError = handleApiError(error);
@@ -91,9 +112,58 @@ export const handleApiError = (error: unknown): AppError => {
     if ((error as any).response) {
         // 서버 응답이 있는 경우
         const { status, data } = (error as any).response;
-        const message =
-            data?.error?.message || data?.message || '서버 오류가 발생했습니다';
-        const code = data?.error?.code || 'API_ERROR';
+
+        // HTTP 상태 코드별 에러 메시지
+        let message = '서버 오류가 발생했습니다';
+        let code = 'API_ERROR';
+
+        switch (status) {
+            case 400:
+                message =
+                    data?.error?.message ||
+                    data?.message ||
+                    '잘못된 요청입니다';
+                code = data?.error?.code || 'BAD_REQUEST';
+                break;
+            case 401:
+                message = '인증이 필요합니다';
+                code = 'UNAUTHORIZED';
+                break;
+            case 403:
+                message = '접근 권한이 없습니다';
+                code = 'FORBIDDEN';
+                break;
+            case 404:
+                message = '요청한 리소스를 찾을 수 없습니다';
+                code = 'NOT_FOUND';
+                break;
+            case 408:
+                message = '요청이 시간 초과되었습니다';
+                code = 'TIMEOUT';
+                break;
+            case 429:
+                message = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요';
+                code = 'RATE_LIMIT';
+                break;
+            case 500:
+                message = '서버 내부 오류가 발생했습니다';
+                code = 'INTERNAL_SERVER_ERROR';
+                break;
+            case 502:
+                message = '서버를 일시적으로 사용할 수 없습니다';
+                code = 'BAD_GATEWAY';
+                break;
+            case 503:
+                message = '서비스를 일시적으로 사용할 수 없습니다';
+                code = 'SERVICE_UNAVAILABLE';
+                break;
+            default:
+                message =
+                    data?.error?.message ||
+                    data?.message ||
+                    `서버 오류 (${status})`;
+                code = data?.error?.code || 'API_ERROR';
+        }
 
         return new AppError(message, code, status, data);
     }
@@ -101,6 +171,11 @@ export const handleApiError = (error: unknown): AppError => {
     if ((error as any).request) {
         // 요청은 보냈지만 응답이 없는 경우 (네트워크 오류)
         return new AppError('네트워크 연결을 확인해주세요', 'NETWORK_ERROR', 0);
+    }
+
+    if ((error as any).code === 'ECONNABORTED') {
+        // 타임아웃 에러
+        return new AppError('요청이 시간 초과되었습니다', 'TIMEOUT', 0);
     }
 
     // 기타 오류
