@@ -6,6 +6,7 @@ import { MenuRecommendationProvider } from './MenuRecommendationContext';
 import { ChujonProvider } from './ChujonContext';
 import { NearbyProvider } from './NearbyContext';
 import { QuestionsProvider } from './QuestionsContext';
+import { BoardProvider } from './BoardContext';
 
 interface AppProviderProps {
     children: ReactNode;
@@ -20,7 +21,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
                         <ChujonProvider>
                             <NearbyProvider>
                                 <QuestionsProvider>
-                                    {children}
+                                    <BoardProvider>
+                                        {children}
+                                    </BoardProvider>
                                 </QuestionsProvider>
                             </NearbyProvider>
                         </ChujonProvider>

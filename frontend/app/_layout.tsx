@@ -120,6 +120,19 @@ export default function RootLayout() {
                         href: null,
                     }}
                 />
+                <Tabs.Screen
+                    name='board'
+                    options={{
+                        title: '게시판',
+                        tabBarIcon: ({ color, size, focused }) => (
+                            <Ionicons
+                                name={focused ? 'chatbubble' : 'chatbubble-outline'}
+                                size={isWeb ? 20 : size}
+                                color={color}
+                            />
+                        ),
+                    }}
+                />
             </Tabs>
         </AppProvider>
     );

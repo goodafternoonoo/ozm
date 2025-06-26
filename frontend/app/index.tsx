@@ -1,22 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useMemo, useCallback } from 'react';
-import {
-    ActivityIndicator,
-    Modal,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import ChujonRecommendation from '../components/ChujonRecommendation';
 import { CollaborativeMenuCard } from '../components/CollaborativeMenuCard';
 import { MenuCard } from '../components/MenuCard';
 import { useChujonRecommendation } from '../hooks/useChujonRecommendation';
 import { useCollaborativeRecommendations } from '../hooks/useCollaborativeRecommendations';
-import {
-    TimeSlot,
-    useMenuRecommendations,
-} from '../hooks/useMenuRecommendations';
+import { TimeSlot, useMenuRecommendations } from '../hooks/useMenuRecommendations';
 import { colors } from '../styles/GlobalStyles';
 import { MenuRecommendationStyles } from '../styles/MenuRecommendationStyles';
 
